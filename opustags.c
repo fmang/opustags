@@ -365,7 +365,7 @@ int main(int argc, char **argv){
                 free_tags(&tags);
                 if(raw_tags)
                     free(raw_tags);
-                if(error)
+                if(error || !out)
                     break;
                 else
                     continue;
@@ -389,6 +389,8 @@ int main(int argc, char **argv){
             else if(ogg_stream_check(&enc) != 0)
                 error = "ogg_stream_check: internal error (encoder)";
         }
+        else if(packet_count >= 2) // Read-only mode
+            break;
     }
     if(packet_count >= 0){
         ogg_stream_clear(&os);
