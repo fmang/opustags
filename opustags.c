@@ -32,7 +32,7 @@ int parse_tags(char *data, long len, opus_tags *tags){
     tags->lengths = calloc(tags->count, sizeof(uint32_t));
     if(tags->lengths == NULL)
         return -1;
-    tags->comment = calloc(tags->count, sizeof(const char*));
+    tags->comment = calloc(tags->count, sizeof(char*));
     if(tags->comment == NULL){
         free(tags->lengths);
         return -1;
@@ -50,6 +50,54 @@ int parse_tags(char *data, long len, opus_tags *tags){
     if(pos != len)
         return -1;
     return 0;
+}
+
+int match_field(const char *comment, uint32_t len, const char *field){
+    size_t field_len = strlen(field);
+    if(len <= field_len)
+        return 0;
+    if(comment[field_len] != '=')
+        return 0;
+    if(strncmp(comment, field, field_len) != 0)
+        return 0;
+    return 1;
+
+}
+
+void delete_tags(opus_tags *tags, const char *field){
+    uint32_t i;
+    for(i=0; i<tags->count; i++){
+        if(match_field(tags->comment[i], tags->lengths[i], field)){
+            tags->count--;
+            tags->lengths[i] = tags->lengths[tags->count];
+            tags->comment[i] = tags->comment[tags->count];
+            // No need to resize the arrays.
+        }
+    }
+}
+
+int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count){
+    uint32_t *lengths = realloc(tags->lengths, (tags->count + count) * sizeof(uint32_t));
+    const char **comment = realloc(tags->comment, (tags->count + count) * sizeof(char*));
+    if(lengths == NULL || comment == NULL)
+        return -1;
+    tags->lengths = lengths;
+    tags->comment = comment;
+    uint32_t i;
+    for(i=0; i<count; i++){
+        tags->lengths[tags->count + i] = strlen(tags_to_add[i]);
+        tags->comment[tags->count + i] = tags_to_add[i];
+    }
+    tags->count += count;
+    return 0;
+}
+
+void print_tags(opus_tags *tags){
+    int i;
+    for(i=0; i<tags->count; i++){
+        fwrite(tags->comment[i], 1, tags->lengths[i], stdout);
+        puts("");
+    }
 }
 
 void free_tags(opus_tags *tags){
@@ -112,13 +160,12 @@ int main(int argc, char **argv){
             if(packet_count == 2){ // Comment header
                 if(parse_tags((char*) op.packet, op.bytes, &tags) == -1)
                     error = "opustags: invalid comment header";
-                fwrite(tags.vendor_string, 1, tags.vendor_length, stdout);
-                puts("");
-                int i;
-                for(i=0; i<tags.count; i++){
-                    fwrite(tags.comment[i], 1, tags.lengths[i], stdout);
-                    puts("");
-                }
+                // DEBUG
+                delete_tags(&tags, "ARTIST");
+                const char *tag = "ARTIST=Someone";
+                add_tags(&tags, &tag, 1);
+                print_tags(&tags);
+                // END DEBUG
                 free_tags(&tags);
                 break;
             }
