@@ -107,14 +107,31 @@ void free_tags(opus_tags *tags){
     }
 }
 
+int write_page(ogg_page *og, FILE *stream){
+    if(fwrite(og->header, 1, og->header_len, stream) < og->header_len)
+        return -1;
+    if(fwrite(og->body, 1, og->body_len, stream) < og->body_len)
+        return -1;
+    return 0;
+}
+
 int main(int argc, char **argv){
     FILE *in = fopen(argv[1], "r");
     if(!in){
         perror("fopen");
         return EXIT_FAILURE;
     }
+    FILE *out = NULL;
+    if(argc == 3){
+        out = fopen(argv[2], "w");
+        if(!out){
+            perror("fopen");
+            fclose(in);
+            return EXIT_FAILURE;
+        }
+    }
     ogg_sync_state oy;
-    ogg_stream_state os;
+    ogg_stream_state os, enc;
     ogg_page og;
     ogg_packet op;
     opus_tags tags;
@@ -140,10 +157,25 @@ int main(int argc, char **argv){
             continue;
         }
         // We got a page.
-        if(packet_count == -1){ // First page
-            if(ogg_stream_init(&os, ogg_page_serialno(&og)) == -1){
-                error = "ogg_stream_init: unsuccessful";
+        // Short-circuit when the relevant packets have been read.
+        if(packet_count >= 2 && out){
+            if(write_page(&og, out) == -1){
+                error = "write_page: fwrite error";
                 break;
+            }
+            continue;
+        }
+        // Initialize the streams from the first page.
+        if(packet_count == -1){
+            if(ogg_stream_init(&os, ogg_page_serialno(&og)) == -1){
+                error = "ogg_stream_init: couldn't create a decoder";
+                break;
+            }
+            if(out){
+                if(ogg_stream_init(&enc, ogg_page_serialno(&og)) == -1){
+                    error = "ogg_stream_init: couldn't create an encoder";
+                    break;
+                }
             }
             packet_count = 0;
         }
@@ -155,12 +187,16 @@ int main(int argc, char **argv){
         while(ogg_stream_packetout(&os, &op) == 1){
             packet_count++;
             if(packet_count == 1){ // Identification header
-                if(strncmp((char*) op.packet, "OpusHead", 8) != 0)
+                if(strncmp((char*) op.packet, "OpusHead", 8) != 0){
                     error = "opustags: invalid identification header";
+                    break;
+                }
             }
             else if(packet_count == 2){ // Comment header
-                if(parse_tags((char*) op.packet, op.bytes, &tags) == -1)
+                if(parse_tags((char*) op.packet, op.bytes, &tags) == -1){
                     error = "opustags: invalid comment header";
+                    break;
+                }
                 // DEBUG
                 delete_tags(&tags, "ARTIST");
                 const char *tag = "ARTIST=Someone";
@@ -168,16 +204,38 @@ int main(int argc, char **argv){
                 print_tags(&tags);
                 // END DEBUG
                 free_tags(&tags);
-                break;
+                if(!out)
+                    break;
+            }
+            if(out){
+                if(ogg_stream_packetin(&enc, &op) == -1){
+                    error = "ogg_stream_packetin: internal error";
+                    break;
+                }
             }
         }
+        if(error != NULL)
+            break;
         if(ogg_stream_check(&os) != 0)
-            error = "ogg_stream_check: internal error";
+            error = "ogg_stream_check: internal error (decoder)";
+        // Write the page.
+        if(out){
+            ogg_stream_flush(&enc, &og);
+            if(write_page(&og, out) == -1)
+                error = "write_page: fwrite error";
+            else if(ogg_stream_check(&enc) != 0)
+                error = "ogg_stream_check: internal error (encoder)";
+        }
     }
-    if(packet_count >= 0)
+    if(packet_count >= 0){
         ogg_stream_clear(&os);
+        if(out)
+            ogg_stream_clear(&enc);
+    }
     ogg_sync_clear(&oy);
     fclose(in);
+    if(out)
+        fclose(out);
     if(!error && packet_count < 2)
         error = "opustags: invalid file";
     if(error){
