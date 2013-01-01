@@ -140,9 +140,11 @@ int main(int argc, char **argv){
     size_t len;
     char *error = NULL;
     int packet_count = -1;
-    while(error == NULL && !feof(in)){
+    while(error == NULL){
         // Read until we complete a page.
         if(ogg_sync_pageout(&oy, &og) != 1){
+            if(feof(in))
+                break;
             buf = ogg_sync_buffer(&oy, 65536);
             if(buf == NULL){
                 error = "ogg_sync_buffer: out of memory";
