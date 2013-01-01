@@ -172,7 +172,7 @@ const char *help =
     "  -a, --add FIELD=VALUE   add a field\n"
     "  -s, --set FIELD=VALUE   delete then add a field\n"
     "  -D, --delete-all        delete all the fields!\n"
-    "  -S, --set-all           read the fields to set from stdin\n";
+    "  -S, --set-all           read the fields from stdin\n";
 
 struct option options[] = {
     {"help", no_argument, 0, 'h'},
@@ -240,7 +240,8 @@ int main(int argc, char **argv){
     if(print_help){
         puts(version);
         puts(usage);
-        fputs(help, stdout);
+        puts(help);
+        puts("See the man page for extensive documentation.");
         return EXIT_SUCCESS;
     }
     if(optind != argc - 1){
