@@ -160,9 +160,11 @@ int main(int argc, char **argv){
     const char* to_add[argc];
     const char* to_delete[argc];
     int count_add = 0, count_delete = 0;
+    int delete_all = 0;
+    int set_all = 0;
     int overwrite = 0;
     int c;
-    while((c = getopt(argc, argv, "o:yd:a:s:")) != -1){
+    while((c = getopt(argc, argv, "o:yd:a:s:DS")) != -1){
         switch(c){
             case 'o':
                 path_out = optarg;
@@ -186,6 +188,11 @@ int main(int argc, char **argv){
                 to_add[count_add++] = optarg;
                 if(c == 's')
                     to_delete[count_delete++] = optarg;
+                break;
+            case 'S':
+                set_all = 1;
+            case 'D':
+                delete_all = 1;
                 break;
             default:
                 return EXIT_FAILURE;
@@ -215,8 +222,15 @@ int main(int argc, char **argv){
         }
     }
     FILE *in;
-    if(strcmp(path_in, "-") == 0)
+    if(strcmp(path_in, "-") == 0){
+        if(set_all){
+            fputs("can't open stdin for input when -S is specified\n", stderr);
+            if(out)
+                fclose(out);
+            return EXIT_FAILURE;
+        }
         in = stdin;
+    }
     else
         in = fopen(path_in, "r");
     if(!in){
@@ -294,8 +308,50 @@ int main(int argc, char **argv){
                     error = "opustags: invalid comment header";
                     break;
                 }
-                for(int i=0; i<count_delete; i++)
-                    delete_tags(&tags, to_delete[i]);
+                if(delete_all)
+                    tags.count = 0;
+                else{
+                    int i;
+                    for(i=0; i<count_delete; i++)
+                        delete_tags(&tags, to_delete[i]);
+                }
+                char *raw_tags = NULL;
+                if(set_all){
+                    raw_tags = malloc(16384);
+                    if(raw_tags == NULL){
+                        error = "malloc: not enough memory for buffering stdin";
+                        free(raw_tags);
+                        break;
+                    }
+                    else{
+                        char *raw_comment[256];
+                        size_t raw_len = fread(raw_tags, 1, 16384, stdin);
+                        if(raw_len == 16384)
+                            fputs("warning: truncating comment to 16 KiB\n", stderr);
+                        uint32_t raw_count = 0;
+                        size_t field_len = 0;
+                        int caught_eq = 0;
+                        size_t i = 0;
+                        char *cursor = raw_tags;
+                        for(i=0; i<raw_len && raw_count < 256; i++){
+                            if(raw_tags[i] == '\n'){
+                                if(caught_eq)
+                                    raw_comment[raw_count++] = cursor;
+                                else
+                                    fputs("warning: skipping malformed tag\n", stderr);
+                                cursor = raw_tags + i + 1;
+                                field_len = 0;
+                                caught_eq = 0;
+                                raw_tags[i] = '\0';
+                                continue;
+                            }
+                            if(raw_tags[i] == '=')
+                                caught_eq = 1;
+                            field_len++;
+                        }
+                        add_tags(&tags, (const char**) raw_comment, raw_count);
+                    }
+                }
                 add_tags(&tags, to_add, count_add);
                 if(out){
                     ogg_packet packet;
@@ -307,6 +363,8 @@ int main(int argc, char **argv){
                 else
                     print_tags(&tags);
                 free_tags(&tags);
+                if(raw_tags)
+                    free(raw_tags);
                 if(error)
                     break;
                 else
