@@ -88,7 +88,8 @@ int render_tags(opus_tags *tags, ogg_packet *op){
 }
 
 int match_field(const char *comment, uint32_t len, const char *field){
-    size_t field_len = strlen(field);
+    size_t field_len;
+    for(field_len = 0; field[field_len] != '\0' && field[field_len] != '='; field_len++);
     if(len <= field_len)
         return 0;
     if(comment[field_len] != '=')
