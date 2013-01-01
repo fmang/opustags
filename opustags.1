@@ -42,6 +42,10 @@ which will cause \fBopustags\fP to read tags from \fBstdin\fP.
 The format is the same as the one used for output; that is to say,
 newline-separated \fIFIELD=Value\fP assignment. Note that this implies
 \fB--delete-all\fP.
+.PP
+\fBWarning:\fP the Opus format specifications requires tags to be encoded in
+\fBUTF-8\fP. This tool ignores the system locale, assuming the encoding is
+set to UTF-8, and assume that tags are already encoded in UTF-8.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help
