@@ -182,7 +182,8 @@ struct option options[] = {
     {"add", required_argument, 0, 'a'},
     {"set", required_argument, 0, 's'},
     {"delete-all", no_argument, 0, 'D'},
-    {"set-all", no_argument, 0, 'S'}
+    {"set-all", no_argument, 0, 'S'},
+    {NULL, 0, 0, 0}
 };
 
 int main(int argc, char **argv){
