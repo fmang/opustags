@@ -151,13 +151,14 @@ int main(int argc, char **argv){
             error = "ogg_stream_pagein: invalid page";
             break;
         }
-        if(ogg_stream_packetout(&os, &op) == 1){
+        // Read all the packets.
+        while(ogg_stream_packetout(&os, &op) == 1){
             packet_count++;
             if(packet_count == 1){ // Identification header
                 if(strncmp((char*) op.packet, "OpusHead", 8) != 0)
                     error = "opustags: invalid identification header";
             }
-            if(packet_count == 2){ // Comment header
+            else if(packet_count == 2){ // Comment header
                 if(parse_tags((char*) op.packet, op.bytes, &tags) == -1)
                     error = "opustags: invalid comment header";
                 // DEBUG
