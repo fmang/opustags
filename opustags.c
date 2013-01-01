@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -149,14 +150,30 @@ int write_page(ogg_page *og, FILE *stream){
 }
 
 int main(int argc, char **argv){
-    FILE *in = fopen(argv[1], "r");
+    const char *path_in, *path_out = NULL;
+    int c;
+    while((c = getopt(argc, argv, "o:")) != -1){
+        switch(c){
+            case 'o':
+                path_out = optarg;
+                break;
+            default:
+                return EXIT_FAILURE;
+        }
+    }
+    if(optind != argc - 1){
+        fputs("invalid arguments\n", stderr);
+        return EXIT_FAILURE;
+    }
+    path_in = argv[optind];
+    FILE *in = fopen(path_in, "r");
     if(!in){
         perror("fopen");
         return EXIT_FAILURE;
     }
     FILE *out = NULL;
-    if(argc == 3){
-        out = fopen(argv[2], "w");
+    if(path_out != NULL){
+        out = fopen(path_out, "w");
         if(!out){
             perror("fopen");
             fclose(in);
@@ -239,6 +256,8 @@ int main(int argc, char **argv){
                         error = "ogg_stream_packetin: internal error";
                     free(packet.packet);
                 }
+                else
+                    print_tags(&tags);
                 free_tags(&tags);
                 if(error)
                     break;
