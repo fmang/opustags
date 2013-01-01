@@ -153,15 +153,35 @@ int write_page(ogg_page *og, FILE *stream){
 
 int main(int argc, char **argv){
     const char *path_in, *path_out = NULL;
+    const char* to_add[argc];
+    const char* to_delete[argc];
+    int count_add = 0, count_delete = 0;
     int overwrite = 0;
     int c;
-    while((c = getopt(argc, argv, "o:y")) != -1){
+    while((c = getopt(argc, argv, "o:yd:a:s:")) != -1){
         switch(c){
             case 'o':
                 path_out = optarg;
                 break;
             case 'y':
                 overwrite = 1;
+                break;
+            case 'd':
+                if(strchr(optarg, '=') != NULL){
+                    fprintf(stderr, "invalid field: '%s'\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                to_delete[count_delete++] = optarg;
+                break;
+            case 'a':
+            case 's':
+                if(strchr(optarg, '=') == NULL){
+                    fprintf(stderr, "invalid comment: '%s'\n", optarg);
+                    return EXIT_FAILURE;
+                }
+                to_add[count_add++] = optarg;
+                if(c == 's')
+                    to_delete[count_delete++] = optarg;
                 break;
             default:
                 return EXIT_FAILURE;
@@ -262,6 +282,9 @@ int main(int argc, char **argv){
                     error = "opustags: invalid comment header";
                     break;
                 }
+                for(int i=0; i<count_delete; i++)
+                    delete_tags(&tags, to_delete[i]);
+                add_tags(&tags, to_add, count_add);
                 if(out){
                     ogg_packet packet;
                     render_tags(&tags, &packet);
