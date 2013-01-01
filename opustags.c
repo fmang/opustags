@@ -258,30 +258,10 @@ int main(int argc, char **argv){
             }
         }
     }
-    FILE *out = NULL;
-    if(path_out != NULL){
-        if(strcmp(path_out, "-") == 0)
-            out = stdout;
-        else{
-            if(!overwrite){
-                if(access(path_out, F_OK) == 0){
-                    fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", path_out);
-                    return EXIT_FAILURE;
-                }
-            }
-            out = fopen(path_out, "w");
-            if(!out){
-                perror("fopen");
-                return EXIT_FAILURE;
-            }
-        }
-    }
     FILE *in;
     if(strcmp(path_in, "-") == 0){
         if(set_all){
             fputs("can't open stdin for input when -S is specified\n", stderr);
-            if(out)
-                fclose(out);
             return EXIT_FAILURE;
         }
         in = stdin;
@@ -290,9 +270,27 @@ int main(int argc, char **argv){
         in = fopen(path_in, "r");
     if(!in){
         perror("fopen");
-        if(out)
-            fclose(out);
         return EXIT_FAILURE;
+    }
+    FILE *out = NULL;
+    if(path_out != NULL){
+        if(strcmp(path_out, "-") == 0)
+            out = stdout;
+        else{
+            if(!overwrite){
+                if(access(path_out, F_OK) == 0){
+                    fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", path_out);
+                    fclose(in);
+                    return EXIT_FAILURE;
+                }
+            }
+            out = fopen(path_out, "w");
+            if(!out){
+                perror("fopen");
+                fclose(in);
+                return EXIT_FAILURE;
+            }
+        }
     }
     ogg_sync_state oy;
     ogg_stream_state os, enc;
