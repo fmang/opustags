@@ -113,6 +113,8 @@ void delete_tags(opus_tags *tags, const char *field){
 }
 
 int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count){
+    if(count == 0)
+        return 0;
     uint32_t *lengths = realloc(tags->lengths, (tags->count + count) * sizeof(uint32_t));
     const char **comment = realloc(tags->comment, (tags->count + count) * sizeof(char*));
     if(lengths == NULL || comment == NULL)
@@ -129,6 +131,8 @@ int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count){
 }
 
 void print_tags(opus_tags *tags){
+    if(tags->count == 0)
+        puts("no tags");
     int i;
     for(i=0; i<tags->count; i++){
         fwrite(tags->comment[i], 1, tags->lengths[i], stdout);
