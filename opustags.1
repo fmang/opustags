@@ -1,0 +1,96 @@
+.TH opustags 1 "January 1st 2013"
+.SH NAME
+opustags \- Opus comment editor
+.SH SYNOPSIS
+.B opustags --help
+.br
+.B opustags
+.RI [ OPTIONS ]
+.I INPUT
+.br
+.B opustags
+.I OPTIONS
+.B -o
+.I OUTPUT INPUT
+.SH DESCRIPTION
+.PP
+\fBopustags\fP can read and edit the comment header of an Opus file.
+It basically has two modes: read-only and read-write (for tag edition).
+.PP
+In read-only mode, only the beginning of \fIINPUT\fP is read, and the tags are
+printed on \fBstdout\fP.
+\fIINPUT\fP can either be the name of a file or \fB-\fP to read from \fBstdin\fP.
+You can use the options below to edit the tags before printing them.
+This could be useful to preview some changes before writing them.
+.PP
+As for the edition mode, you need to specify an output file (or \fB-\fP for
+\fBstdout\fP). It must be different from the input file.
+You may want to use \fB--overwrite\fP if you know what you’re doing.
+.PP
+Tag edition can be made with the \fB--add\fP, \fB--delete\fP and \fB--set\fP
+options. They can be written in any order and don’t conflict with each other.
+However, they aren’t executed in any order: first the specified tags are
+deleted, then the new tags are added. “Set” operations are mere convenience
+for delete/add.
+.PP
+You can delete all the tags with \fB--delete-all\fP. This operation can be
+combined with \fB--add\fP to set new tags without being bothered by the old
+ones. Another way to do this is to use \fB--set-all\fP as explained below.
+.PP
+If you want to process tags yourself, you can use the \fB--set-all\fP option
+which will cause \fBopustags\fP to read tags from \fBstdin\fP.
+The format is the same as the one used for output; that is to say,
+newline-separated \fIFIELD=Value\fP assignment. Note that this implies
+\fB--delete-all\fP.
+.SH OPTIONS
+.TP
+.B \-h, \-\-help
+Display a brief description of the options.
+.TP
+.B \-o, \-\-output \fIFILE\fI
+Edition mode. The input file will be read, its tags edited, then written to the
+specified output file. If \fIFILE\fP is \fB-\fP then the resulting Opus file
+will be written to \fBstdout\fP. As the input file is read incrementally, the
+output file can’t be the same as the input file.
+.TP
+.B \-y, \-\-overwrite
+By default, \fBopustags\fP refuses to overwrite an already existent file. Use
+this option to allow that. Note that this doesn’t allow in-place edition, the
+output file needs to be different from the input file.
+.TP
+.B \-d, \-\-delete \fIFIELD\fP
+Delete all the tags whose field name is \fIFIELD\fP (they may be several, though
+usually there is only one of each type). You can use this option as many times
+as you want.
+.TP
+.B \-a, \-\-add \fIFIELD=VALUE\fP
+Add a tag. It doesn’t matter if a tag of the same type already exist (think
+the case where there are several artists). You can use this option as many
+times as needed, with the same field names or not. When the \fB--delete\fP
+is used with the same \fIFIELD\fP, only the older tags are deleted.
+.TP
+.B \-s, \-\-set \fIFIELD=VALUE\fP
+This option is provided for convenience. It delete all the fields of the same
+type that may already exist, then adds it with the wanted value.
+This is strictly equivalent to \fB--delete\fP \fIFIELD\fP \fB--add\fP
+\fIFIELD=VALUE\fP. You can combine it with \fB--add\fP to add tags of the same
+type. As deletion occurs before adding, \fB--set\fP won’t erase the tags
+added with \fB--add\fP.
+.TP
+.B \-D, \-\-delete-all
+Delete all the tags before adding any. When this option is specified, the
+\fB--delete\fP options are ignored. Tags then can be added using \fB--add\fP
+or \fB--set\fP, which, in that case, are equivalent.
+.TP
+.B \-S, \-\-set-all
+Sets the tags from scratch. All the original tags are deleted and new ones are
+read from \fBstdin\fP. Each line must specify a \fIFIELD=VALUE\fP pair and be
+LF-terminated. If the last line isn’t terminated when the end of the stream is
+reached, it is ignored. Invalid lines are skipped and cause a warning to be
+issued.  This could be useful for batch processing tags through an utility like
+\fBsed\fP.
+.SH SEE ALSO
+.BR vorbiscomment (1),
+.BR sed (1)
+.SH AUTHOR
+Frédéric Mangano <fmang@mg0.fr>
