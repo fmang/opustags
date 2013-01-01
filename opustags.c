@@ -232,12 +232,6 @@ int main(int argc, char **argv){
                     error = "opustags: invalid comment header";
                     break;
                 }
-                // DEBUG
-                delete_tags(&tags, "ARTIST");
-                const char *tag = "ARTIST=Someone";
-                add_tags(&tags, &tag, 1);
-                print_tags(&tags);
-                // END DEBUG
                 if(out){
                     ogg_packet packet;
                     render_tags(&tags, &packet);
