@@ -52,6 +52,39 @@ int parse_tags(char *data, long len, opus_tags *tags){
     return 0;
 }
 
+int render_tags(opus_tags *tags, ogg_packet *op){
+    // Note: op->packet must be manually freed.
+    op->b_o_s = 0;
+    op->e_o_s = 0;
+    op->granulepos = 0;
+    op->packetno = 1;
+    long len = 8 + 4 + tags->vendor_length + 4;
+    uint32_t i;
+    for(i=0; i<tags->count; i++)
+        len += 4 + tags->lengths[i];
+    op->bytes = len;
+    char *data = malloc(len);
+    if(!data)
+        return -1;
+    op->packet = (unsigned char*) data;
+    uint32_t n;
+    memcpy(data, "OpusTags", 8);
+    n = htole32(tags->vendor_length);
+    memcpy(data+8, &n, 4);
+    memcpy(data+12, tags->vendor_string, tags->vendor_length);
+    data += 12 + tags->vendor_length;
+    n = htole32(tags->count);
+    memcpy(data, &n, 4);
+    data += 4;
+    for(i=0; i<tags->count; i++){
+        n = htole32(tags->lengths[i]);
+        memcpy(data, &n, 4);
+        memcpy(data+4, tags->comment[i], tags->lengths[i]);
+        data += 4 + tags->lengths[i];
+    }
+    return 0;
+}
+
 int match_field(const char *comment, uint32_t len, const char *field){
     size_t field_len = strlen(field);
     if(len <= field_len)
@@ -205,9 +238,18 @@ int main(int argc, char **argv){
                 add_tags(&tags, &tag, 1);
                 print_tags(&tags);
                 // END DEBUG
+                if(out){
+                    ogg_packet packet;
+                    render_tags(&tags, &packet);
+                    if(ogg_stream_packetin(&enc, &packet) == -1)
+                        error = "ogg_stream_packetin: internal error";
+                    free(packet.packet);
+                }
                 free_tags(&tags);
-                if(!out)
+                if(error)
                     break;
+                else
+                    continue;
             }
             if(out){
                 if(ogg_stream_packetin(&enc, &op) == -1){
