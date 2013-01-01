@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <ogg/ogg.h>
 
 typedef struct {
@@ -151,11 +152,15 @@ int write_page(ogg_page *og, FILE *stream){
 
 int main(int argc, char **argv){
     const char *path_in, *path_out = NULL;
+    int overwrite = 0;
     int c;
-    while((c = getopt(argc, argv, "o:")) != -1){
+    while((c = getopt(argc, argv, "o:y")) != -1){
         switch(c){
             case 'o':
                 path_out = optarg;
+                break;
+            case 'y':
+                overwrite = 1;
                 break;
             default:
                 return EXIT_FAILURE;
@@ -166,19 +171,26 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
     path_in = argv[optind];
-    FILE *in = fopen(path_in, "r");
-    if(!in){
-        perror("fopen");
-        return EXIT_FAILURE;
-    }
     FILE *out = NULL;
     if(path_out != NULL){
+        if(!overwrite){
+            if(access(path_out, F_OK) == 0){
+                fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", path_out);
+                return EXIT_FAILURE;
+            }
+        }
         out = fopen(path_out, "w");
         if(!out){
             perror("fopen");
-            fclose(in);
             return EXIT_FAILURE;
         }
+    }
+    FILE *in = fopen(path_in, "r");
+    if(!in){
+        perror("fopen");
+        if(out)
+            fclose(out);
+        return EXIT_FAILURE;
     }
     ogg_sync_state oy;
     ogg_stream_state os, enc;
