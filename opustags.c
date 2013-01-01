@@ -194,19 +194,27 @@ int main(int argc, char **argv){
     path_in = argv[optind];
     FILE *out = NULL;
     if(path_out != NULL){
-        if(!overwrite){
-            if(access(path_out, F_OK) == 0){
-                fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", path_out);
+        if(strcmp(path_out, "-") == 0)
+            out = stdout;
+        else{
+            if(!overwrite){
+                if(access(path_out, F_OK) == 0){
+                    fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", path_out);
+                    return EXIT_FAILURE;
+                }
+            }
+            out = fopen(path_out, "w");
+            if(!out){
+                perror("fopen");
                 return EXIT_FAILURE;
             }
         }
-        out = fopen(path_out, "w");
-        if(!out){
-            perror("fopen");
-            return EXIT_FAILURE;
-        }
     }
-    FILE *in = fopen(path_in, "r");
+    FILE *in;
+    if(strcmp(path_in, "-") == 0)
+        in = stdin;
+    else
+        in = fopen(path_in, "r");
     if(!in){
         perror("fopen");
         if(out)
