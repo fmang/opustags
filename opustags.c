@@ -155,6 +155,16 @@ int write_page(ogg_page *og, FILE *stream){
     return 0;
 }
 
+struct option options[] = {
+    {"output", required_argument, 0, 'o'},
+    {"overwrite", no_argument, 0, 'y'},
+    {"delete", required_argument, 0, 'd'},
+    {"add", required_argument, 0, 'a'},
+    {"set", required_argument, 0, 's'},
+    {"delete-all", required_argument, 0, 'D'},
+    {"set-all", required_argument, 0, 'S'}
+};
+
 int main(int argc, char **argv){
     const char *path_in, *path_out = NULL;
     const char* to_add[argc];
@@ -164,7 +174,7 @@ int main(int argc, char **argv){
     int set_all = 0;
     int overwrite = 0;
     int c;
-    while((c = getopt(argc, argv, "o:yd:a:s:DS")) != -1){
+    while((c = getopt_long(argc, argv, "o:yd:a:s:DS", options, NULL)) != -1){
         switch(c){
             case 'o':
                 path_out = optarg;
