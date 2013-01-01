@@ -11,11 +11,14 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
     ogg_sync_state oy;
+    ogg_stream_state os;
     ogg_page og;
+    ogg_packet op;
     ogg_sync_init(&oy);
     char *buf;
     size_t len;
     char *error = NULL;
+    int packet_count = -1;
     while(error == NULL && !feof(in)){
         // Read until we complete a page.
         if(ogg_sync_pageout(&oy, &og) != 1){
@@ -34,7 +37,26 @@ int main(int argc, char **argv){
         }
         // We got a page.
         puts("got a page");
+        if(packet_count == -1){ // First page
+            if(ogg_stream_init(&os, ogg_page_serialno(&og)) == -1){
+                error = "ogg_stream_init: unsuccessful";
+                break;
+            }
+            packet_count = 0;
+        }
+        if(ogg_stream_pagein(&os, &og) == -1){
+            error = "ogg_stream_pagein: invalid page";
+            break;
+        }
+        if(ogg_stream_packetout(&os, &op) == 1){
+            packet_count++;
+            puts("got a packet");
+        }
+        if(ogg_stream_check(&os) != 0)
+            error = "ogg_stream_check: internal error";
     }
+    if(packet_count >= 0)
+        ogg_stream_clear(&os);
     ogg_sync_clear(&oy);
     fclose(in);
     if(error){
