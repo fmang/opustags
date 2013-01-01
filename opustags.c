@@ -155,7 +155,26 @@ int write_page(ogg_page *og, FILE *stream){
     return 0;
 }
 
+const char *version = "opustags version 1.0\n";
+
+const char *usage =
+    "Usage: opustags --help\n"
+    "       opustags [OPTIONS] FILE\n"
+    "       opustags OPTIONS FILE -o FILE\n";
+
+const char *help =
+    "Options:\n"
+    "  -h, --help              print this help\n"
+    "  -o, --output            write the modified tags to a file\n"
+    "  -y, --overwrite         overwrite the output file if it already exists\n"
+    "  -d, --delete FIELD      delete all the fields of a specified type\n"
+    "  -a, --add FIELD=VALUE   add a field\n"
+    "  -s, --set FIELD=VALUE   delete then add a field\n"
+    "  -D, --delete-all        delete all the fields!\n"
+    "  -S, --set-all           read the fields to set from stdin\n";
+
 struct option options[] = {
+    {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'},
     {"overwrite", no_argument, 0, 'y'},
     {"delete", required_argument, 0, 'd'},
@@ -166,6 +185,11 @@ struct option options[] = {
 };
 
 int main(int argc, char **argv){
+    if(argc == 1){
+        fputs(version, stdout);
+        fputs(usage, stdout);
+        return EXIT_SUCCESS;
+    }
     const char *path_in, *path_out = NULL;
     const char* to_add[argc];
     const char* to_delete[argc];
@@ -173,9 +197,13 @@ int main(int argc, char **argv){
     int delete_all = 0;
     int set_all = 0;
     int overwrite = 0;
+    int print_help = 0;
     int c;
-    while((c = getopt_long(argc, argv, "o:yd:a:s:DS", options, NULL)) != -1){
+    while((c = getopt_long(argc, argv, "ho:yd:a:s:DS", options, NULL)) != -1){
         switch(c){
+            case 'h':
+                print_help = 1;
+                break;
             case 'o':
                 path_out = optarg;
                 break;
@@ -207,6 +235,12 @@ int main(int argc, char **argv){
             default:
                 return EXIT_FAILURE;
         }
+    }
+    if(print_help){
+        puts(version);
+        puts(usage);
+        fputs(help, stdout);
+        return EXIT_SUCCESS;
     }
     if(optind != argc - 1){
         fputs("invalid arguments\n", stderr);
