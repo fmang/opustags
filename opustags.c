@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <getopt.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -247,6 +248,15 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
     path_in = argv[optind];
+    if(path_out != NULL && strcmp(path_in, "-") != 0){
+        char canon_in[PATH_MAX+1], canon_out[PATH_MAX+1];
+        if(realpath(path_in, canon_in) && realpath(path_out, canon_out)){
+            if(strcmp(canon_in, canon_out) == 0){
+                fputs("error: the input and output files are the same\n", stderr);
+                return EXIT_FAILURE;
+            }
+        }
+    }
     FILE *out = NULL;
     if(path_out != NULL){
         if(strcmp(path_out, "-") == 0)
