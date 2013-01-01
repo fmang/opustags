@@ -36,7 +36,6 @@ int main(int argc, char **argv){
             continue;
         }
         // We got a page.
-        puts("got a page");
         if(packet_count == -1){ // First page
             if(ogg_stream_init(&os, ogg_page_serialno(&og)) == -1){
                 error = "ogg_stream_init: unsuccessful";
@@ -50,7 +49,15 @@ int main(int argc, char **argv){
         }
         if(ogg_stream_packetout(&os, &op) == 1){
             packet_count++;
-            puts("got a packet");
+            if(packet_count == 1){ // Identification header
+                if(strncmp((char*) op.packet, "OpusHead", 8) != 0)
+                    error = "opustags: invalid identification header";
+            }
+            if(packet_count == 2){ // Comment header
+                if(strncmp((char*) op.packet, "OpusTags", 8) != 0)
+                    error = "opustags: invalid comment header";
+                break;
+            }
         }
         if(ogg_stream_check(&os) != 0)
             error = "ogg_stream_check: internal error";
@@ -59,6 +66,8 @@ int main(int argc, char **argv){
         ogg_stream_clear(&os);
     ogg_sync_clear(&oy);
     fclose(in);
+    if(!error && packet_count < 2)
+        error = "opustags: invalid file";
     if(error){
         fprintf(stderr, "%s\n", error);
         return EXIT_FAILURE;
