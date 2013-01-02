@@ -462,6 +462,8 @@ int main(int argc, char **argv){
         error = "opustags: invalid file";
     if(error){
         fprintf(stderr, "%s\n", error);
+        if(path_out != NULL && out != stdout)
+            remove(path_out);
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
