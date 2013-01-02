@@ -3,6 +3,12 @@ opustags
 
 View and edit Opus comments.
 
+Requirements
+------------
+
+* A POSIX-compliant system,
+* libogg.
+
 Installing
 ----------
 
