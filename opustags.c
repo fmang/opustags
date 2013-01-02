@@ -167,6 +167,7 @@ const char *help =
     "Options:\n"
     "  -h, --help              print this help\n"
     "  -o, --output            write the modified tags to a file\n"
+    "  -i, --in-place [SUFFIX] use a temporary file then replace the original file\n"
     "  -y, --overwrite         overwrite the output file if it already exists\n"
     "  -d, --delete FIELD      delete all the fields of a specified type\n"
     "  -a, --add FIELD=VALUE   add a field\n"
@@ -177,6 +178,7 @@ const char *help =
 struct option options[] = {
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'},
+    {"in-place", optional_argument, 0, 'i'},
     {"overwrite", no_argument, 0, 'y'},
     {"delete", required_argument, 0, 'd'},
     {"add", required_argument, 0, 'a'},
@@ -192,7 +194,7 @@ int main(int argc, char **argv){
         fputs(usage, stdout);
         return EXIT_SUCCESS;
     }
-    const char *path_in, *path_out = NULL;
+    char *path_in, *path_out = NULL, *inplace = NULL;
     const char* to_add[argc];
     const char* to_delete[argc];
     int count_add = 0, count_delete = 0;
@@ -201,13 +203,16 @@ int main(int argc, char **argv){
     int overwrite = 0;
     int print_help = 0;
     int c;
-    while((c = getopt_long(argc, argv, "ho:yd:a:s:DS", options, NULL)) != -1){
+    while((c = getopt_long(argc, argv, "ho:i::yd:a:s:DS", options, NULL)) != -1){
         switch(c){
             case 'h':
                 print_help = 1;
                 break;
             case 'o':
                 path_out = optarg;
+                break;
+            case 'i':
+                inplace = optarg == NULL ? ".otmp" : optarg;
                 break;
             case 'y':
                 overwrite = 1;
@@ -249,6 +254,10 @@ int main(int argc, char **argv){
         fputs("invalid arguments\n", stderr);
         return EXIT_FAILURE;
     }
+    if(inplace && path_out){
+        fputs("cannot combine --in-place and --output\n", stderr);
+        return EXIT_FAILURE;
+    }
     path_in = argv[optind];
     if(path_out != NULL && strcmp(path_in, "-") != 0){
         char canon_in[PATH_MAX+1], canon_out[PATH_MAX+1];
@@ -265,6 +274,10 @@ int main(int argc, char **argv){
             fputs("can't open stdin for input when -S is specified\n", stderr);
             return EXIT_FAILURE;
         }
+        if(inplace){
+            fputs("cannot modify stdin 'in-place'\n", stderr);
+            return EXIT_FAILURE;
+        }
         in = stdin;
     }
     else
@@ -274,11 +287,21 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
     FILE *out = NULL;
+    if(inplace != NULL){
+        path_out = malloc(strlen(path_in) + strlen(inplace) + 1);
+        if(path_out == NULL){
+            fputs("failure to allocate memory\n", stderr);
+            fclose(in);
+            return EXIT_FAILURE;
+        }
+        strcpy(path_out, path_in);
+        strcat(path_out, inplace);
+    }
     if(path_out != NULL){
         if(strcmp(path_out, "-") == 0)
             out = stdout;
         else{
-            if(!overwrite){
+            if(!overwrite && !inplace){
                 if(access(path_out, F_OK) == 0){
                     fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", path_out);
                     fclose(in);
@@ -289,6 +312,8 @@ int main(int argc, char **argv){
             if(!out){
                 perror("fopen");
                 fclose(in);
+                if(inplace)
+                    free(path_out);
                 return EXIT_FAILURE;
             }
         }
@@ -464,7 +489,17 @@ int main(int argc, char **argv){
         fprintf(stderr, "%s\n", error);
         if(path_out != NULL && out != stdout)
             remove(path_out);
+        if(inplace)
+            free(path_out);
         return EXIT_FAILURE;
+    }
+    else if(inplace){
+        if(rename(path_out, path_in) == -1){
+            perror("rename");
+            free(path_out);
+            return EXIT_FAILURE;
+        }
+        free(path_out);
     }
     return EXIT_SUCCESS;
 }

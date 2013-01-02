@@ -1,4 +1,4 @@
-.TH opustags 1 "January 1st 2013"
+.TH opustags 1 "January 2013"
 .SH NAME
 opustags \- Opus comment editor
 .SH SYNOPSIS
@@ -26,6 +26,7 @@ This could be useful to preview some changes before writing them.
 As for the edition mode, you need to specify an output file (or \fB-\fP for
 \fBstdout\fP). It must be different from the input file.
 You may want to use \fB--overwrite\fP if you know what you’re doing.
+To overwrite the input file, use \fB--in-place\fP.
 .PP
 Tag edition can be made with the \fB--add\fP, \fB--delete\fP and \fB--set\fP
 options. They can be written in any order and don’t conflict with each other.
@@ -56,6 +57,14 @@ Edition mode. The input file will be read, its tags edited, then written to the
 specified output file. If \fIFILE\fP is \fB-\fP then the resulting Opus file
 will be written to \fBstdout\fP. As the input file is read incrementally, the
 output file can’t be the same as the input file.
+.TP
+.B \-i, \-\-in-place \fR[\fP\fISUFFIX\fP\fR]\fP
+Use this when you want to modify the input file in-place. This creates a
+temporary file with the specified suffix (.otmp by default). This implies
+\fB--overwrite\fP in that if a file with the same temporary name already
+exists, it will be overwritten without warning. Of course, this overwrites
+the input file too. You cannot use this option when the input file is actually
+\fBstdin\fP.
 .TP
 .B \-y, \-\-overwrite
 By default, \fBopustags\fP refuses to overwrite an already existent file. Use
