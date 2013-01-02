@@ -379,16 +379,19 @@ int main(int argc, char **argv){
                     }
                     else{
                         char *raw_comment[256];
-                        size_t raw_len = fread(raw_tags, 1, 16384, stdin);
-                        if(raw_len == 16384)
+                        size_t raw_len = fread(raw_tags, 1, 16383, stdin);
+                        if(raw_len == 16383)
                             fputs("warning: truncating comment to 16 KiB\n", stderr);
+                        raw_tags[raw_len] = '\0';
                         uint32_t raw_count = 0;
                         size_t field_len = 0;
                         int caught_eq = 0;
                         size_t i = 0;
                         char *cursor = raw_tags;
-                        for(i=0; i<raw_len && raw_count < 256; i++){
-                            if(raw_tags[i] == '\n'){
+                        for(i=0; i <= raw_len && raw_count < 256; i++){
+                            if(raw_tags[i] == '\n' || raw_tags[i] == '\0'){
+                                if(field_len == 0)
+                                    continue;
                                 if(caught_eq)
                                     raw_comment[raw_count++] = cursor;
                                 else

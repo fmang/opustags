@@ -89,10 +89,9 @@ or \fB--set\fP, which, in that case, are equivalent.
 .B \-S, \-\-set-all
 Sets the tags from scratch. All the original tags are deleted and new ones are
 read from \fBstdin\fP. Each line must specify a \fIFIELD=VALUE\fP pair and be
-LF-terminated. If the last line isn’t terminated when the end of the stream is
-reached, it is ignored. Invalid lines are skipped and cause a warning to be
-issued.  This could be useful for batch processing tags through an utility like
-\fBsed\fP.
+LF-terminated (except for the last line). Invalid lines are skipped and cause
+a warning to be issued. Blank lines are ignored. This mode could be useful for
+batch processing tags through an utility like \fBsed\fP.
 .SH SEE ALSO
 .BR vorbiscomment (1),
 .BR sed (1)
