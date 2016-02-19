@@ -5,10 +5,10 @@ LDFLAGS=-logg
 
 all: opustags
 
-opustags: opustags.c
+opustags: src/opustags.c
 
-man: opustags.1
-	gzip <opustags.1 >opustags.1.gz
+man: doc/opustags.1
+	gzip <doc/opustags.1 >opustags.1.gz
 
 install: opustags man
 	mkdir -p $(DESTDIR)/bin $(DESTDIR)/$(MANDEST)/man1
