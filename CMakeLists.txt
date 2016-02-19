@@ -8,8 +8,8 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/modules/")
 # Dependencies
 # ------------
 find_package(Ogg REQUIRED)
-include_directories(${ogg_INCLUDE_DIR})
-link_directories(${ogg_LIBRARY_DIRS})
+include_directories(${Ogg_INCLUDE_DIR})
+link_directories(${Ogg_LIBRARY_DIRS})
 
 # --------------------
 # Global build options
@@ -49,6 +49,8 @@ endif()
 add_library(common OBJECT ${common_sources} ${common_headers})
 add_executable(opustags "${CMAKE_SOURCE_DIR}/src/main.cc" $<TARGET_OBJECTS:common>)
 add_executable(run_tests "${CMAKE_SOURCE_DIR}/tests/main.cc" $<TARGET_OBJECTS:common> ${test_sources} ${test_headers})
+target_link_libraries(opustags ${OGG_LIBRARY})
+target_link_libraries(run_tests ${OGG_LIBRARY})
 target_include_directories(common BEFORE PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(opustags BEFORE PUBLIC "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(run_tests BEFORE PUBLIC "${CMAKE_SOURCE_DIR}/src")
