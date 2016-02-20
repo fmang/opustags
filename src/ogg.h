@@ -5,7 +5,8 @@
 #include <map>
 #include <ogg/ogg.h>
 
-namespace opustags::ogg
+namespace opustags {
+namespace ogg
 {
     typedef std::map<std::string, std::string> Tags;
 
@@ -88,4 +89,5 @@ namespace opustags::ogg
         // numbers and splitting large packets as it's gotta be done.
         std::map<int, ogg_stream_state> streams;
     };
+}
 }
