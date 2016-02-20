@@ -33,14 +33,14 @@ void delete_tags(ogg::Reader *reader, opustags::ogg::Writer *writer, long select
 				s->type = ogg::UNKNOWN_STREAM;
 			// fall through
 		case ogg::RAW_READY:
-			writer->write_raw_page(s->current_page);
+			writer->write_raw_page(reader->current_page);
 			break;
 		case ogg::TAGS_READY:
 			// only streams selected at HEADER_READY reach this point
 			writer->write_tags(s->stream.serialno, ogg::Tags());
 			break;
 		case ogg::DATA_READY:
-			writer->write_page(s->current_page);
+			writer->write_page(reader->current_page);
 			break;
 		default:
 			;
