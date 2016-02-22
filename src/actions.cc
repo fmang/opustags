@@ -9,7 +9,7 @@ enum StreamSelection {
 	FIRST_STREAM = -2,
 };
 
-void list_tags(ogg::Reader *reader, long select)
+void list_tags(ogg::Decoder *reader, long select)
 {
 	ogg::Stream *s;
 	while ((s = reader->read_page()) != NULL) {
@@ -21,7 +21,7 @@ void list_tags(ogg::Reader *reader, long select)
 	}
 }
 
-void delete_tags(ogg::Reader *reader, opustags::ogg::Writer *writer, long select)
+void delete_tags(ogg::Decoder *reader, opustags::ogg::Encoder *writer, long select)
 {
 	ogg::Stream *s;
 	while ((s = reader->read_page()) != NULL) {

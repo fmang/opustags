@@ -32,10 +32,14 @@ namespace ogg
         Stream(int serialno);
         ~Stream();
 
-        // Called by Reader once a page was read.
-        // Return true if it's ready, false if it expects more data.
-        // In the latter case, Reader::read_page will keep reading.
+        // Called by Decoder once a page was read.
+        // Returns true if it's ready, false if it expects more data.
+        // In the latter case, Decoder::read_page will keep reading.
         bool page_in(const ogg_page&);
+
+        // Make the stream behave as if it were unknown.
+        // As a consequence, no more effort would be made in extracting data.
+        void downgrade();
 
         StreamState state;
         StreamType type;
@@ -44,10 +48,10 @@ namespace ogg
         ogg_stream_state stream;
     };
 
-    struct Reader
+    struct Decoder
     {
-        Reader(std::istream&&);
-        ~Reader();
+        Decoder(std::istream&&);
+        ~Decoder();
 
         // Read a page, dispatch it, and return the stream it belongs to.
         // The read page is given to Stream::page_in before this function
@@ -62,10 +66,10 @@ namespace ogg
         std::map<int, Stream> streams;
     };
 
-    struct Writer
+    struct Encoder
     {
-        Writer(std::ostream&&);
-        ~Writer();
+        Encoder(std::ostream&&);
+        ~Encoder();
 
         void write_page(const ogg_page&);
 
