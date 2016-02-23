@@ -1,11 +1,10 @@
 #pragma once
 
-#include <stdexcept>
+#include "tags.h"
+
 #include <iostream>
 #include <map>
 #include <ogg/ogg.h>
-
-#include "tags.h"
 
 namespace opustags {
 namespace ogg
@@ -30,13 +29,13 @@ namespace ogg
     // not.
     struct Stream
     {
-        Stream(int serialno);
+        Stream(int streamno);
         ~Stream();
 
         // Called by Decoder once a page was read.
         // Returns true if it's ready, false if it expects more data.
         // In the latter case, Decoder::read_page will keep reading.
-        bool page_in(const ogg_page&);
+        bool page_in(ogg_page&);
 
         // Make the stream behave as if it were unknown.
         // As a consequence, no more effort would be made in extracting data.
@@ -61,6 +60,12 @@ namespace ogg
         // need a new sequence number.
 
         ogg_stream_state stream;
+
+    private:
+        bool handle_page();
+        void handle_packet(const ogg_packet&);
+        void parse_header(const ogg_packet&);
+        void parse_tags(const ogg_packet&);
     };
 
     struct Decoder
@@ -93,7 +98,7 @@ namespace ogg
         // needed for write_page.
         void write_raw_page(const ogg_page&);
 
-        void write_tags(int serialno, const Tags&);
+        void write_tags(int streamno, const Tags&);
 
         std::ostream output;
 

@@ -16,6 +16,7 @@ void opustags::list_tags(ogg::Decoder &dec, TagsHandler &handler)
                 break;
             case ogg::TAGS_READY:
                 handler.list(s->stream.serialno, s->tags);
+                s->downgrade(); // no more use for it
                 break;
             default:
                 ;
