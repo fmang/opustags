@@ -37,7 +37,8 @@ namespace opustags {
     // header is read.
     //
     // Use:
-    //   ogg::Decoder dec(std::ifstream("in.ogg"));
+    //   std::ifstream in("in.ogg");
+    //   ogg::Decoder dec(&in);
     //   TagsLister lister(options);
     //   list_tags(dec, lister);
     //
@@ -47,8 +48,10 @@ namespace opustags {
     // with the handler's edit method.
     //
     // Use:
-    //   ogg::Decoder dec(std::ifstream("in.ogg"));
-    //   ogg::Encoder enc(std::ofstream("out.ogg"));
+    //   std::ifstream in("in.ogg");
+    //   ogg::Decoder dec(&in);
+    //   std::ofstream out("out.ogg");
+    //   std::Encoder enc(&out);
     //   TagsEditor editor(options);
     //   edit_tags(dec, enc, editor);
     //
