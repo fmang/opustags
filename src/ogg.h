@@ -5,11 +5,11 @@
 #include <map>
 #include <ogg/ogg.h>
 
+#include "tags.h"
+
 namespace opustags {
 namespace ogg
 {
-    typedef std::map<std::string, std::string> Tags;
-
     enum StreamState {
         BEGIN_OF_STREAM,
         HEADER_READY,

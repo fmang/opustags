@@ -1,11 +1,9 @@
 #pragma once
 
+#include "tags.h"
 #include "ogg.h"
 
 namespace opustags {
-
-    // To be defined properly somewhere.
-    class Tags;
 
     // TagsHandler define various operations related to tags and stream in
     // order to control the main loop.
