@@ -17,6 +17,7 @@ namespace ogg
         DATA_READY,
         RAW_READY,
         END_OF_STREAM,
+        // Meaning of these states below, in Stream.
     };
 
     enum StreamType {
@@ -44,6 +45,20 @@ namespace ogg
         StreamState state;
         StreamType type;
         Tags tags;
+
+        // Here are the meanings of the state variable:
+        //   BEGIN_OF_STREAM: the stream was just initialized,
+        //   HEADER_READY: the header is parsed and we know the type,
+        //   TAGS_READY: the tags are parsed and complete,
+        //   DATA_READY: we've read a data page whose meaning is no concern to us,
+        //   RAW_READY: we don't even know what kind of stream that is, so don't alter it,
+        //   END_OF_STREAM: no more thing to read, not even the current page.
+
+        // From the state, we decide what to do with the Decoder's current_page.
+        // The difference between DATA_READY and RAW_DATA is that the former
+        // might require a reencoding of the current page. For example, if the
+        // tags grow and span over two pages, all the following pages are gonna
+        // need a new sequence number.
 
         ogg_stream_state stream;
     };

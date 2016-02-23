@@ -23,8 +23,8 @@ namespace opustags {
         void list(int streamno, const Tags&) {}
 
         // Transform the tags at will.
-        // Returns true if the tags were indeed modified, false to cancel any
-        // kind of modification.
+        // Returns true if the tags were indeed modified, false if they weren't.
+        // The latter case may be used for optimization.
         bool edit(int streamno, Tags&) { return false; }
 
         // The work is done.
@@ -37,10 +37,23 @@ namespace opustags {
 
     // Decode a file and call the handler's list method every time a tags
     // header is read.
+    //
+    // Use:
+    //   ogg::Decoder dec(std::ifstream("in.ogg"));
+    //   TagsLister lister(options);
+    //   list_tags(dec, lister);
+    //
     void list_tags(ogg::Decoder&, TagsHandler&);
 
     // Forward the input data to the output stream, transforming tags on-the-go
     // with the handler's edit method.
+    //
+    // Use:
+    //   ogg::Decoder dec(std::ifstream("in.ogg"));
+    //   ogg::Encoder enc(std::ofstream("out.ogg"));
+    //   TagsEditor editor(options);
+    //   edit_tags(dec, enc, editor);
+    //
     void edit_tags(ogg::Decoder &in, ogg::Encoder &out, TagsHandler&);
 
 }
