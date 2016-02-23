@@ -38,7 +38,7 @@ void opustags::edit_tags(ogg::Decoder &in, ogg::Encoder &out, TagsHandler &handl
                     s->downgrade();
                     out.write_raw_page(in.current_page);
                 } else {
-                    out.write_page(in.current_page);
+                    out.forward(*s);
                 }
                 break;
 
@@ -48,7 +48,7 @@ void opustags::edit_tags(ogg::Decoder &in, ogg::Encoder &out, TagsHandler &handl
                 break;
 
             case ogg::DATA_READY:
-                out.write_page(in.current_page);
+                out.forward(*s);
                 break;
 
             case ogg::RAW_READY:

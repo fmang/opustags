@@ -93,9 +93,9 @@ namespace ogg
     struct Encoder
     {
         Encoder(std::ostream*);
-        ~Encoder();
 
-        void write_page(const ogg_page&);
+        // Copy the input stream's current page.
+        void forward(Stream &in);
 
         // Write the page without even ensuring its page number is correct.
         // It would be an efficient way to copy a stream identically, and also
@@ -108,7 +108,12 @@ namespace ogg
 
         // We're gonna need some ogg_stream_state for adjusting the page
         // numbers and splitting large packets as it's gotta be done.
-        std::map<int, ogg_stream_state> streams;
+        std::map<int, Stream> streams;
+
+    private:
+        Stream& get_stream(int streamno);
+        void forward_stream(Stream &in, Stream &out);
+        void flush_stream(Stream &out);
     };
 }
 }

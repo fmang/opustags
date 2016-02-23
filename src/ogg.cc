@@ -42,7 +42,7 @@ bool ogg::Stream::page_in(ogg_page &og)
 bool ogg::Stream::handle_page()
 {
     ogg_packet op;
-    int rc = ogg_stream_packetout(&stream, &op);
+    int rc = ogg_stream_packetpeek(&stream, &op);
     if (rc < 0)
         throw std::runtime_error("ogg_stream_packetout failed");
     else if (rc == 0) // insufficient data
@@ -142,4 +142,73 @@ bool ogg::Decoder::buff()
     input->read(buf, 65536);
     ogg_sync_wrote(&sync, input->gcount());
     return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ogg::Encoder
+
+ogg::Encoder::Encoder(std::ostream *out)
+    : output(out)
+{
+    output->exceptions(std::ifstream::badbit);
+}
+
+ogg::Stream& ogg::Encoder::get_stream(int streamno)
+{
+    auto i = streams.find(streamno);
+    if (i == streams.end())
+        i = streams.emplace(streamno, Stream(streamno)).first;
+    return i->second;
+}
+
+void ogg::Encoder::forward(ogg::Stream &in)
+{
+    ogg::Stream *out = &get_stream(in.stream.serialno);
+    forward_stream(in, *out);
+    flush_stream(*out);
+}
+
+void ogg::Encoder::forward_stream(ogg::Stream &in, ogg::Stream &out)
+{
+    int rc;
+    ogg_packet op;
+    for (;;) {
+        rc = ogg_stream_packetout(&in.stream, &op);
+        if (rc < 0) {
+            throw std::runtime_error("ogg_stream_packetout failed");
+        } else if (rc == 0) {
+            break;
+        } else {
+            if (ogg_stream_packetin(&out.stream, &op) != 0)
+                throw std::runtime_error("ogg_stream_packetin failed");
+        }
+    }
+}
+void ogg::Encoder::flush_stream(ogg::Stream &out)
+{
+    ogg_page og;
+    if (ogg_stream_flush(&out.stream, &og))
+            write_raw_page(og);
+}
+
+void ogg::Encoder::write_raw_page(const ogg_page &og)
+{
+    output->write((const char*) og.header, og.header_len);
+    output->write((const char*) og.body, og.body_len);
+}
+
+void ogg::Encoder::write_tags(int streamno, const Tags&)
+{
+    ogg_packet op;
+    op.b_o_s = 0;
+    op.e_o_s = 0;
+    op.granulepos = 0;
+    op.packetno = 1; // TODO ensure it's not 2
+    // craft the tags
+    op.bytes = 0;
+
+    ogg::Stream *s = &streams.at(streamno); // assume it exists
+    if (ogg_stream_packetin(&s->stream, &op) != 0)
+        throw std::runtime_error("ogg_stream_packetin failed");
+    flush_stream(*s);
 }
