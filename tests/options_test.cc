@@ -1,6 +1,11 @@
 #include "options.h"
 #include <memory>
 #include "catch.h"
+#include "tags_handlers/modification_tags_handler.h"
+#include "tags_handlers/insertion_tags_handler.h"
+#include "tags_handlers/removal_tags_handler.h"
+
+using namespace opustags;
 
 static std::unique_ptr<char[]> string_to_uptr(const std::string &str)
 {
@@ -11,7 +16,7 @@ static std::unique_ptr<char[]> string_to_uptr(const std::string &str)
     return ret;
 }
 
-static opustags::Options retrieve_options(std::vector<std::string> args)
+static Options retrieve_options(std::vector<std::string> args)
 {
     // need to pass non-const char*, but we got const objects. make copies
     std::vector<std::unique_ptr<char[]>> arg_holders;
@@ -23,7 +28,17 @@ static opustags::Options retrieve_options(std::vector<std::string> args)
     for (size_t i = 0; i < arg_holders.size(); i++)
         plain_args[i] = arg_holders[i].get();
 
-    return opustags::parse_args(arg_holders.size(), plain_args.get());
+    return parse_args(arg_holders.size(), plain_args.get());
+}
+
+// retrieve a specific TagsHandler from the CompositeTagsHandler in options
+template<typename T> static T *get_handler(
+    const Options &options, const size_t index)
+{
+    const auto handlers = options.tags_handler.get_handlers();
+    const auto handler = dynamic_cast<T*>(handlers.at(index).get());
+    REQUIRE(handler);
+    return handler;
 }
 
 TEST_CASE("Options parsing test")
@@ -46,12 +61,6 @@ TEST_CASE("Options parsing test")
         REQUIRE(!retrieve_options({}).set_all);
     }
 
-    SECTION("--delete-all") {
-        REQUIRE(retrieve_options({"--delete-all"}).delete_all);
-        REQUIRE(retrieve_options({"-D"}).delete_all);
-        REQUIRE(!retrieve_options({}).delete_all);
-    }
-
     SECTION("--in-place") {
         REQUIRE(retrieve_options({"-i"}).in_place == ".otmp");
         REQUIRE(retrieve_options({"--in-place"}).in_place == ".otmp");
@@ -68,52 +77,66 @@ TEST_CASE("Options parsing test")
         REQUIRE_THROWS(retrieve_options({"--delete", "invalid="}));
     }
 
+    SECTION("--delete-all") {
+        REQUIRE(get_handler<RemovalTagsHandler>(
+            retrieve_options({"--delete-all"}), 0)->get_tag_key().empty());
+
+        REQUIRE(get_handler<RemovalTagsHandler>(
+            retrieve_options({"-D"}), 0)->get_tag_key().empty());
+    }
+
     SECTION("--delete") {
-        REQUIRE(
-            retrieve_options({"--delete", "ABC"}).to_delete
-                == std::vector<std::string>{"ABC"});
-        REQUIRE(
-            retrieve_options({"-d", "ABC"}).to_delete
-                == std::vector<std::string>{"ABC"});
-        REQUIRE(
-            retrieve_options({"-d", "ABC", "-d", "XYZ"}).to_delete
-                == (std::vector<std::string>{"ABC", "XYZ"}));
+        const auto opts = retrieve_options({"--delete", "A", "-d", "B"});
+        REQUIRE(get_handler<RemovalTagsHandler>(opts, 0)->get_tag_key() == "A");
+        REQUIRE(get_handler<RemovalTagsHandler>(opts, 1)->get_tag_key() == "B");
         REQUIRE_THROWS(retrieve_options({"--delete", "invalid="}));
     }
 
     SECTION("--add") {
-        const auto args1 = retrieve_options({"--add", "ABC=XYZ"});
-        const auto args2 = retrieve_options({"-a", "ABC=XYZ"});
-        REQUIRE(args1.to_add == args2.to_add);
-        REQUIRE(args1.to_add
-            == (std::map<std::string, std::string>{{"ABC", "XYZ"}}));
-        REQUIRE(args1.to_delete.empty());
-        REQUIRE(args2.to_delete.empty());
-
-        const auto args3 = retrieve_options({"-a", "ABC=XYZ", "-a", "1=2"});
-        REQUIRE(args3.to_add == (std::map<std::string, std::string>{
-            {"ABC", "XYZ"},
-            {"1", "2"}}));
-        REQUIRE(args3.to_delete.empty());
-
+        const auto opts = retrieve_options({"--add", "A=1", "-a", "B=2"});
+        const auto handler1 = get_handler<InsertionTagsHandler>(opts, 0);
+        const auto handler2 = get_handler<InsertionTagsHandler>(opts, 1);
+        REQUIRE(handler1->get_tag_key() == "A");
+        REQUIRE(handler1->get_tag_value() == "1");
+        REQUIRE(handler2->get_tag_key() == "B");
+        REQUIRE(handler2->get_tag_value() == "2");
         REQUIRE_THROWS(retrieve_options({"--add", "invalid"}));
     }
 
     SECTION("--set") {
-        const auto args1 = retrieve_options({"--set", "ABC=XYZ"});
-        const auto args2 = retrieve_options({"-s", "ABC=XYZ"});
-        REQUIRE(args1.to_add == args2.to_add);
-        REQUIRE(args1.to_add
-            == (std::map<std::string, std::string>{{"ABC", "XYZ"}}));
-        REQUIRE(args1.to_delete == args2.to_delete);
-        REQUIRE(args1.to_delete == std::vector<std::string>{"ABC"});
-
-        const auto args3 = retrieve_options({"-s", "ABC=XYZ", "-s", "1=2"});
-        REQUIRE(args3.to_add == (std::map<std::string, std::string>{
-            {"ABC", "XYZ"},
-            {"1", "2"}}));
-        REQUIRE(args3.to_delete == (std::vector<std::string>{"ABC", "1"}));
-
+        const auto opts = retrieve_options({"--set", "A=1", "-s", "B=2"});
+        const auto handler1 = get_handler<ModificationTagsHandler>(opts, 0);
+        const auto handler2 = get_handler<ModificationTagsHandler>(opts, 1);
+        REQUIRE(handler1->get_tag_key() == "A");
+        REQUIRE(handler1->get_tag_value() == "1");
+        REQUIRE(handler2->get_tag_key() == "B");
+        REQUIRE(handler2->get_tag_value() == "2");
         REQUIRE_THROWS(retrieve_options({"--set", "invalid"}));
+    }
+
+    SECTION("--stream") {
+        // by default, use all the streams
+        REQUIRE(
+            get_handler<RemovalTagsHandler>(retrieve_options({"-d", "xyz"}), 0)
+            ->get_streamno() == StreamTagsHandler::ALL_STREAMS);
+
+        // ...unless the user supplies an option to use a specific stream
+        REQUIRE(
+            get_handler<RemovalTagsHandler>(
+                retrieve_options({"--stream", "1", "-d", "xyz"}), 0)
+            ->get_streamno() == 1);
+
+        // ...which can be combined multiple times
+        {
+            const auto opts = retrieve_options({
+                "--stream", "1",
+                "-d", "xyz",
+                "--stream", "2",
+                "-d", "abc"});
+            const auto handler1 = get_handler<RemovalTagsHandler>(opts, 0);
+            const auto handler2 = get_handler<RemovalTagsHandler>(opts, 1);
+            REQUIRE(handler1->get_streamno() == 1);
+            REQUIRE(handler2->get_streamno() == 2);
+        }
     }
 }

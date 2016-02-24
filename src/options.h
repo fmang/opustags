@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <map>
 #include <vector>
+#include "tags_handlers/composite_tags_handler.h"
 
 namespace opustags
 {
@@ -12,13 +13,12 @@ namespace opustags
 
         bool show_help;
         bool overwrite;
-        bool delete_all;
         bool set_all;
 
-        std::string in_place; // string?
+        std::string in_place;
         std::string path_out;
-        std::map<std::string, std::string> to_add;
-        std::vector<std::string> to_delete;
+
+        CompositeTagsHandler tags_handler;
     };
 
     struct ArgumentError : std::runtime_error
