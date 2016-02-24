@@ -2,7 +2,7 @@
 
 using namespace opustags;
 
-void opustags::list_tags(ogg::Decoder &dec, TagsHandler &handler)
+void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler)
 {
     ogg::Stream *s;
     while (!handler.done()) {
@@ -24,7 +24,8 @@ void opustags::list_tags(ogg::Decoder &dec, TagsHandler &handler)
     }
 }
 
-void opustags::edit_tags(ogg::Decoder &in, ogg::Encoder &out, TagsHandler &handler)
+void opustags::edit_tags(
+    ogg::Decoder &in, ogg::Encoder &out, ITagsHandler &handler)
 {
     ogg::Stream *s;
     while (true) {
