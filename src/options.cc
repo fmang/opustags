@@ -36,12 +36,10 @@ Options opustags::parse_args(const int argc, char **argv)
     Options options;
     char c;
     optind = 0;
-    while ((c = getopt_long(argc, argv, short_def, long_def, nullptr)) != -1)
-    {
+    while ((c = getopt_long(argc, argv, short_def, long_def, nullptr)) != -1) {
         const std::string arg(optarg == nullptr ? "" : optarg);
 
-        switch (c)
-        {
+        switch (c) {
             case 'h':
                 options.show_help = true;
                 break;

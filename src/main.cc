@@ -24,8 +24,7 @@ static void show_usage(const bool include_help)
 
     std::cout << "opustags v" << version << "\n";
     std::cout << usage;
-    if (include_help)
-    {
+    if (include_help) {
         std::cout << "\n";
         std::cout << help;
     }
@@ -33,25 +32,20 @@ static void show_usage(const bool include_help)
 
 int main(int argc, char **argv)
 {
-    if (argc == 1)
-    {
+    if (argc == 1) {
         show_usage(false);
         return EXIT_SUCCESS;
     }
 
-    try
-    {
+    try {
         const auto options = opustags::parse_args(argc, argv);
-        if (options.show_help)
-        {
+        if (options.show_help) {
             show_usage(true);
             return EXIT_SUCCESS;
         }
 
         std::cout << "Working...\n";
-    }
-    catch (const std::exception &e)
-    {
+    } catch (const std::exception &e) {
         std::cerr << e.what();
         return EXIT_FAILURE;
     }

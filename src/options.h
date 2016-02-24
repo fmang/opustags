@@ -21,9 +21,8 @@ namespace opustags
         std::vector<std::string> to_delete;
     };
 
-    class ArgumentError : public std::runtime_error
+    struct ArgumentError : std::runtime_error
     {
-    public:
         ArgumentError(const std::string &message);
     };
 
