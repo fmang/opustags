@@ -27,4 +27,7 @@ TEST_CASE("Modification tags handler test")
     REQUIRE(handler2.edit(streamno, tags));
     REQUIRE(tags.get_all().size() == 2);
     REQUIRE(tags.get(other_tag_key) == new_value);
+
+    // setting existing keys reports no modifications if values are the same
+    REQUIRE(!handler2.edit(streamno, tags));
 }
