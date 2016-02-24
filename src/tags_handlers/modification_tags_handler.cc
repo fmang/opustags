@@ -10,6 +10,16 @@ ModificationTagsHandler::ModificationTagsHandler(
 {
 }
 
+std::string ModificationTagsHandler::get_tag_key() const
+{
+    return tag_key;
+}
+
+std::string ModificationTagsHandler::get_tag_value() const
+{
+    return tag_value;
+}
+
 bool ModificationTagsHandler::edit_impl(Tags &tags)
 {
     tags.set(tag_key, tag_value);

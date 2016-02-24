@@ -36,3 +36,9 @@ bool CompositeTagsHandler::done()
         done &= handler->done();
     return done;
 }
+
+const std::vector<std::shared_ptr<ITagsHandler>>
+    CompositeTagsHandler::get_handlers() const
+{
+    return handlers;
+}

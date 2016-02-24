@@ -14,6 +14,11 @@ RemovalTagsHandler::RemovalTagsHandler(
 {
 }
 
+std::string RemovalTagsHandler::get_tag_key() const
+{
+    return tag_key;
+}
+
 bool RemovalTagsHandler::edit_impl(Tags &tags)
 {
     if (tag_key.empty())

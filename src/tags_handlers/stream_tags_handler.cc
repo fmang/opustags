@@ -2,9 +2,16 @@
 
 using namespace opustags;
 
+const int StreamTagsHandler::ALL_STREAMS = -1;
+
 StreamTagsHandler::StreamTagsHandler(const int streamno)
     : streamno(streamno), work_finished(false)
 {
+}
+
+int StreamTagsHandler::get_streamno() const
+{
+    return streamno;
 }
 
 bool StreamTagsHandler::relevant(const int streamno)

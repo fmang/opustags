@@ -10,6 +10,8 @@ namespace opustags {
         RemovalTagsHandler(const int streamno);
         RemovalTagsHandler(const int streamno, const std::string &tag_key);
 
+        std::string get_tag_key() const;
+
     protected:
         bool edit_impl(Tags &) override;
 

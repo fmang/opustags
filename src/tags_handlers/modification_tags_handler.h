@@ -12,6 +12,9 @@ namespace opustags {
             const std::string &tag_key,
             const std::string &tag_value);
 
+        std::string get_tag_key() const;
+        std::string get_tag_value() const;
+
     protected:
         bool edit_impl(Tags &) override;
 

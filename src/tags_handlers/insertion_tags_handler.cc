@@ -11,6 +11,16 @@ InsertionTagsHandler::InsertionTagsHandler(
 {
 }
 
+std::string InsertionTagsHandler::get_tag_key() const
+{
+    return tag_key;
+}
+
+std::string InsertionTagsHandler::get_tag_value() const
+{
+    return tag_value;
+}
+
 bool InsertionTagsHandler::edit_impl(Tags &tags)
 {
     if (tags.contains(tag_key))

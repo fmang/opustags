@@ -11,6 +11,8 @@ namespace opustags {
     public:
         StreamTagsHandler(const int streamno);
 
+        int get_streamno() const;
+
         bool relevant(const int streamno) override;
         void list(const int streamno, const Tags &) override;
         bool edit(const int streamno, Tags &) override;

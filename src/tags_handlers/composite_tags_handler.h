@@ -16,6 +16,8 @@ namespace opustags {
         bool edit(const int streamno, Tags &) override;
         bool done() override;
 
+        const std::vector<std::shared_ptr<ITagsHandler>> get_handlers() const;
+
     private:
         std::vector<std::shared_ptr<ITagsHandler>> handlers;
     };
