@@ -28,36 +28,31 @@ static opustags::Options retrieve_options(std::vector<std::string> args)
 
 TEST_CASE("Options parsing test")
 {
-    SECTION("--help")
-    {
+    SECTION("--help") {
         REQUIRE(retrieve_options({"--help"}).show_help);
         REQUIRE(retrieve_options({"--h"}).show_help);
         REQUIRE(!retrieve_options({}).show_help);
     }
 
-    SECTION("--overwrite")
-    {
+    SECTION("--overwrite") {
         REQUIRE(retrieve_options({"--overwrite"}).overwrite);
         REQUIRE(retrieve_options({"-y"}).overwrite);
         REQUIRE(!retrieve_options({}).overwrite);
     }
 
-    SECTION("--set-all")
-    {
+    SECTION("--set-all") {
         REQUIRE(retrieve_options({"--set-all"}).set_all);
         REQUIRE(retrieve_options({"-S"}).set_all);
         REQUIRE(!retrieve_options({}).set_all);
     }
 
-    SECTION("--delete-all")
-    {
+    SECTION("--delete-all") {
         REQUIRE(retrieve_options({"--delete-all"}).delete_all);
         REQUIRE(retrieve_options({"-D"}).delete_all);
         REQUIRE(!retrieve_options({}).delete_all);
     }
 
-    SECTION("--in-place")
-    {
+    SECTION("--in-place") {
         REQUIRE(retrieve_options({"-i"}).in_place == ".otmp");
         REQUIRE(retrieve_options({"--in-place"}).in_place == ".otmp");
         REQUIRE(retrieve_options({"--in-place=ABC"}).in_place == "ABC");
@@ -67,15 +62,13 @@ TEST_CASE("Options parsing test")
         REQUIRE(retrieve_options({}).in_place.empty());
     }
 
-    SECTION("--output")
-    {
+    SECTION("--output") {
         REQUIRE(retrieve_options({"--output", "ABC"}).path_out == "ABC");
         REQUIRE(retrieve_options({"-o", "ABC"}).path_out == "ABC");
         REQUIRE_THROWS(retrieve_options({"--delete", "invalid="}));
     }
 
-    SECTION("--delete")
-    {
+    SECTION("--delete") {
         REQUIRE(
             retrieve_options({"--delete", "ABC"}).to_delete
                 == std::vector<std::string>{"ABC"});
@@ -88,8 +81,7 @@ TEST_CASE("Options parsing test")
         REQUIRE_THROWS(retrieve_options({"--delete", "invalid="}));
     }
 
-    SECTION("--add")
-    {
+    SECTION("--add") {
         const auto args1 = retrieve_options({"--add", "ABC=XYZ"});
         const auto args2 = retrieve_options({"-a", "ABC=XYZ"});
         REQUIRE(args1.to_add == args2.to_add);
@@ -107,8 +99,7 @@ TEST_CASE("Options parsing test")
         REQUIRE_THROWS(retrieve_options({"--add", "invalid"}));
     }
 
-    SECTION("--set")
-    {
+    SECTION("--set") {
         const auto args1 = retrieve_options({"--set", "ABC=XYZ"});
         const auto args2 = retrieve_options({"-s", "ABC=XYZ"});
         REQUIRE(args1.to_add == args2.to_add);
