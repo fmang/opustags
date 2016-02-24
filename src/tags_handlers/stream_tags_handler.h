@@ -9,6 +9,8 @@ namespace opustags {
     class StreamTagsHandler : public ITagsHandler
     {
     public:
+        static const int ALL_STREAMS;
+
         StreamTagsHandler(const int streamno);
 
         int get_streamno() const;

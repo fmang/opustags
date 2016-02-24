@@ -37,42 +37,50 @@ bool DummyTagsHandler::edit_impl(Tags &)
 
 TEST_CASE("Stream-based tags handler test")
 {
-    const auto relevant_stream_number = 1;
-    const auto irrelevant_stream_number = 2;
-    Tags dummy_tags;
+    SECTION("Concrete stream") {
+        const auto relevant_stream_number = 1;
+        const auto irrelevant_stream_number = 2;
+        Tags dummy_tags;
+        DummyTagsHandler handler(relevant_stream_number);
 
-    DummyTagsHandler handler(1);
+        SECTION("Relevance") {
+            REQUIRE(!handler.relevant(irrelevant_stream_number));
+            REQUIRE(handler.relevant(relevant_stream_number));
+        }
 
-    SECTION("Relevance") {
-        REQUIRE(!handler.relevant(irrelevant_stream_number));
-        REQUIRE(handler.relevant(relevant_stream_number));
+        SECTION("Listing") {
+            handler.list(irrelevant_stream_number, dummy_tags);
+            REQUIRE(!handler.list_fired);
+            handler.list(relevant_stream_number, dummy_tags);
+            REQUIRE(handler.list_fired);
+        }
+
+        SECTION("Editing") {
+            REQUIRE(!handler.edit(irrelevant_stream_number, dummy_tags));
+            REQUIRE(!handler.edit_fired);
+            REQUIRE(handler.edit(relevant_stream_number, dummy_tags));
+            REQUIRE(handler.edit_fired);
+        }
+
+        SECTION("Finish through listing") {
+            REQUIRE(!handler.edit(irrelevant_stream_number, dummy_tags));
+            REQUIRE(!handler.done());
+            REQUIRE(handler.edit(relevant_stream_number, dummy_tags));
+            REQUIRE(handler.done());
+        }
+
+        SECTION("Finish through editing") {
+            handler.list(irrelevant_stream_number, dummy_tags);
+            REQUIRE(!handler.done());
+            handler.list(relevant_stream_number, dummy_tags);
+            REQUIRE(handler.done());
+        }
     }
 
-    SECTION("Listing") {
-        handler.list(irrelevant_stream_number, dummy_tags);
-        REQUIRE(!handler.list_fired);
-        handler.list(relevant_stream_number, dummy_tags);
-        REQUIRE(handler.list_fired);
-    }
-
-    SECTION("Editing") {
-        REQUIRE(!handler.edit(irrelevant_stream_number, dummy_tags));
-        REQUIRE(!handler.edit_fired);
-        REQUIRE(handler.edit(relevant_stream_number, dummy_tags));
-        REQUIRE(handler.edit_fired);
-    }
-
-    SECTION("Finish through listing") {
-        REQUIRE(!handler.edit(irrelevant_stream_number, dummy_tags));
-        REQUIRE(!handler.done());
-        REQUIRE(handler.edit(relevant_stream_number, dummy_tags));
-        REQUIRE(handler.done());
-    }
-
-    SECTION("Finish through editing") {
-        handler.list(irrelevant_stream_number, dummy_tags);
-        REQUIRE(!handler.done());
-        handler.list(relevant_stream_number, dummy_tags);
-        REQUIRE(handler.done());
+    SECTION("Any stream") {
+        DummyTagsHandler handler(StreamTagsHandler::ALL_STREAMS);
+        REQUIRE(handler.relevant(1));
+        REQUIRE(handler.relevant(2));
+        REQUIRE(handler.relevant(3));
     }
 }
