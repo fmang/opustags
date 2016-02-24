@@ -1,5 +1,4 @@
 #include "tags_handlers/modification_tags_handler.h"
-#include "tags_handlers_errors.h"
 
 using namespace opustags;
 
