@@ -1,8 +1,9 @@
 #pragma once
 
+#include <map>
+
 namespace opustags {
 
-    class Tags {
-    };
+    using Tags = std::map<std::string, std::string>;
 
 }
