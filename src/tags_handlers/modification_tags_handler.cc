@@ -12,6 +12,6 @@ ModificationTagsHandler::ModificationTagsHandler(
 
 bool ModificationTagsHandler::edit_impl(Tags &tags)
 {
-    tags[tag_key] = tag_value;
+    tags.set(tag_key, tag_value);
     return true;
 }

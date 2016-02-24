@@ -13,7 +13,7 @@ TEST_CASE("Insertion tags handler test")
         streamno, expected_tag_key, expected_tag_value);
 
     REQUIRE(handler.edit(streamno, tags));
-    REQUIRE(tags.size() == 1);
-    REQUIRE(tags[expected_tag_key] == expected_tag_value);
+    REQUIRE(tags.get_all().size() == 1);
+    REQUIRE(tags.get(expected_tag_key) == expected_tag_value);
     REQUIRE_THROWS(handler.edit(streamno, tags));
 }
