@@ -77,7 +77,7 @@ namespace ogg
         // The read page is given to Stream::page_in before this function
         // returns.
         // After the end of the file is reached, it returns NULL.
-        Stream* read_page();
+        Stream *read_page();
 
         std::istream *input;
 

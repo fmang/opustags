@@ -30,7 +30,7 @@ Options opustags::parse_args(const int argc, char **argv)
         {"set", required_argument, 0, 's'},
         {"delete-all", no_argument, 0, 'D'},
         {"set-all", no_argument, 0, 'S'},
-        {NULL, 0, 0, 0}
+        {nullptr, 0, 0, 0}
     };
 
     Options options;

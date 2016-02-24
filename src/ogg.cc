@@ -62,6 +62,7 @@ void ogg::Stream::handle_packet(const ogg_packet &op)
         parse_tags(op);
     // else shrug
 }
+
 void ogg::Stream::parse_header(const ogg_packet &op)
 {
     // TODO
@@ -97,7 +98,7 @@ ogg::Decoder::~Decoder()
     ogg_sync_clear(&sync);
 }
 
-ogg::Stream* ogg::Decoder::read_page()
+ogg::Stream *ogg::Decoder::read_page()
 {
     while (page_out()) {
         int streamno = ogg_page_serialno(&current_page);
@@ -109,7 +110,7 @@ ogg::Stream* ogg::Decoder::read_page()
         if (i->second.page_in(current_page))
             return &(i->second);
     }
-    return NULL; // end of stream
+    return nullptr; // end of stream
 }
 
 // Read the next page and return true on success, false on end of stream.
@@ -137,7 +138,7 @@ bool ogg::Decoder::buff()
     if (input->eof())
         return false;
     char *buf = ogg_sync_buffer(&sync, 65536);
-    if (buf == NULL)
+    if (buf == nullptr)
         throw std::runtime_error("ogg_sync_buffer failed");
     input->read(buf, 65536);
     ogg_sync_wrote(&sync, input->gcount());
@@ -184,6 +185,7 @@ void ogg::Encoder::forward_stream(ogg::Stream &in, ogg::Stream &out)
         }
     }
 }
+
 void ogg::Encoder::flush_stream(ogg::Stream &out)
 {
     ogg_page og;
@@ -193,8 +195,8 @@ void ogg::Encoder::flush_stream(ogg::Stream &out)
 
 void ogg::Encoder::write_raw_page(const ogg_page &og)
 {
-    output->write((const char*) og.header, og.header_len);
-    output->write((const char*) og.body, og.body_len);
+    output->write(reinterpret_cast<const char*>(og.header), og.header_len);
+    output->write(reinterpret_cast<const char*>(og.body), og.body_len);
 }
 
 void ogg::Encoder::write_tags(int streamno, const Tags&)

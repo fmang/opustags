@@ -7,7 +7,7 @@ void opustags::list_tags(ogg::Decoder &dec, TagsHandler &handler)
     ogg::Stream *s;
     while (!handler.done()) {
         s = dec.read_page();
-        if (s == NULL)
+        if (s == nullptr)
             break; // end of stream
         switch (s->state) {
             case ogg::HEADER_READY:
@@ -29,7 +29,7 @@ void opustags::edit_tags(ogg::Decoder &in, ogg::Encoder &out, TagsHandler &handl
     ogg::Stream *s;
     while (true) {
         s = in.read_page();
-        if (s == NULL)
+        if (s == nullptr)
             break; // end of stream
         switch (s->state) {
 

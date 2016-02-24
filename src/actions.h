@@ -8,7 +8,8 @@ namespace opustags {
     // TagsHandler define various operations related to tags and stream in
     // order to control the main loop.
     // In its implementation, it is expected to receive an option structure.
-    struct TagsHandler {
+    struct TagsHandler
+    {
 
         // Irrelevant streams don't even need to be parsed, so we can save some
         // effort with this method.
