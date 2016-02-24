@@ -9,4 +9,9 @@ namespace opustags {
         TagAlreadyExistsError(const std::string &tag_key);
     };
 
+    struct TagDoesNotExistError : std::runtime_error
+    {
+        TagDoesNotExistError(const std::string &tag_key);
+    };
+
 }
