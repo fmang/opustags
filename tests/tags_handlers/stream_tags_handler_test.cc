@@ -78,9 +78,15 @@ TEST_CASE("Stream-based tags handler test")
     }
 
     SECTION("Any stream") {
+        Tags dummy_tags;
         DummyTagsHandler handler(StreamTagsHandler::ALL_STREAMS);
         REQUIRE(handler.relevant(1));
         REQUIRE(handler.relevant(2));
         REQUIRE(handler.relevant(3));
+        REQUIRE(!handler.done());
+        handler.list(1, dummy_tags);
+        REQUIRE(!handler.done());
+        handler.list(2, dummy_tags);
+        REQUIRE(!handler.done());
     }
 }

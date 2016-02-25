@@ -24,7 +24,7 @@ void StreamTagsHandler::list(const int streamno, const Tags &tags)
     if (!relevant(streamno))
         return;
     list_impl(tags);
-    work_finished = true;
+    work_finished = this->streamno != ALL_STREAMS;
 }
 
 bool StreamTagsHandler::edit(const int streamno, Tags &tags)
@@ -32,7 +32,7 @@ bool StreamTagsHandler::edit(const int streamno, Tags &tags)
     if (!relevant(streamno))
         return false;
     const auto ret = edit_impl(tags);
-    work_finished = true;
+    work_finished = this->streamno != ALL_STREAMS;
     return ret;
 }
 
