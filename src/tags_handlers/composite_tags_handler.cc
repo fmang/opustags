@@ -31,10 +31,10 @@ bool CompositeTagsHandler::edit(const int streamno, Tags &tags)
 
 bool CompositeTagsHandler::done()
 {
-    bool done = true;
     for (const auto &handler : handlers)
-        done &= handler->done();
-    return done;
+        if (!handler->done())
+            return false;
+    return true;
 }
 
 const std::vector<std::shared_ptr<ITagsHandler>>
