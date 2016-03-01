@@ -65,7 +65,7 @@ namespace ogg
         bool handle_page();
         void handle_packet(const ogg_packet&);
         void parse_header(const ogg_packet&);
-        void parse_tags(const ogg_packet&);
+        void parse_opustags(const ogg_packet&);
     };
 
     struct Decoder
@@ -114,6 +114,7 @@ namespace ogg
         Stream& get_stream(int streamno);
         void forward_stream(Stream &in, Stream &out);
         void flush_stream(Stream &out);
+        std::string render_opustags(const Tags &tags);
     };
 }
 }

@@ -43,6 +43,16 @@ void Tags::set(const std::string &key, const std::string &value)
     max_index++;
 }
 
+void Tags::set(const std::string &assoc)
+{
+    size_t eq = assoc.find_first_of('=');
+    if (eq == std::string::npos)
+        throw std::runtime_error("misconstructed tag");
+    std::string name = assoc.substr(0, eq);
+    std::string value = assoc.substr(eq + 1);
+    set(name, value);
+}
+
 void Tags::remove(const std::string &key)
 {
     key_to_value.erase(key);

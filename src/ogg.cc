@@ -2,7 +2,9 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <sstream>
 #include <cstring>
+#include <endian.h>
 
 using namespace opustags;
 
@@ -60,7 +62,7 @@ void ogg::Stream::handle_packet(const ogg_packet &op)
     if (state == ogg::BEGIN_OF_STREAM)
         parse_header(op);
     else if (state == ogg::HEADER_READY)
-        parse_tags(op);
+        parse_opustags(op);
     // else shrug
 }
 
@@ -75,9 +77,52 @@ void ogg::Stream::parse_header(const ogg_packet &op)
     }
 }
 
-void ogg::Stream::parse_tags(const ogg_packet &op)
+// For reference:
+// https://tools.ietf.org/html/draft-ietf-codec-oggopus-14#section-5.2
+void ogg::Stream::parse_opustags(const ogg_packet &op)
 {
-    // TODO
+    // This part is gonna be C-ish because I don't see how I'd do this in C++
+    // without being inefficient, both in volume of code and performance.
+    char *data = reinterpret_cast<char*>(op.packet);
+    long remaining = op.bytes;
+    if (remaining < 8 || memcmp(data, "OpusTags", 8) != 0)
+        throw std::runtime_error("expected OpusTags header");
+    data += 8;
+    remaining -= 8;
+
+    // Vendor string
+    if (remaining < 4)
+        throw std::runtime_error("no space for vendor string length");
+    uint32_t vendor_length = le32toh(*reinterpret_cast<uint32_t*>(data));
+    if (remaining - 4 < vendor_length)
+        throw std::runtime_error("invalid vendor string length");
+    tags.vendor = std::string(data + 4, vendor_length);
+    data += 4 + vendor_length;
+    remaining -= 4 + vendor_length;
+
+    // User comments count
+    if (remaining < 4)
+        throw std::runtime_error("no space for user comment list length");
+    uint32_t comment_count = le32toh(*reinterpret_cast<uint32_t*>(data));
+    data += 4;
+    remaining -= 4;
+
+    // Actual comments
+    for (uint32_t i = 0; i < comment_count; i++) {
+        if (remaining < 4)
+            throw std::runtime_error("no space for user comment length");
+        uint32_t comment_length = le32toh(*reinterpret_cast<uint32_t*>(data));
+        if (remaining - 4 < comment_length)
+            throw std::runtime_error("no space for comment contents");
+        tags.set(std::string(data + 4, comment_length));
+        data += 4 + comment_length;
+        remaining -= 4 + comment_length;
+    }
+
+    // Extra data to keep if the least significant bit of the first byte is 1
+    if (remaining > 0 && (*data & 1) == 1 )
+        tags.extra = std::string(data, remaining);
+
     state = TAGS_READY;
 }
 
@@ -204,18 +249,26 @@ void ogg::Encoder::write_raw_page(const ogg_page &og)
     output->write(reinterpret_cast<const char*>(og.body), og.body_len);
 }
 
-void ogg::Encoder::write_tags(int streamno, const Tags&)
+void ogg::Encoder::write_tags(int streamno, const Tags &tags)
 {
     ogg_packet op;
     op.b_o_s = 0;
     op.e_o_s = 0;
     op.granulepos = 0;
     op.packetno = 1; // TODO ensure it's not 2
-    // craft the tags
-    op.bytes = 0;
+
+    std::string data = render_opustags(tags);
+    op.bytes = data.size();
+    op.packet = reinterpret_cast<unsigned char*>(const_cast<char*>(data.data()));
 
     ogg::Stream *s = &streams.at(streamno); // assume it exists
     if (ogg_stream_packetin(&s->stream, &op) != 0)
         throw std::runtime_error("ogg_stream_packetin failed");
     flush_stream(*s);
+}
+
+std::string ogg::Encoder::render_opustags(const Tags &tags)
+{
+    std::stringbuf s;
+    return s.str();
 }
