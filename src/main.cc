@@ -1,7 +1,7 @@
 #include <iostream>
 #include "options.h"
 
-static const auto version = "1.1";
+static const auto version = "2.x";
 
 static void show_usage(const bool include_help)
 {
