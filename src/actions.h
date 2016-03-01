@@ -10,7 +10,7 @@ namespace opustags {
     //
     // Use:
     //   std::ifstream in("in.ogg");
-    //   ogg::Decoder dec(&in);
+    //   ogg::Decoder dec(in);
     //   TagsLister lister(options);
     //   list_tags(dec, lister);
     //
@@ -21,9 +21,9 @@ namespace opustags {
     //
     // Use:
     //   std::ifstream in("in.ogg");
-    //   ogg::Decoder dec(&in);
+    //   ogg::Decoder dec(in);
     //   std::ofstream out("out.ogg");
-    //   std::Encoder enc(&out);
+    //   std::Encoder enc(out);
     //   TagsEditor editor(options);
     //   edit_tags(dec, enc, editor);
     //

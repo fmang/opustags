@@ -70,7 +70,7 @@ namespace ogg
 
     struct Decoder
     {
-        Decoder(std::istream*);
+        Decoder(std::istream&);
         ~Decoder();
 
         // Read a page, dispatch it, and return the stream it belongs to.
@@ -79,7 +79,7 @@ namespace ogg
         // After the end of the file is reached, it returns NULL.
         Stream *read_page();
 
-        std::istream *input;
+        std::istream &input;
 
         ogg_sync_state sync;
         ogg_page current_page;
@@ -92,7 +92,7 @@ namespace ogg
 
     struct Encoder
     {
-        Encoder(std::ostream*);
+        Encoder(std::ostream&);
 
         // Copy the input stream's current page.
         void forward(Stream &in);
@@ -104,7 +104,7 @@ namespace ogg
 
         void write_tags(int streamno, const Tags&);
 
-        std::ostream *output;
+        std::ostream &output;
 
         // We're gonna need some ogg_stream_state for adjusting the page
         // numbers and splitting large packets as it's gotta be done.

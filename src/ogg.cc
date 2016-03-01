@@ -136,10 +136,10 @@ void ogg::Stream::downgrade()
 ////////////////////////////////////////////////////////////////////////////////
 // ogg::Decoder
 
-ogg::Decoder::Decoder(std::istream *in)
+ogg::Decoder::Decoder(std::istream &in)
     : input(in)
 {
-    input->exceptions(std::ifstream::badbit);
+    input.exceptions(std::ifstream::badbit);
     ogg_sync_init(&sync);
 }
 
@@ -185,23 +185,23 @@ bool ogg::Decoder::page_out()
 // Read data from the stream into the sync's buffer.
 bool ogg::Decoder::buff()
 {
-    if (input->eof())
+    if (input.eof())
         return false;
     char *buf = ogg_sync_buffer(&sync, 65536);
     if (buf == nullptr)
         throw std::runtime_error("ogg_sync_buffer failed");
-    input->read(buf, 65536);
-    ogg_sync_wrote(&sync, input->gcount());
+    input.read(buf, 65536);
+    ogg_sync_wrote(&sync, input.gcount());
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // ogg::Encoder
 
-ogg::Encoder::Encoder(std::ostream *out)
+ogg::Encoder::Encoder(std::ostream &out)
     : output(out)
 {
-    output->exceptions(std::ifstream::badbit);
+    output.exceptions(std::ifstream::badbit);
 }
 
 ogg::Stream& ogg::Encoder::get_stream(int streamno)
@@ -245,8 +245,8 @@ void ogg::Encoder::flush_stream(ogg::Stream &out)
 
 void ogg::Encoder::write_raw_page(const ogg_page &og)
 {
-    output->write(reinterpret_cast<const char*>(og.header), og.header_len);
-    output->write(reinterpret_cast<const char*>(og.body), og.body_len);
+    output.write(reinterpret_cast<const char*>(og.header), og.header_len);
+    output.write(reinterpret_cast<const char*>(og.body), og.body_len);
 }
 
 void ogg::Encoder::write_tags(int streamno, const Tags &tags)
