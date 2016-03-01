@@ -30,6 +30,7 @@ namespace ogg
     struct Stream
     {
         Stream(int streamno);
+        Stream(const Stream&) = delete;
         ~Stream();
 
         // Called by Decoder once a page was read.
@@ -71,6 +72,7 @@ namespace ogg
     struct Decoder
     {
         Decoder(std::istream&);
+        Decoder(const Decoder&) = delete;
         ~Decoder();
 
         // Read a page, dispatch it, and return the stream it belongs to.
