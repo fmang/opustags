@@ -2,7 +2,7 @@
 
 #include <map>
 #include <vector>
-#include <tuple>
+#include <utility>
 
 namespace opustags {
 
@@ -12,7 +12,7 @@ namespace opustags {
     public:
         Tags();
 
-        const std::vector<std::tuple<std::string, std::string>> get_all() const;
+        const std::vector<std::pair<std::string, std::string>> get_all() const;
 
         std::string get(const std::string &key) const;
         void set(const std::string &key, const std::string &value);

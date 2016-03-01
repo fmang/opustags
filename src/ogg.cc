@@ -270,5 +270,24 @@ void ogg::Encoder::write_tags(int streamno, const Tags &tags)
 std::string ogg::Encoder::render_opustags(const Tags &tags)
 {
     std::stringbuf s;
+    uint32_t length;
+    s.sputn("OpusTags", 8);
+    length = htole32(tags.vendor.size());
+    s.sputn(reinterpret_cast<char*>(&length), 4);
+    s.sputn(tags.vendor.data(), tags.vendor.size());
+
+    auto assocs = tags.get_all();
+    length = htole32(assocs.size());
+    s.sputn(reinterpret_cast<char*>(&length), 4);
+
+    for (auto assoc : assocs) {
+        length = htole32(assoc.first.size() + 1 + assoc.second.size());
+        s.sputn(reinterpret_cast<char*>(&length), 4);
+        s.sputn(assoc.first.data(), assoc.first.size());
+        s.sputc('=');
+        s.sputn(assoc.second.data(), assoc.second.size());
+    }
+
+    s.sputn(tags.extra.data(), tags.extra.size());
     return s.str();
 }

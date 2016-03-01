@@ -7,7 +7,7 @@ Tags::Tags() : max_index(0)
 {
 }
 
-const std::vector<std::tuple<std::string, std::string>> Tags::get_all() const
+const std::vector<std::pair<std::string, std::string>> Tags::get_all() const
 {
     std::vector<std::string> keys;
     for (const auto &kv : key_to_value)
@@ -21,10 +21,10 @@ const std::vector<std::tuple<std::string, std::string>> Tags::get_all() const
             return key_to_index.at(a) < key_to_index.at(b);
         });
 
-    std::vector<std::tuple<std::string, std::string>> result;
+    std::vector<std::pair<std::string, std::string>> result;
     for (const auto &key : keys) {
         result.push_back(
-            std::make_tuple(
+            std::make_pair(
                 key, key_to_value.at(key)));
     }
 
