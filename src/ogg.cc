@@ -148,17 +148,18 @@ ogg::Decoder::~Decoder()
     ogg_sync_clear(&sync);
 }
 
-ogg::Stream *ogg::Decoder::read_page()
+std::shared_ptr<ogg::Stream> ogg::Decoder::read_page()
 {
     while (page_out()) {
         int streamno = ogg_page_serialno(&current_page);
         auto i = streams.find(streamno);
         if (i == streams.end()) {
             // we could check the page number to detect new streams (pageno = 0)
-            i = streams.emplace(streamno, Stream(streamno)).first;
+            auto s = std::make_shared<Stream>(streamno);
+            i = streams.emplace(streamno, s).first;
         }
-        if (i->second.page_in(current_page))
-            return &(i->second);
+        if (i->second->page_in(current_page))
+            return i->second;
     }
     return nullptr; // end of stream
 }
@@ -207,9 +208,11 @@ ogg::Encoder::Encoder(std::ostream &out)
 ogg::Stream& ogg::Encoder::get_stream(int streamno)
 {
     auto i = streams.find(streamno);
-    if (i == streams.end())
-        i = streams.emplace(streamno, Stream(streamno)).first;
-    return i->second;
+    if (i == streams.end()) {
+        auto s = std::make_shared<Stream>(streamno);
+        i = streams.emplace(streamno, s).first;
+    }
+    return *(i->second);
 }
 
 void ogg::Encoder::forward(ogg::Stream &in)
@@ -261,7 +264,7 @@ void ogg::Encoder::write_tags(int streamno, const Tags &tags)
     op.bytes = data.size();
     op.packet = reinterpret_cast<unsigned char*>(const_cast<char*>(data.data()));
 
-    ogg::Stream *s = &streams.at(streamno); // assume it exists
+    std::shared_ptr<ogg::Stream> s = streams.at(streamno); // assume it exists
     if (ogg_stream_packetin(&s->stream, &op) != 0)
         throw std::runtime_error("ogg_stream_packetin failed");
     flush_stream(*s);

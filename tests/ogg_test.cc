@@ -13,7 +13,7 @@ SCENARIO("decoding a single-stream file", "[ogg]")
         ogg::Decoder dec(src);
 
         WHEN("reading the first page") {
-            ogg::Stream *s = dec.read_page();
+            std::shared_ptr<ogg::Stream> s = dec.read_page();
             THEN("the Opus header is ready") {
                 REQUIRE(s != nullptr);
                 REQUIRE(s->state == ogg::HEADER_READY);

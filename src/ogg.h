@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <ogg/ogg.h>
 
 namespace opustags {
@@ -79,13 +80,13 @@ namespace ogg
         // The read page is given to Stream::page_in before this function
         // returns.
         // After the end of the file is reached, it returns NULL.
-        Stream *read_page();
+        std::shared_ptr<Stream> read_page();
 
         std::istream &input;
 
         ogg_sync_state sync;
         ogg_page current_page;
-        std::map<int, Stream> streams;
+        std::map<int, std::shared_ptr<Stream>> streams;
 
     private:
         bool page_out();
@@ -110,7 +111,7 @@ namespace ogg
 
         // We're gonna need some ogg_stream_state for adjusting the page
         // numbers and splitting large packets as it's gotta be done.
-        std::map<int, Stream> streams;
+        std::map<int, std::shared_ptr<Stream>> streams;
 
     private:
         Stream& get_stream(int streamno);

@@ -4,7 +4,7 @@ using namespace opustags;
 
 void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler)
 {
-    ogg::Stream *s;
+    std::shared_ptr<ogg::Stream> s;
     while (!handler.done()) {
         s = dec.read_page();
         if (s == nullptr)
@@ -27,7 +27,7 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler)
 void opustags::edit_tags(
     ogg::Decoder &in, ogg::Encoder &out, ITagsHandler &handler)
 {
-    ogg::Stream *s;
+    std::shared_ptr<ogg::Stream> s;
     while (true) {
         s = in.read_page();
         if (s == nullptr)
