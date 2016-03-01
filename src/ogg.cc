@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <fstream>
+#include <cstring>
 
 using namespace opustags;
 
@@ -65,9 +66,13 @@ void ogg::Stream::handle_packet(const ogg_packet &op)
 
 void ogg::Stream::parse_header(const ogg_packet &op)
 {
-    // TODO
-    // set type
-    // set state
+    if (op.bytes >= 8 && memcmp(op.packet, "OpusTags", 8) == 0) {
+        type = OPUS_STREAM;
+        state = HEADER_READY;
+    } else {
+        type = UNKNOWN_STREAM;
+        state = RAW_READY;
+    }
 }
 
 void ogg::Stream::parse_tags(const ogg_packet &op)
