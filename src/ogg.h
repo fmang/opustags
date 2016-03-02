@@ -64,6 +64,7 @@ namespace ogg
         ogg_stream_state stream;
 
     private:
+        void flush_packets();
         bool handle_page();
         void handle_packet(const ogg_packet&);
         void parse_header(const ogg_packet&);

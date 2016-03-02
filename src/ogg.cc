@@ -24,10 +24,17 @@ ogg::Stream::~Stream()
     ogg_stream_clear(&stream);
 }
 
+void ogg::Stream::flush_packets()
+{
+    ogg_packet op;
+    while (ogg_stream_packetout(&stream, &op) > 0);
+}
+
 bool ogg::Stream::page_in(ogg_page &og)
 {
     if (state == ogg::RAW_READY)
         return true;
+    flush_packets(); // otherwise packet_out keeps returning the same packet
     if (ogg_stream_pagein(&stream, &og) != 0)
         throw std::runtime_error("ogg_stream_pagein failed");
 
