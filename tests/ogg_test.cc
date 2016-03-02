@@ -5,21 +5,19 @@
 
 using namespace opustags;
 
-SCENARIO("decoding a single-stream file", "[ogg]")
+TEST_CASE("decoding a single-stream file", "[ogg]")
 {
+    std::ifstream src("../tests/samples/mystery.ogg");
+    ogg::Decoder dec(src);
 
-    GIVEN("an ogg::Decoder") {
-        std::ifstream src("../tests/samples/mystery.ogg");
-        ogg::Decoder dec(src);
+    std::shared_ptr<ogg::Stream> s = dec.read_page();
+    REQUIRE(s != nullptr);
+    REQUIRE(s->state == ogg::HEADER_READY);
+    REQUIRE(s->type == ogg::OPUS_STREAM);
 
-        WHEN("reading the first page") {
-            std::shared_ptr<ogg::Stream> s = dec.read_page();
-            THEN("the Opus header is ready") {
-                REQUIRE(s != nullptr);
-                REQUIRE(s->state == ogg::HEADER_READY);
-                REQUIRE(s->type == ogg::OPUS_STREAM);
-            }
-        }
-    }
-
+    std::shared_ptr<ogg::Stream> s2 = dec.read_page();
+    REQUIRE(s2 == s);
+    REQUIRE(s->state == ogg::TAGS_READY);
+    REQUIRE(s->type == ogg::OPUS_STREAM);
+    REQUIRE(s->tags.get("encoder") == "Lavc57.24.102 libopus");
 }
