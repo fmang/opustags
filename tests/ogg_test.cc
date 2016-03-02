@@ -21,3 +21,16 @@ TEST_CASE("decoding a single-stream file", "[ogg]")
     REQUIRE(s->type == ogg::OPUS_STREAM);
     REQUIRE(s->tags.get("encoder") == "Lavc57.24.102 libopus");
 }
+
+TEST_CASE("decoding garbage", "[ogg]")
+{
+    std::ifstream src("Makefile");
+    ogg::Decoder dec(src);
+    REQUIRE_THROWS(dec.read_page());
+}
+
+// TODO decoding a multi-stream file
+// TODO decoding a vorbis ogg stream
+
+// Encoding is trickier, and might as well be done in actions_test.cc, given
+// opustags::edit_tags covers all of Encoder's regular code.
