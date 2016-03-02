@@ -68,7 +68,7 @@ void ogg::Stream::handle_packet(const ogg_packet &op)
 
 void ogg::Stream::parse_header(const ogg_packet &op)
 {
-    if (op.bytes >= 8 && memcmp(op.packet, "OpusTags", 8) == 0) {
+    if (op.bytes >= 8 && memcmp(op.packet, "OpusHead", 8) == 0) {
         type = OPUS_STREAM;
         state = HEADER_READY;
     } else {
