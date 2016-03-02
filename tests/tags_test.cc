@@ -3,7 +3,7 @@
 
 using namespace opustags;
 
-TEST_CASE("Tag manipulation test")
+TEST_CASE("Tag manipulation test", "[tags]")
 {
     SECTION("Basic operations") {
         Tags tags;
@@ -38,5 +38,20 @@ TEST_CASE("Tag manipulation test")
         REQUIRE(std::get<0>(tags.get_all()[0]) == "x");
         REQUIRE(std::get<0>(tags.get_all()[1]) == "y");
         REQUIRE(std::get<0>(tags.get_all()[2]) == "gamma");
+    }
+
+    SECTION("Key to multiple values") {
+        // ARTIST is set once per artist.
+        // https://www.xiph.org/vorbis/doc/v-comment.html
+        Tags tags;
+        tags.set("ARTIST", "You");
+        tags.set("ARTIST", "Me");
+        REQUIRE(tags.get_all().size() == 2);
+    }
+
+    SECTION("Raw set") {
+        Tags tags;
+        tags.set("TITLE=Foo=Bar");
+        REQUIRE(tags.get("TITLE") == "Foo=Bar");
     }
 }
