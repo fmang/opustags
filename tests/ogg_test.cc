@@ -40,7 +40,45 @@ TEST_CASE("decoding an Ogg Vorbis file", "[ogg]")
     REQUIRE(s->type == ogg::UNKNOWN_STREAM);
 }
 
-// TODO decoding a multi-stream file
+TEST_CASE("decoding a multi-stream file", "[ogg]")
+{
+    std::ifstream src("../tests/samples/mystery-beep.ogg");
+    ogg::Decoder dec(src);
+    std::shared_ptr<ogg::Stream> first, second, third, s;
+
+    s = dec.read_page();
+    first = s;
+    REQUIRE(s != nullptr);
+    REQUIRE(s->state == ogg::HEADER_READY);
+    REQUIRE(s->type == ogg::OPUS_STREAM);
+
+    s = dec.read_page();
+    second = s;
+    REQUIRE(s != nullptr);
+    REQUIRE(s != first);
+    REQUIRE(s->state == ogg::RAW_READY);
+    REQUIRE(s->type == ogg::UNKNOWN_STREAM);
+
+    s = dec.read_page();
+    third = s;
+    REQUIRE(s != nullptr);
+    REQUIRE(s != first);
+    REQUIRE(s != second);
+    REQUIRE(s->state == ogg::HEADER_READY);
+    REQUIRE(s->type == ogg::OPUS_STREAM);
+
+    s = dec.read_page();
+    REQUIRE(s == first);
+    REQUIRE(s->state == ogg::TAGS_READY);
+
+    s = dec.read_page();
+    REQUIRE(s == second);
+    REQUIRE(s->state == ogg::RAW_READY);
+
+    s = dec.read_page();
+    REQUIRE(s == third);
+    REQUIRE(s->state == ogg::TAGS_READY);
+}
 
 // Encoding is trickier, and might as well be done in actions_test.cc, given
 // opustags::edit_tags covers all of Encoder's regular code.
