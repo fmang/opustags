@@ -54,4 +54,10 @@ TEST_CASE("Tag manipulation test", "[tags]")
         tags.set("TITLE=Foo=Bar");
         REQUIRE(tags.get("TITLE") == "Foo=Bar");
     }
+
+    SECTION("Case insensitiveness for keys") {
+        Tags tags;
+        tags.set("TiTlE=Boop");
+        REQUIRE(tags.get("tiTLE") == "Boop");
+    }
 }
