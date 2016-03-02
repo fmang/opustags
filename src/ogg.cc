@@ -265,7 +265,7 @@ void ogg::Encoder::write_tags(int streamno, const Tags &tags)
     op.b_o_s = 0;
     op.e_o_s = 0;
     op.granulepos = 0;
-    op.packetno = 1; // TODO ensure it's not 2
+    op.packetno = 1; // checked on a file from ffmpeg
 
     std::string data = render_opustags(tags);
     op.bytes = data.size();

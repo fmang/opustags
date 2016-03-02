@@ -5,7 +5,7 @@
 
 using namespace opustags;
 
-TEST_CASE("decoding a single-stream file", "[ogg]")
+TEST_CASE("decoding a single-stream Ogg Opus file", "[ogg]")
 {
     std::ifstream src("../tests/samples/mystery.ogg");
     ogg::Decoder dec(src);
@@ -29,8 +29,18 @@ TEST_CASE("decoding garbage", "[ogg]")
     REQUIRE_THROWS(dec.read_page());
 }
 
+TEST_CASE("decoding an Ogg Vorbis file", "[ogg]")
+{
+    std::ifstream src("../tests/samples/beep.ogg");
+    ogg::Decoder dec(src);
+
+    std::shared_ptr<ogg::Stream> s = dec.read_page();
+    REQUIRE(s != nullptr);
+    REQUIRE(s->state == ogg::RAW_READY);
+    REQUIRE(s->type == ogg::UNKNOWN_STREAM);
+}
+
 // TODO decoding a multi-stream file
-// TODO decoding a vorbis ogg stream
 
 // Encoding is trickier, and might as well be done in actions_test.cc, given
 // opustags::edit_tags covers all of Encoder's regular code.
