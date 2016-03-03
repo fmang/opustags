@@ -105,7 +105,7 @@ TEST_CASE("editing one stream", "[actions]")
     {
         ogg::Decoder dec(in);
         ogg::Encoder enc(out);
-        InsertionTagsHandler editor(147710457, "pwnd", "yes");
+        InsertionTagsHandler editor(-336916309, "pwnd", "yes");
         edit_tags(dec, enc, editor);
     }
 
@@ -124,6 +124,7 @@ TEST_CASE("editing one stream", "[actions]")
             s2[i] = b.read_page();
         }
 
+        REQUIRE(s2[0]->stream.serialno == -336916309);
         REQUIRE(s2[0]->type == ogg::OPUS_STREAM);
         REQUIRE(s2[1]->type == ogg::UNKNOWN_STREAM);
         REQUIRE(s2[2]->type == ogg::OPUS_STREAM);
