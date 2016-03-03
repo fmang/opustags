@@ -7,8 +7,10 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler)
     std::shared_ptr<ogg::Stream> s;
     while (!handler.done()) {
         s = dec.read_page();
-        if (s == nullptr)
+        if (s == nullptr) {
+            handler.end_of_stream();
             break; // end of stream
+        }
         switch (s->state) {
             case ogg::HEADER_READY:
                 if (!handler.relevant(s->stream.serialno))
@@ -28,7 +30,7 @@ void opustags::edit_tags(
     ogg::Decoder &in, ogg::Encoder &out, ITagsHandler &handler)
 {
     std::shared_ptr<ogg::Stream> s;
-    while (true) {
+    for (;;) {
         s = in.read_page();
         if (s == nullptr)
             break; // end of stream
@@ -60,4 +62,5 @@ void opustags::edit_tags(
                 ;
         }
     }
+    handler.end_of_stream();
 }

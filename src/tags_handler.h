@@ -30,6 +30,15 @@ namespace opustags {
         // use keeping reading the file for new streams. In that case, a true
         // return value would abort any further processing.
         virtual bool done() = 0;
+
+        // Signals the end of the stream.
+        // If after this function is called, done() returns false, it's an
+        // error. However, it would be better to raise the error inside
+        // end_of_stream().
+        // For example, if you expect to find the stream #1 and reach the
+        // end-of-stream before finding it, better tell the user that you
+        // didn't do what he expected.
+        virtual void end_of_stream() {}
     };
 
 }
