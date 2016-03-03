@@ -22,7 +22,7 @@ TEST_CASE("Tag manipulation test", "[tags]")
         tags.add("b", "2");
         REQUIRE(tags.get_all().size() == 2);
         tags.clear();
-        REQUIRE(tags.get_all().size() == 0);
+        REQUIRE(tags.get_all().empty());
     }
 
     SECTION("Maintaing order of insertions") {
@@ -66,7 +66,7 @@ TEST_CASE("Tag manipulation test", "[tags]")
         tags.add("ARTIST", "You");
         tags.add("ARTIST", "Me");
         tags.remove("ARTIST");
-        REQUIRE(tags.get_all().size() == 0);
+        REQUIRE(tags.get_all().empty());
     }
 
     SECTION("Raw set") {
@@ -77,7 +77,9 @@ TEST_CASE("Tag manipulation test", "[tags]")
 
     SECTION("Case insensitiveness for keys") {
         Tags tags;
-        tags.add("TiTlE=Boop");
-        REQUIRE(tags.get("tiTLE") == "Boop");
+        tags.add("TITLE", "Boop");
+        REQUIRE(tags.get("title") == "Boop");
+        tags.remove("titLE");
+        REQUIRE(tags.get_all().empty());
     }
 }

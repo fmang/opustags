@@ -3,6 +3,17 @@
 
 using namespace opustags;
 
+// ASCII only, but for tag keys it's good enough
+static bool iequals(const std::string &a, const std::string &b)
+{
+    if (a.size() != b.size())
+        return false;
+    for (size_t i = 0; i < a.size(); i++)
+        if (std::tolower(a[i]) != std::tolower(b[i]))
+            return false;
+    return true;
+}
+
 const std::vector<Tag> Tags::get_all() const
 {
     return tags;
@@ -11,7 +22,7 @@ const std::vector<Tag> Tags::get_all() const
 std::string Tags::get(const std::string &key) const
 {
     for (auto &tag : tags)
-        if (tag.key == key)
+        if (iequals(tag.key, key))
             return tag.value;
     throw std::runtime_error("Tag '" + key + "' not found.");
 }
@@ -43,7 +54,7 @@ void Tags::remove(const std::string &key)
         tags.begin(),
         tags.end(),
         std::back_inserter(new_tags),
-        [&](const Tag &tag) { return tag.key != key; });
+        [&](const Tag &tag) { return !iequals(tag.key, key); });
     tags = new_tags;
 }
 
@@ -52,5 +63,5 @@ bool Tags::contains(const std::string &key) const
     return std::count_if(
         tags.begin(),
         tags.end(),
-        [&](const Tag &tag) { return tag.key == key; }) > 0;
+        [&](const Tag &tag) { return iequals(tag.key, key); }) > 0;
 }
