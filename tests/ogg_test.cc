@@ -134,5 +134,11 @@ TEST_CASE("decoding a malicious Ogg Opus file", "[ogg]")
     REQUIRE_THROWS(dec.read_page());
 }
 
+TEST_CASE("decoding a bad stream", "[ogg]")
+{
+    std::ifstream in("uioprheuio");
+    REQUIRE_THROWS(std::make_shared<ogg::Decoder>(in));
+}
+
 // Encoding is trickier, and might as well be done in actions_test.cc, given
 // opustags::edit_tags covers all of Encoder's regular code.

@@ -146,6 +146,8 @@ void ogg::Stream::downgrade()
 ogg::Decoder::Decoder(std::istream &in)
     : input(in)
 {
+    if (!in)
+        throw std::runtime_error("invalid stream to decode");
     input.exceptions(std::ifstream::badbit);
     ogg_sync_init(&sync);
 }
@@ -209,6 +211,8 @@ bool ogg::Decoder::buff()
 ogg::Encoder::Encoder(std::ostream &out)
     : output(out)
 {
+    if (!output)
+        throw std::runtime_error("invalid stream to decode");
     output.exceptions(std::ifstream::badbit);
 }
 
