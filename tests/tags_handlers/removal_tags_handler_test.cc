@@ -15,8 +15,8 @@ TEST_CASE("Removal tags handler test")
         RemovalTagsHandler handler(streamno, expected_tag_key);
 
         Tags tags;
-        tags.set(expected_tag_key, dummy_value);
-        tags.set(other_tag_key, dummy_value);
+        tags.add(expected_tag_key, dummy_value);
+        tags.add(other_tag_key, dummy_value);
 
         REQUIRE(tags.get_all().size() == 2);
         REQUIRE(handler.edit(streamno, tags));
@@ -30,10 +30,10 @@ TEST_CASE("Removal tags handler test")
         RemovalTagsHandler handler(streamno);
 
         Tags tags;
-        tags.set("z", "value1");
-        tags.set("a", "value2");
-        tags.set("y", "value3");
-        tags.set("c", "value4");
+        tags.add("z", "value1");
+        tags.add("a", "value2");
+        tags.add("y", "value3");
+        tags.add("c", "value4");
 
         REQUIRE(tags.get_all().size() == 4);
         REQUIRE(handler.edit(streamno, tags));

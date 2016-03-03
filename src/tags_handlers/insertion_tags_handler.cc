@@ -26,6 +26,6 @@ bool InsertionTagsHandler::edit_impl(Tags &tags)
     if (tags.contains(tag_key))
         throw TagAlreadyExistsError(tag_key);
 
-    tags.set(tag_key, tag_value);
+    tags.add(tag_key, tag_value);
     return true;
 }

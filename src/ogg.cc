@@ -121,7 +121,7 @@ void ogg::Stream::parse_opustags(const ogg_packet &op)
         uint32_t comment_length = le32toh(*reinterpret_cast<uint32_t*>(data));
         if (remaining - 4 < comment_length)
             throw std::runtime_error("no space for comment contents");
-        tags.set(std::string(data + 4, comment_length));
+        tags.add(std::string(data + 4, comment_length));
         data += 4 + comment_length;
         remaining -= 4 + comment_length;
     }
@@ -290,12 +290,12 @@ std::string ogg::Encoder::render_opustags(const Tags &tags)
     length = htole32(assocs.size());
     s.sputn(reinterpret_cast<char*>(&length), 4);
 
-    for (auto assoc : assocs) {
-        length = htole32(assoc.first.size() + 1 + assoc.second.size());
+    for (const auto assoc : assocs) {
+        length = htole32(assoc.key.size() + 1 + assoc.value.size());
         s.sputn(reinterpret_cast<char*>(&length), 4);
-        s.sputn(assoc.first.data(), assoc.first.size());
+        s.sputn(assoc.key.data(), assoc.key.size());
         s.sputc('=');
-        s.sputn(assoc.second.data(), assoc.second.size());
+        s.sputn(assoc.value.data(), assoc.value.size());
     }
 
     s.sputn(tags.extra.data(), tags.extra.size());

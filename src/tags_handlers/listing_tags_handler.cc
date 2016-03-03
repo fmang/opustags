@@ -11,6 +11,6 @@ ListingTagsHandler::ListingTagsHandler(
 
 void ListingTagsHandler::list_impl(const Tags &tags)
 {
-    for (const auto &kv : tags.get_all())
-        output_stream << std::get<0>(kv) << "=" << std::get<1>(kv) << "\n";
+    for (const auto &tag : tags.get_all())
+        output_stream << tag.key << "=" << tag.value << "\n";
 }

@@ -12,7 +12,7 @@ TEST_CASE("Modification tags handler test")
     const auto new_value = "dummy 2";
 
     Tags tags;
-    tags.set(first_tag_key, dummy_value);
+    tags.add(first_tag_key, dummy_value);
 
     REQUIRE(tags.get_all().size() == 1);
 

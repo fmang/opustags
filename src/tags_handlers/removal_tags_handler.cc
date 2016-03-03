@@ -23,10 +23,9 @@ bool RemovalTagsHandler::edit_impl(Tags &tags)
 {
     if (tag_key.empty())
     {
-        const auto all_tags = tags.get_all();
-        for (const auto &kv : all_tags)
-            tags.remove(std::get<0>(kv));
-        return !all_tags.empty();
+        const auto anything_removed = tags.get_all().size() > 0;
+        tags.clear();
+        return anything_removed;
     }
     else
     {

@@ -3,63 +3,54 @@
 
 using namespace opustags;
 
-Tags::Tags() : max_index(0)
+const std::vector<Tag> Tags::get_all() const
 {
-}
-
-const std::vector<std::pair<std::string, std::string>> Tags::get_all() const
-{
-    std::vector<std::string> keys;
-    for (const auto &kv : key_to_value)
-        keys.push_back(kv.first);
-
-    std::sort(
-        keys.begin(),
-        keys.end(),
-        [&](const std::string &a, const std::string &b)
-        {
-            return key_to_index.at(a) < key_to_index.at(b);
-        });
-
-    std::vector<std::pair<std::string, std::string>> result;
-    for (const auto &key : keys) {
-        result.push_back(
-            std::make_pair(
-                key, key_to_value.at(key)));
-    }
-
-    return result;
+    return tags;
 }
 
 std::string Tags::get(const std::string &key) const
 {
-    return key_to_value.at(key);
+    for (auto &tag : tags)
+        if (tag.key == key)
+            return tag.value;
+    throw std::runtime_error("Tag '" + key + "' not found.");
 }
 
-void Tags::set(const std::string &key, const std::string &value)
+void Tags::add(const std::string &key, const std::string &value)
 {
-    key_to_value[key] = value;
-    key_to_index[key] = max_index;
-    max_index++;
+    tags.push_back({key, value});
 }
 
-void Tags::set(const std::string &assoc)
+void Tags::clear()
+{
+    tags.clear();
+}
+
+void Tags::add(const std::string &assoc)
 {
     size_t eq = assoc.find_first_of('=');
     if (eq == std::string::npos)
         throw std::runtime_error("misconstructed tag");
     std::string name = assoc.substr(0, eq);
     std::string value = assoc.substr(eq + 1);
-    set(name, value);
+    add(name, value);
 }
 
 void Tags::remove(const std::string &key)
 {
-    key_to_value.erase(key);
-    key_to_index.erase(key);
+    std::vector<Tag> new_tags;
+    std::copy_if(
+        tags.begin(),
+        tags.end(),
+        std::back_inserter(new_tags),
+        [&](const Tag &tag) { return tag.key != key; });
+    tags = new_tags;
 }
 
 bool Tags::contains(const std::string &key) const
 {
-    return key_to_value.find(key) != key_to_value.end();
+    return std::count_if(
+        tags.begin(),
+        tags.end(),
+        [&](const Tag &tag) { return tag.key == key; }) > 0;
 }
