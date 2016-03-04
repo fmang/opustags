@@ -3,9 +3,9 @@
 
 using namespace opustags;
 
-TEST_CASE("Tag manipulation test", "[tags]")
+TEST_CASE("tag manipulation", "[tags]")
 {
-    SECTION("Basic operations") {
+    SECTION("basic operations") {
         Tags tags;
         REQUIRE(!tags.contains("a"));
         tags.add("a", "1");
@@ -16,7 +16,7 @@ TEST_CASE("Tag manipulation test", "[tags]")
         REQUIRE_THROWS(tags.get("a"));
     }
 
-    SECTION("Clearing") {
+    SECTION("clearing") {
         Tags tags;
         tags.add("a", "1");
         tags.add("b", "2");
@@ -25,7 +25,7 @@ TEST_CASE("Tag manipulation test", "[tags]")
         REQUIRE(tags.get_all().empty());
     }
 
-    SECTION("Maintaing order of insertions") {
+    SECTION("maintaing order of insertions") {
         Tags tags;
         tags.add("z", "1");
         tags.add("y", "2");
@@ -52,7 +52,7 @@ TEST_CASE("Tag manipulation test", "[tags]")
         REQUIRE(tags.get_all()[3].key == "gamma");
     }
 
-    SECTION("Key to multiple values") {
+    SECTION("key to multiple values") {
         // ARTIST is set once per artist.
         // https://www.xiph.org/vorbis/doc/v-comment.html
         Tags tags;
@@ -61,7 +61,7 @@ TEST_CASE("Tag manipulation test", "[tags]")
         REQUIRE(tags.get_all().size() == 2);
     }
 
-    SECTION("Removing multivalues should remove all of them") {
+    SECTION("removing multivalues should remove all of them") {
         Tags tags;
         tags.add("ARTIST", "You");
         tags.add("ARTIST", "Me");
@@ -69,13 +69,13 @@ TEST_CASE("Tag manipulation test", "[tags]")
         REQUIRE(tags.get_all().empty());
     }
 
-    SECTION("Raw set") {
+    SECTION("raw set") {
         Tags tags;
         tags.add("TITLE=Foo=Bar");
         REQUIRE(tags.get("TITLE") == "Foo=Bar");
     }
 
-    SECTION("Case insensitiveness for keys") {
+    SECTION("case insensitiveness for keys") {
         Tags tags;
         tags.add("TITLE", "Boop");
         REQUIRE(tags.get("title") == "Boop");

@@ -35,20 +35,20 @@ bool DummyTagsHandler::edit_impl(Tags &)
     return true;
 }
 
-TEST_CASE("Stream-based tags handler test")
+TEST_CASE("stream-based tags handler", "[tags_handlers]")
 {
-    SECTION("Concrete stream") {
+    SECTION("concrete stream") {
         const auto relevant_stream_number = 1;
         const auto irrelevant_stream_number = 2;
         Tags dummy_tags;
         DummyTagsHandler handler(relevant_stream_number);
 
-        SECTION("Relevance") {
+        SECTION("relevance") {
             REQUIRE(!handler.relevant(irrelevant_stream_number));
             REQUIRE(handler.relevant(relevant_stream_number));
         }
 
-        SECTION("Listing") {
+        SECTION("listing") {
             handler.list(irrelevant_stream_number, dummy_tags);
             REQUIRE(!handler.list_fired);
             handler.list(relevant_stream_number, dummy_tags);
@@ -62,14 +62,14 @@ TEST_CASE("Stream-based tags handler test")
             REQUIRE(handler.edit_fired);
         }
 
-        SECTION("Finish through listing") {
+        SECTION("finish through listing") {
             REQUIRE(!handler.edit(irrelevant_stream_number, dummy_tags));
             REQUIRE(!handler.done());
             REQUIRE(handler.edit(relevant_stream_number, dummy_tags));
             REQUIRE(handler.done());
         }
 
-        SECTION("Finish through editing") {
+        SECTION("finish through editing") {
             handler.list(irrelevant_stream_number, dummy_tags);
             REQUIRE(!handler.done());
             handler.list(relevant_stream_number, dummy_tags);
@@ -77,7 +77,7 @@ TEST_CASE("Stream-based tags handler test")
         }
     }
 
-    SECTION("Any stream") {
+    SECTION("any stream") {
         Tags dummy_tags;
         DummyTagsHandler handler(StreamTagsHandler::ALL_STREAMS);
         REQUIRE(handler.relevant(1));

@@ -43,7 +43,7 @@ bool DummyTagsHandler::done()
     return done_ret;
 }
 
-TEST_CASE("Composite tags handler test")
+TEST_CASE("composite tags handler", "[tags_handlers]")
 {
     auto handler1 = std::make_shared<DummyTagsHandler>();
     auto handler2 = std::make_shared<DummyTagsHandler>();
@@ -51,7 +51,7 @@ TEST_CASE("Composite tags handler test")
     composite_handler.add_handler(handler1);
     composite_handler.add_handler(handler2);
 
-    SECTION("Relevance") {
+    SECTION("relevance") {
         const int dummy_streamno = 1;
         handler1->relevant_ret = true;
         handler2->relevant_ret = true;
@@ -62,7 +62,7 @@ TEST_CASE("Composite tags handler test")
         REQUIRE(!composite_handler.relevant(dummy_streamno));
     }
 
-    SECTION("Listing") {
+    SECTION("listing") {
         const int dummy_streamno = 1;
         Tags dummy_tags;
         REQUIRE(!handler1->list_fired);
@@ -72,7 +72,7 @@ TEST_CASE("Composite tags handler test")
         REQUIRE(handler2->list_fired);
     }
 
-    SECTION("Editing") {
+    SECTION("editing") {
         const int dummy_streamno = 1;
         Tags dummy_tags;
         handler1->edit_ret = true;
@@ -84,7 +84,7 @@ TEST_CASE("Composite tags handler test")
         REQUIRE(!composite_handler.edit(dummy_streamno, dummy_tags));
     }
 
-    SECTION("Finish") {
+    SECTION("finish") {
         handler1->done_ret = true;
         handler2->done_ret = true;
         REQUIRE(composite_handler.done());

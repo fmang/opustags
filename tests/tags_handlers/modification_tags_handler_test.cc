@@ -3,7 +3,7 @@
 
 using namespace opustags;
 
-TEST_CASE("Modification tags handler test")
+TEST_CASE("modification tags handler", "[tags_handlers]")
 {
     const auto streamno = 1;
     const auto first_tag_key = "tag_key";

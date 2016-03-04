@@ -4,7 +4,7 @@
 
 using namespace opustags;
 
-TEST_CASE("Listing tags handler test")
+TEST_CASE("listing tags handler", "[tags_handlers]")
 {
     const auto streamno = 1;
 

@@ -3,7 +3,7 @@
 
 using namespace opustags;
 
-TEST_CASE("Insertion tags handler test")
+TEST_CASE("insertion tags handler", "[tags_handlers]")
 {
     Tags tags;
     const auto streamno = 1;

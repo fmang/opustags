@@ -41,7 +41,7 @@ template<typename T> static T *get_handler(
     return handler;
 }
 
-TEST_CASE("Options parsing test")
+TEST_CASE("option parsing", "[options]")
 {
     SECTION("--help") {
         REQUIRE(retrieve_options({"--help"}).show_help);

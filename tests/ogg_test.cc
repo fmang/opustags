@@ -80,7 +80,7 @@ TEST_CASE("decoding a multi-stream file", "[ogg]")
     REQUIRE(s->state == ogg::TAGS_READY);
 }
 
-void craft_stream(std::ostream &out, const std::string &tags_data)
+static void craft_stream(std::ostream &out, const std::string &tags_data)
 {
     ogg::Encoder enc(out);
     ogg_stream_state os;

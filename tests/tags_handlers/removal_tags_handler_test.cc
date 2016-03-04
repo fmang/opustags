@@ -3,11 +3,11 @@
 
 using namespace opustags;
 
-TEST_CASE("Removal tags handler test")
+TEST_CASE("removal tags handler", "[tags_handlers]")
 {
     const auto streamno = 1;
 
-    SECTION("Removing a single tag")
+    SECTION("removing a single tag")
     {
         const auto expected_tag_key = "tag_key";
         const auto other_tag_key = "other_tag_key";
@@ -25,7 +25,7 @@ TEST_CASE("Removal tags handler test")
         REQUIRE_THROWS(handler.edit(streamno, tags));
     }
 
-    SECTION("Removing all tags")
+    SECTION("removing all tags")
     {
         RemovalTagsHandler handler(streamno);
 

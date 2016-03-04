@@ -10,7 +10,7 @@
 
 using namespace opustags;
 
-bool same_streams(ogg::Decoder &a, ogg::Decoder &b)
+static bool same_streams(ogg::Decoder &a, ogg::Decoder &b)
 {
     std::shared_ptr<ogg::Stream> sa, sb;
     ogg_packet pa, pb;
@@ -46,7 +46,7 @@ bool same_streams(ogg::Decoder &a, ogg::Decoder &b)
     return true;
 }
 
-bool same_files(std::istream &a, std::istream &b)
+static bool same_files(std::istream &a, std::istream &b)
 {
     static const size_t block = 1024;
     char ba[block], bb[block];
