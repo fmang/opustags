@@ -23,9 +23,6 @@ std::string InsertionTagsHandler::get_tag_value() const
 
 bool InsertionTagsHandler::edit_impl(Tags &tags)
 {
-    if (tags.contains(tag_key))
-        throw TagAlreadyExistsError(tag_key);
-
     tags.add(tag_key, tag_value);
     return true;
 }

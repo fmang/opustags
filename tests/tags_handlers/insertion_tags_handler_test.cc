@@ -15,5 +15,8 @@ TEST_CASE("insertion tags handler", "[tags_handlers]")
     REQUIRE(handler.edit(streamno, tags));
     REQUIRE(tags.get_all().size() == 1);
     REQUIRE(tags.get(expected_tag_key) == expected_tag_value);
-    REQUIRE_THROWS(handler.edit(streamno, tags));
+
+    REQUIRE(handler.edit(streamno, tags));
+    REQUIRE(tags.get_all().size() == 2);
+    REQUIRE(tags.get(expected_tag_key) == expected_tag_value);
 }
