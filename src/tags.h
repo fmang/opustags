@@ -19,8 +19,8 @@ namespace opustags {
         const std::vector<Tag> get_all() const;
 
         std::string get(const std::string &key) const;
+        void add(const Tag &tag);
         void add(const std::string &key, const std::string &value);
-        void add(const std::string &assoc); // KEY=value
         void remove(const std::string &key);
         bool contains(const std::string &key) const;
         void clear();
@@ -34,5 +34,7 @@ namespace opustags {
     private:
         std::vector<Tag> tags;
     };
+
+    Tag parse_tag(const std::string &assoc); // KEY=value
 
 }

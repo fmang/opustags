@@ -122,7 +122,7 @@ void ogg::Stream::parse_opustags(const ogg_packet &op)
         uint32_t comment_length = le32toh(*reinterpret_cast<uint32_t*>(data));
         if (remaining - 4 < comment_length)
             throw std::runtime_error("no space for comment contents");
-        tags.add(std::string(data + 4, comment_length));
+        tags.add(parse_tag(std::string(data + 4, comment_length)));
         data += 4 + comment_length;
         remaining -= 4 + comment_length;
     }

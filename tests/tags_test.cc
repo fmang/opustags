@@ -69,10 +69,10 @@ TEST_CASE("tag manipulation", "[tags]")
         REQUIRE(tags.get_all().empty());
     }
 
-    SECTION("raw set") {
-        Tags tags;
-        tags.add("TITLE=Foo=Bar");
-        REQUIRE(tags.get("TITLE") == "Foo=Bar");
+    SECTION("tag parsing") {
+        Tag t = parse_tag("TITLE=Foo=Bar");
+        REQUIRE(t.key == "TITLE");
+        REQUIRE(t.value == "Foo=Bar");
     }
 
     SECTION("case insensitiveness for keys") {
