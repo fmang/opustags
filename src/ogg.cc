@@ -110,12 +110,13 @@ void ogg::Stream::parse_opustags(const ogg_packet &op)
     // User comments count
     if (remaining < 4)
         throw std::runtime_error("no space for user comment list length");
-    uint32_t comment_count = le32toh(*reinterpret_cast<uint32_t*>(data));
+    long comment_count = le32toh(*reinterpret_cast<uint32_t*>(data));
     data += 4;
     remaining -= 4;
 
     // Actual comments
-    for (uint32_t i = 0; i < comment_count; i++) {
+    // We iterate on a long type to prevent infinite looping when comment_count == UINT32_MAX.
+    for (long i = 0; i < comment_count; i++) {
         if (remaining < 4)
             throw std::runtime_error("no space for user comment length");
         uint32_t comment_length = le32toh(*reinterpret_cast<uint32_t*>(data));
