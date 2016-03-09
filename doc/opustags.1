@@ -2,120 +2,195 @@
 .SH NAME
 opustags \- Opus comment editor
 .SH SYNOPSIS
-.B opustags --help
+.B opustags \-\-help
 .br
 .B opustags
 .RI [ OPTIONS ]
 .I INPUT
 .br
 .B opustags
-.I OPTIONS
-.B -o
+.RI [ OPTIONS ]
+.B \-o
 .I OUTPUT INPUT
 .SH DESCRIPTION
 .PP
 \fBopustags\fP can read and edit the comment header of an Opus file.
-It has two modes: read-only for tag listing, and read-write for tag edition.
+It has two modes of operation: read\-only for tag listing, and read\-write for
+tag edition.
 .PP
-In read-only mode, only the beginning of \fIINPUT\fP is read, and the tags are
-printed on \fBstdout\fP.
-\fIINPUT\fP can either be the name of a file or \fB-\fP to read from \fBstdin\fP.
-You can use the options below to edit the tags before printing them.
-This could be useful to preview some changes before writing them.
+Edition mode is triggered by the \fB\-\-ouput\fP and \fB\-\-in\-place\fP
+options. Otherwise, the default mode is listing.
 .PP
-As for the edition mode, you need to specify an output file (or \fB-\fP for
-\fBstdout\fP). It must be different from the input file.
-You may want to use \fB--overwrite\fP if you know what you're doing.
-To overwrite the input file, use \fB--in-place\fP.
+Edition options are incompatible in listing mode, the same way as listing
+options are incompatible in edition mode.
 .PP
-Tag edition can be made with the \fB--add\fP, \fB--delete\fP and \fB--set\fP
+\fIINPUT\fP can either be the name of a file or \fB\-\fP to read from standard input.
+.SS Listing
+.PP
+In listing mode, the tags are printed on standard output. Two listing formats
+are available: pretty and raw. By default, pretty listing is implied if the
+output is a terminal, and raw listing if it isn't.
+.PP
+Pretty listing is enabled with the option \fB\-\-list\fP. Colors are enabled
+unless you use the \fB\-\-no\-color\fP option.
+.PP
+Dumping with \fB\-\-export\fP outputs the raw tags in UTF-8, for automatic
+processing. You can restore exported tags with the \fB\-\-import\fP option.
+.SS Editing
+.PP
+As for the edition mode, you need to specify an output file (or \fB\-\fP for
+standard output). It must be different from the input file. You may want to
+use \fB\-\-overwrite\fP if you know what you're doing. To overwrite the input
+file, use \fB\-\-in\-place\fP.
+.PP
+Tag edition can be made with the \fB\-\-add\fP, \fB\-\-delete\fP and \fB\-\-set\fP
 options. These don't conflict with each other, and you can use these options as
 many times as you wish.
 .PP
-In case an Ogg file contains multiple streams, the \fB--stream\fP option lets
-you specify the particular stream to modify. You can modify several streams at
-once by using this option more than once. Only operations specified after this
-option and relevant, and until another \fB--stream\fP option is found.
-.PP
-You can delete all the tags with \fB--delete-all\fP. This operation can be
-combined with \fB--add\fP to set new tags without being bothered by the old
+You can delete all the tags with \fB\-\-delete\-all\fP. This operation can be
+combined with \fB\-\-add\fP to set new tags without being bothered by the old
 ones.
 .PP
-If you want to process tags yourself, you can use the \fB--import\fP option
-which will cause \fBopustags\fP to read tags from \fBstdin\fP.
-The format is the same as the one used for output; that is to say,
-newline-separated \fIFIELD=Value\fP assignment. Note that this implies
-\fB--delete-all\fP.
+If you want to process tags yourself, you can use the \fB\-\-import\fP option
+which will cause \fBopustags\fP to read tags from standard input. The format
+is the same as the one used for output with \fB\-\-export\fP.
+Note that this option implies \fB\-\-delete\-all\fP.
+Also, input is read as UTF-8.
 .PP
-You can use \fB--edit\fP to spawn your \fBEDITOR\fP and edit the tags
-interactively. In read-write mode, if no other options is specified, this one
+You can use \fB\-\-edit\fP to spawn your \fBEDITOR\fP and edit the tags
+interactively. In read\-write mode, if no other option is specified, this one
 is implied.
+.SS Stream Selection
+.PP
+In case an Ogg file contains multiple streams, the \fB\-\-stream\fP option lets
+you specify the particular streams to modify. You can modify several streams in
+different ways by using this option more than once. Only operations specified
+after this option and relevant, and until another \fB\-\-stream\fP option is
+found.
+.PP
+	opustags \-\-stream 1 \-\-stream 2 \-\-list # BAD
+.PP
+The above command would only show the second stream. To display both streams,
+use instead:
+.PP
+	opustags \-\-stream 1,2 \-\-list
+.PP
+See also the examples at the end of this page, and the documentation of the
+\fB\-\-stream\fP option.
+.PP
+You can easily find the id's of the available streams by calling opustags with
+no options to list the tags. Usually, you'll only have one stream, id 1.
 .SH OPTIONS
+.SS General
 .TP
 .B \-h, \-\-help
 Display a brief description of the options.
 .TP
-.B \-o, \-\-output \fIFILE\fI
-Edition mode. The input file will be read, its tags edited, then written to the
-specified output file. If \fIFILE\fP is \fB-\fP then the resulting Opus file
-will be written to \fBstdout\fP. As the input file is read incrementally, the
-output file can't be the same as the input file.
-.TP
-.B \-i, \-\-in-place \fR[\fP\fISUFFIX\fP\fR]\fP
-Use this when you want to modify the input file in-place. This creates a
-temporary file with the specified suffix (\fI.otmp\fP by default). This implies
-\fB--overwrite\fP in that if a file with the same temporary name already
-exists, it will be overwritten without warning. Of course, this overwrites
-the input file too. You cannot use this option when the input file is \fBstdin\fP.
-.TP
-.B \-y, \-\-overwrite
-By default, \fBopustags\fP refuses to overwrite an already existent file. Use
-this option to allow that. Note that this doesn't allow in-place edition, the
-output file needs to be different from the input file.
+.B \-V, \-\-version
+Display the version of opustags.
 .TP
 .B \-\-stream \fIID\fP
-Specify the stream that will be affected by the following options.
-Streams are numbered from 1, by their order of apparition in the file.
-The special id \fBall\fP selects all the Opus streams found, and is the default
+Specify the stream that will be affected by the options following it. The
+special id \fBall\fP selects all the Opus streams found, and is the default
 value.
-This option should be set if the input file contains more than one Opus stream,
-otherwise a warning is generated. If in-place modification is selected, this
-warning becomes a fatal error.
+.sp
+The identifer of a stream is determined from its position in the file. The
+first Opus stream found will have id 1, the second 2, and so on. Non-Opus
+streams are not numbered.
+.sp
+You can select more than one stream with this option by separated id's with commas. For example: \-\-stream 1,3. Ranges are not supported.
+.sp
+In edition mode, this option should be set if the input file contains more than
+one Opus stream, otherwise a warning is generated. If in\-place modification is
+selected, this warning becomes a fatal error.
+.SS Listing
+.TP
+.B \-l, \-\-list
+Display a pretty listing of all the tags found. This is the default option in
+read\-only mode if the standard output is a terminal.
+.TP
+.B \-\-no\-color
+By default, when listing tags with \fB\-\-list\fP, colors are used. Use this
+option to disable it.
+.TP
+.B \-\-export
+Dump the tags on standard output in a format compatible with \fB\-\-import\fP.
+If only one stream is specified, the output format is compatible with other
+tools such as vorbiscomment.
+.sp
+When exporting, output is encoded in UTF\-8 in
+order not to lose information.
+.TP
+.B \-\-full
+For performance reasons, only the beginning of the input is read, because
+that's where tags are expected. If, however, you think you have an
+unconventional file and you suspect that opustags is missing some streams, you
+can use this option to force it to read the whole file.
+.sp
+This option shouldn't be needed, but if you do find files that require this
+option, please submit a bug report (see the bottom of the page).
+.SS Edition
+.TP
+.B \-o, \-\-output \fIFILE\fI
+Edition mode. The input file will be read, its tags edited, then written to the
+specified output file. If \fIFILE\fP is \fB\-\fP then the resulting Opus file
+will be written to standard output. The output file can't be the same as the
+input file, use \fB\-\-in\-place\fP instead. This option may be specied at most
+once.
+.TP
+.B \-i, \-\-in\-place \fR[\fP\fISUFFIX\fP\fR]\fP
+Use this when you want to modify the input file in\-place. This creates a
+temporary file with the specified suffix (\fI.otmp\fP by default). This implies
+\fB\-\-overwrite\fP in that if a file with the same temporary name already
+exists, it will be overwritten without warning. Of course, this overwrites the
+input file too. You cannot use this option when the input file is the standard
+input.
+.TP
+.B \-y, \-\-overwrite
+By default, opustags refuses to overwrite an already existent file. Use
+this option to allow that.
 .TP
 .B \-d, \-\-delete \fIFIELD\fP
 Delete all the tags whose field name is \fIFIELD\fP. Note that one tag key,
-like \fIARTIST\fP, may appear more than once.
+like \fIARTIST\fP, may appear more than once, in which case all of those are
+deleted.
 .TP
 .B \-a, \-\-add \fIFIELD=VALUE\fP
 Add a tag. It doesn't matter if a tag of the same type already exist (think
 the case where there are several artists). You can use this option as many
-times as needed, with the same field names or not. When the \fB--delete\fP
+times as needed, with the same field names or not. When the \fB\-\-delete\fP
 is used with the same \fIFIELD\fP, only the older tags are deleted.
 .TP
 .B \-s, \-\-set \fIFIELD=VALUE\fP
 This option is provided for convenience. It deletes all the fields of the same
-type that may already exist, then adds it with the wanted value.
-This is strictly equivalent to \fB--delete\fP \fIFIELD\fP \fB--add\fP
-\fIFIELD=VALUE\fP. You can combine it with \fB--add\fP to add tags of the same
-type. As deletion occurs before adding, \fB--set\fP won't erase the tags
-added with \fB--add\fP.
+type that may already exist, then adds it with the wanted value. This is
+strictly equivalent to \fB\-\-delete\fP \fIFIELD\fP \fB\-\-add\fP
+\fIFIELD=VALUE\fP. You can combine it with \fB\-\-add\fP to add tags of the
+same type. As deletion occurs before adding, \fB\-\-set\fP won't erase the tags
+added with \fB\-\-add\fP.
 .TP
-.B \-D, \-\-delete-all
+.B \-D, \-\-delete\-all
 Delete all the tags before adding any. When this option is specified, the
-\fB--delete\fP options are ignored. Tags then can be added using \fB--add\fP
-or \fB--set\fP, which, in this case, are equivalent.
+\fB\-\-delete\fP options are meaningless. Tags then can then be added using
+\fB\-\-add\fP or \fB\-\-set\fP, which, in this case, are equivalent.
 .TP
 .B \-\-import
 Set the tags from scratch. All the original tags are deleted and new ones are
-read from \fBstdin\fP. Each line must specify a \fIFIELD=VALUE\fP pair and be
-LF-terminated (except for the last line). Invalid lines are skipped and cause
-a warning to be issued. Blank lines are ignored. This mode could be useful for
-batch processing tags through an utility like \fBsed\fP.
+read from standard input.
+.sp
+Each line must specify a \fIFIELD=VALUE\fP pair and be LF\-terminated (except
+for the last line). Invalid lines are skipped and issue a warning. Blank lines
+are ignored. Lines whose first non-blank character is \fB#\fP are ignored.
+Blank characters at the beginning of a line are also skipped.
+.sp
+Input is read as UTF\-8, disregarding the current locale of your system.
 .TP
 .B \-e, \-\-edit
 Spawn the program specified in the environment variable \fBEDITOR\fP to edit
 tags interactively. If this variable can't be read or is empty, an error
 message is displayed.
+.sp
+The expected format is the same as the one \fB\-\-import\fP expects.
 .SH EXAMPLES
 Here's how you would list all tags in a stream:
 .PP
@@ -124,18 +199,18 @@ Here's how you would list all tags in a stream:
 Here's how you would edit two streams at once, setting the title and artist of
 the first, and only the title of the second:
 .PP
-	opustags --stream 1 --set TITLE=X --set ARTIST=Y --stream 2 --set TITLE=Y in.ogg -o out.ogg
+	opustags \-\-stream 1 \-\-set TITLE=X \-\-set ARTIST=Y \-\-stream 2 \-\-set TITLE=Y in.ogg \-o out.ogg
 .PP
 Here's how you would set two artists:
 .PP
-	opustags --delete ARTIST --add ARTIST=A --add ARTIST=B in.ogg -o out.ogg
+	opustags \-\-delete ARTIST \-\-add ARTIST=A \-\-add ARTIST=B in.ogg \-o out.ogg
 .PP
-Hoping that helped.
+Hoping that helped!
 .SH SEE ALSO
 .BR vorbiscomment (1),
 .BR sed (1)
 .SH AUTHORS
 Frédéric Mangano <fmang+opustags@mg0.fr>,
-rr- <https://github.com/rr->.
+rr\- <https://github.com/rr\->.
 .PP
 Please report issues on GitHub at <https://github.com/fmang/opustags/issues>.
