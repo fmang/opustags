@@ -1,7 +1,6 @@
 #include <iostream>
 #include "options.h"
-
-static const auto version = "2.x";
+#include "version.h"
 
 static void show_usage(const bool include_help)
 {
@@ -29,12 +28,17 @@ static void show_usage(const bool include_help)
         "      --import            set the tags from scratch basing on stanard input\n"
         "  -e, --edit              spawn the $EDITOR and apply --import on the result\n";
 
-    std::cout << "opustags v" << version << "\n";
+    std::cout << "opustags v" << opustags::version_short << "\n";
     std::cout << usage;
     if (include_help) {
         std::cout << "\n";
         std::cout << help;
     }
+}
+
+static void show_version()
+{
+    std::cout << "opustags v" << opustags::version_long << "\n";
 }
 
 int main(int argc, char **argv)
@@ -48,6 +52,10 @@ int main(int argc, char **argv)
         const auto options = opustags::parse_args(argc, argv);
         if (options.show_help) {
             show_usage(true);
+            return EXIT_SUCCESS;
+        }
+        if (options.show_version) {
+            show_version();
             return EXIT_SUCCESS;
         }
 

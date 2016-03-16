@@ -1,0 +1,10 @@
+#pragma once
+
+#include <string>
+
+namespace opustags {
+
+    static const std::string version_short = "@VERSION_SHORT@";
+    static const std::string version_long = "@VERSION_LONG@";
+
+}

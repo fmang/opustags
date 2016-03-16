@@ -33,6 +33,18 @@ file(GLOB_RECURSE test_headers "${CMAKE_SOURCE_DIR}/tests/*.h")
 list(REMOVE_ITEM common_sources "${CMAKE_SOURCE_DIR}/src/main.cc")
 list(REMOVE_ITEM test_sources "${CMAKE_SOURCE_DIR}/tests/main.cc")
 
+# -------
+# Version
+# -------
+execute_process(COMMAND git describe --tags --abbrev=0 OUTPUT_VARIABLE VERSION_SHORT OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND git describe --always --dirty --long --tags OUTPUT_VARIABLE VERSION_LONG OUTPUT_STRIP_TRAILING_WHITESPACE)
+if("${VERSION_SHORT}" STREQUAL "")
+    set(VERSION_SHORT "0.0")
+    set(VERSION_LONG "?")
+endif()
+configure_file("${CMAKE_SOURCE_DIR}/src/version.h.in" "${CMAKE_BINARY_DIR}/generated/version.h" @ONLY)
+include_directories(${CMAKE_BINARY_DIR}/generated)
+
 # -------------------
 # 3rd party libraries
 # -------------------

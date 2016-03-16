@@ -156,16 +156,22 @@ Options opustags::parse_args(const int argc, char **argv)
         }
     }
 
-    if (optind == argc || argv[optind] == NULL) {
-        throw ArgumentError("Missing input path");
+    std::vector<std::string> stray;
+    while (optind < argc)
+        stray.push_back(argv[optind++]);
+
+    if (!options.show_help && !options.show_version)
+    {
+        if (stray.empty())
+            throw ArgumentError("Missing input path");
+
+        options.path_in = stray.at(0);
+        if (options.path_in.empty())
+            throw ArgumentError("Input path cannot be empty");
+
+        if (stray.size() > 1)
+            throw ArgumentError("Extra argument: " + stray.at(1));
     }
-
-    options.path_in = argv[optind++];
-    if (options.path_in.empty())
-        throw ArgumentError("Input path cannot be empty");
-
-    if (optind < argc)
-        throw ArgumentError("Extra argument: " + std::string(argv[optind]));
 
     return options;
 }
