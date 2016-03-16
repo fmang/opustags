@@ -23,17 +23,17 @@ DummyTagsHandler::DummyTagsHandler()
 {
 }
 
-bool DummyTagsHandler::relevant(const int streamno)
+bool DummyTagsHandler::relevant(const int)
 {
     return relevant_ret;
 }
 
-void DummyTagsHandler::list(const int streamno, const Tags &)
+void DummyTagsHandler::list(const int, const Tags &)
 {
     list_fired = true;
 }
 
-bool DummyTagsHandler::edit(const int streamno, Tags &)
+bool DummyTagsHandler::edit(const int, Tags &)
 {
     return edit_ret;
 }
