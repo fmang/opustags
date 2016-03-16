@@ -60,7 +60,8 @@ Options opustags::parse_args(const int argc, char **argv)
                 break;
 
             case 'i':
-                options.in_place = arg.empty() ? ".otmp" : arg;
+                options.path_out = arg.empty() ? ".otmp" : arg;
+                options.in_place = true;
                 break;
 
             case 'y':
