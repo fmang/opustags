@@ -54,6 +54,15 @@ if (NOT EXISTS "${CATCH_PATH}")
     file(DOWNLOAD "http://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp" "${CATCH_PATH}")
 endif()
 
+# ------------
+# Installation
+# ------------
+install(FILES ${CMAKE_SOURCE_DIR}/doc/opustags.1 DESTINATION ${CMAKE_INSTALL_PREFIX}/man/man1)
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/opustags DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+add_custom_target(uninstall COMMAND
+    rm -f "${CMAKE_INSTALL_PREFIX}/man/man1/opustags.1" &&
+    rm -f "${CMAKE_INSTALL_PREFIX}/bin/opustags" )
+
 # -------------------
 # Linking definitions
 # -------------------
