@@ -124,9 +124,12 @@ Options opustags::parse_args(const int argc, char **argv)
         throw ArgumentError("Missing input path");
     }
 
-    options.path_in = argv[optind];
+    options.path_in = argv[optind++];
     if (options.path_in.empty())
         throw ArgumentError("Input path cannot be empty");
+
+    if (optind < argc)
+        throw ArgumentError("Extra argument: " + std::string(argv[optind]));
 
     return options;
 }

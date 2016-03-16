@@ -67,14 +67,15 @@ TEST_CASE("option parsing", "[options]")
     SECTION("--in-place") {
         REQUIRE(!retrieve_options({}).in_place);
         REQUIRE(retrieve_options({}).path_out.empty());
-        REQUIRE(retrieve_options({"--in-place", "ABC"}).in_place);
-        REQUIRE(retrieve_options({"--in-place", "ABC"}).path_out == ".otmp");
+        REQUIRE(retrieve_options({"--in-place", "ABC"}, false).in_place);
+        REQUIRE(
+            retrieve_options({"--in-place", "ABC"}, false).path_out == ".otmp");
         REQUIRE(retrieve_options({"--in-place"}).in_place);
         REQUIRE(retrieve_options({"--in-place"}).path_out == ".otmp");
         REQUIRE(retrieve_options({"--in-place=ABC"}).in_place);
         REQUIRE(retrieve_options({"--in-place=ABC"}).path_out == "ABC");
-        REQUIRE(retrieve_options({"-i", "ABC"}).in_place);
-        REQUIRE(retrieve_options({"-i", "ABC"}).path_out == ".otmp");
+        REQUIRE(retrieve_options({"-i", "ABC"}, false).in_place);
+        REQUIRE(retrieve_options({"-i", "ABC"}, false).path_out == ".otmp");
         REQUIRE(retrieve_options({"-i"}).in_place);
         REQUIRE(retrieve_options({"-i"}).path_out == ".otmp");
         REQUIRE(retrieve_options({"-iABC"}).in_place);
@@ -85,6 +86,7 @@ TEST_CASE("option parsing", "[options]")
         REQUIRE_THROWS(retrieve_options({}, false));
         REQUIRE_THROWS(retrieve_options({""}, false));
         REQUIRE(retrieve_options({"input"}, false).path_in == "input");
+        REQUIRE_THROWS(retrieve_options({"input", "extra argument"}, false));
     }
 
     SECTION("--output") {
