@@ -13,14 +13,21 @@ static void show_usage(const bool include_help)
     static const auto help =
         "Options:\n"
         "  -h, --help              print this help\n"
-        "  -o, --output            write the modified tags to a file\n"
+        "  -V, --version           print version\n"
+        "  -o, --output FILE       write the modified tags to this file\n"
         "  -i, --in-place [SUFFIX] use a temporary file then replace the original file\n"
         "  -y, --overwrite         overwrite the output file if it already exists\n"
+        "      --stream ID         select stream for the next operations\n"
+        "  -l, --list              display a pretty listing of all tags\n"
+        "      --no-color          disable colors in --list output\n"
         "  -d, --delete FIELD      delete all the fields of a specified type\n"
         "  -a, --add FIELD=VALUE   add a field\n"
         "  -s, --set FIELD=VALUE   delete then add a field\n"
         "  -D, --delete-all        delete all the fields!\n"
-        "  -S, --set-all           read the fields from stdin\n";
+        "      --full              enable full file scan\n"
+        "      --export            dump the tags to standard output for --import\n"
+        "      --import            set the tags from scratch basing on stanard input\n"
+        "  -e, --edit              spawn the $EDITOR and apply --import on the result\n";
 
     std::cout << "opustags v" << version << "\n";
     std::cout << usage;

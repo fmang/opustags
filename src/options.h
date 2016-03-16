@@ -12,8 +12,9 @@ namespace opustags
         Options();
 
         bool show_help;
+        bool show_version;
         bool overwrite;
-        bool set_all;
+        bool full;
 
         bool in_place;
         std::string path_in;

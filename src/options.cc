@@ -2,6 +2,10 @@
 #include <regex>
 #include "tags_handlers/insertion_tags_handler.h"
 #include "tags_handlers/modification_tags_handler.h"
+#include "tags_handlers/external_edit_tags_handler.h"
+#include "tags_handlers/export_tags_handler.h"
+#include "tags_handlers/import_tags_handler.h"
+#include "tags_handlers/listing_tags_handler.h"
 #include "tags_handlers/removal_tags_handler.h"
 #include "options.h"
 
@@ -15,16 +19,18 @@ ArgumentError::ArgumentError(const std::string &message)
 Options::Options() :
     show_help(false),
     overwrite(false),
-    set_all(false)
+    full(false)
 {
 }
 
 Options opustags::parse_args(const int argc, char **argv)
 {
-    static const auto short_def = "ho:i::yd:a:s:DS";
+    static const auto short_def = "hVeo:i::yd:a:s:Dl";
 
     static const option long_def[] = {
         {"help",        no_argument,        0, 'h'},
+        {"version",     no_argument,        0, 'V'},
+        {"full",        no_argument,        0, 0},
         {"output",      required_argument,  0, 'o'},
         {"in-place",    optional_argument,  0, 'i'},
         {"overwrite",   no_argument,        0, 'y'},
@@ -32,11 +38,18 @@ Options opustags::parse_args(const int argc, char **argv)
         {"add",         required_argument,  0, 'a'},
         {"stream",      required_argument,  0, 0},
         {"set",         required_argument,  0, 's'},
+        {"list",        no_argument,        0, 'l'},
         {"delete-all",  no_argument,        0, 'D'},
-        {"set-all",     no_argument,        0, 'S'},
+        {"edit",        no_argument,        0, 'e'},
+        {"import",      no_argument,        0, 0},
+        {"export",      no_argument,        0, 0},
+
+        // TODO: parse no-colors
 
         {nullptr, 0, 0, 0}
     };
+
+    // TODO: use --list as default switch
 
     Options options;
 
@@ -55,6 +68,10 @@ Options opustags::parse_args(const int argc, char **argv)
                 options.show_help = true;
                 break;
 
+            case 'V':
+                options.show_version = true;
+                break;
+
             case 'o':
                 if (arg.empty())
                     throw ArgumentError("Output path cannot be empty");
@@ -62,6 +79,8 @@ Options opustags::parse_args(const int argc, char **argv)
                 break;
 
             case 'i':
+                // TODO: shouldn't we generate random file name here to which
+                // we apply the arg, rather than use the arg as a whole?
                 options.path_out = arg.empty() ? ".otmp" : arg;
                 options.in_place = true;
                 break;
@@ -100,8 +119,15 @@ Options opustags::parse_args(const int argc, char **argv)
                 break;
             }
 
-            case 'S':
-                options.set_all = true;
+            case 'l':
+                options.tags_handler.add_handler(
+                    std::make_shared<ListingTagsHandler>(
+                        current_streamno, std::cout));
+                break;
+
+            case 'e':
+                options.tags_handler.add_handler(
+                    std::make_shared<ExternalEditTagsHandler>());
                 break;
 
             case 'D':
@@ -114,6 +140,14 @@ Options opustags::parse_args(const int argc, char **argv)
                 std::string long_arg = long_def[option_index].name;
                 if (long_arg == "stream")
                     current_streamno = atoi(optarg);
+                else if (long_arg == "full")
+                    options.full = true;
+                else if (long_arg == "export")
+                    options.tags_handler.add_handler(
+                        std::make_shared<ExportTagsHandler>(std::cout));
+                else if (long_arg == "import")
+                    options.tags_handler.add_handler(
+                        std::make_shared<ImportTagsHandler>(std::cin));
                 break;
             }
 

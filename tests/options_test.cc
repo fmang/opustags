@@ -1,8 +1,12 @@
 #include "options.h"
 #include <memory>
 #include "catch.h"
-#include "tags_handlers/modification_tags_handler.h"
+#include "tags_handlers/export_tags_handler.h"
+#include "tags_handlers/external_edit_tags_handler.h"
+#include "tags_handlers/import_tags_handler.h"
 #include "tags_handlers/insertion_tags_handler.h"
+#include "tags_handlers/listing_tags_handler.h"
+#include "tags_handlers/modification_tags_handler.h"
 #include "tags_handlers/removal_tags_handler.h"
 
 using namespace opustags;
@@ -48,8 +52,14 @@ TEST_CASE("option parsing", "[options]")
 {
     SECTION("--help") {
         REQUIRE(retrieve_options({"--help"}).show_help);
-        REQUIRE(retrieve_options({"--h"}).show_help);
+        REQUIRE(retrieve_options({"-h"}).show_help);
         REQUIRE(!retrieve_options({}).show_help);
+    }
+
+    SECTION("--version") {
+        REQUIRE(retrieve_options({"--version"}).show_version);
+        REQUIRE(retrieve_options({"-V"}).show_version);
+        REQUIRE(!retrieve_options({}).show_version);
     }
 
     SECTION("--overwrite") {
@@ -58,10 +68,9 @@ TEST_CASE("option parsing", "[options]")
         REQUIRE(!retrieve_options({}).overwrite);
     }
 
-    SECTION("--set-all") {
-        REQUIRE(retrieve_options({"--set-all"}).set_all);
-        REQUIRE(retrieve_options({"-S"}).set_all);
-        REQUIRE(!retrieve_options({}).set_all);
+    SECTION("--full") {
+        REQUIRE(retrieve_options({"--full"}).full);
+        REQUIRE(!retrieve_options({}).full);
     }
 
     SECTION("--in-place") {
@@ -94,6 +103,29 @@ TEST_CASE("option parsing", "[options]")
         REQUIRE(retrieve_options({"-o", "ABC"}).path_out == "ABC");
         REQUIRE_THROWS(retrieve_options({"--output", ""}));
         REQUIRE_THROWS(retrieve_options({"-o", ""}));
+    }
+
+    SECTION("--import") {
+        get_handler<ImportTagsHandler>(retrieve_options({"--import"}), 0);
+    }
+
+    SECTION("--export") {
+        get_handler<ExportTagsHandler>(retrieve_options({"--export"}), 0);
+    }
+
+    SECTION("--edit") {
+        get_handler<ExternalEditTagsHandler>(retrieve_options({"--edit"}), 0);
+        get_handler<ExternalEditTagsHandler>(retrieve_options({"-e"}), 0);
+    }
+
+    SECTION("--list") {
+        get_handler<ListingTagsHandler>(retrieve_options({"--list"}), 0);
+        get_handler<ListingTagsHandler>(retrieve_options({"-l"}), 0);
+        // TODO:
+        // test enabling / disabling colors, which should be
+        // contained inside the state of ListingTagsHandler
+        // TODO:
+        // it should be the default operation for readonly mode - test this too
     }
 
     SECTION("--delete-all") {
