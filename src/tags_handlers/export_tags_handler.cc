@@ -7,21 +7,25 @@ ExportTagsHandler::ExportTagsHandler(std::ostream &output_stream)
 {
 }
 
-bool ExportTagsHandler::relevant(const int streamno)
+bool ExportTagsHandler::relevant(const int)
 {
-    return false;
+    return true;
 }
 
-void ExportTagsHandler::list(const int streamno, const Tags &)
+void ExportTagsHandler::list(const int streamno, const Tags &tags)
 {
+    output_stream << "[Stream " << streamno << "]\n";
+    for (const auto tag : tags.get_all())
+        output_stream << tag.key << "=" << tag.value << "\n";
+    output_stream << "\n";
 }
 
-bool ExportTagsHandler::edit(const int streamno, Tags &)
+bool ExportTagsHandler::edit(const int, Tags &)
 {
     return false;
 }
 
 bool ExportTagsHandler::done()
 {
-    return true;
+    return false;
 }
