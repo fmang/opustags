@@ -8,6 +8,9 @@ namespace opustags {
 
     struct Tag final
     {
+        bool operator !=(const Tag &other_tag) const;
+        bool operator ==(const Tag &other_tag) const;
+
         std::string key;
         std::string value;
     };
@@ -27,6 +30,9 @@ namespace opustags {
         void remove(const std::string &key);
         bool contains(const std::string &key) const;
         void clear();
+
+        bool operator !=(const Tags &other_tags) const;
+        bool operator ==(const Tags &other_tags) const;
 
         // Additional fields are required to match the specs:
         // https://tools.ietf.org/html/draft-ietf-codec-oggopus-14#section-5.2

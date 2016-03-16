@@ -14,6 +14,17 @@ static bool iequals(const std::string &a, const std::string &b)
     return true;
 }
 
+bool Tag::operator !=(const Tag &other_tag) const
+{
+    return !operator ==(other_tag);
+}
+
+bool Tag::operator ==(const Tag &other_tag) const
+{
+    return key == other_tag.key
+        && value == other_tag.value;
+}
+
 Tags::Tags()
 {
 }
@@ -77,4 +88,16 @@ Tag opustags::parse_tag(const std::string &assoc)
     std::string name = assoc.substr(0, eq);
     std::string value = assoc.substr(eq + 1);
     return { name, value };
+}
+
+bool Tags::operator !=(const Tags &other_tags) const
+{
+    return !operator ==(other_tags);
+}
+
+bool Tags::operator ==(const Tags &other_tags) const
+{
+    return vendor == other_tags.vendor
+        && extra == other_tags.extra
+        && get_all() == other_tags.get_all();
 }
