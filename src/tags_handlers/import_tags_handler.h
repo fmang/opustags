@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include "tags_handler.h"
 
 namespace opustags {
@@ -16,7 +17,11 @@ namespace opustags {
         bool done() override;
 
     private:
+        void parse_input_stream_if_needed();
+
+        bool parsed;
         std::istream &input_stream;
+        std::map<int, Tags> tag_map;
     };
 
 }
