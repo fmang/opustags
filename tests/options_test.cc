@@ -189,5 +189,15 @@ TEST_CASE("option parsing", "[options]")
             REQUIRE(handler1->get_streamno() == 1);
             REQUIRE(handler2->get_streamno() == 2);
         }
+
+        // ...or contain comma separated values
+        {
+            const auto opts = retrieve_options({
+                "--stream", "1,2", "-d", "xyz"});
+            const auto handler1 = get_handler<RemovalTagsHandler>(opts, 0);
+            const auto handler2 = get_handler<RemovalTagsHandler>(opts, 1);
+            REQUIRE(handler1->get_streamno() == 1);
+            REQUIRE(handler2->get_streamno() == 2);
+        }
     }
 }

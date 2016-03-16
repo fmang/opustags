@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <regex>
+#include <sstream>
 #include "tags_handlers/insertion_tags_handler.h"
 #include "tags_handlers/modification_tags_handler.h"
 #include "tags_handlers/external_edit_tags_handler.h"
@@ -55,7 +56,7 @@ Options opustags::parse_args(const int argc, char **argv)
 
     Options options;
 
-    int current_streamno = StreamTagsHandler::ALL_STREAMS;
+    std::vector<int> current_streamnos {StreamTagsHandler::ALL_STREAMS};
     int option_index;
     char c;
     optind = 0;
@@ -94,9 +95,11 @@ Options opustags::parse_args(const int argc, char **argv)
             case 'd':
                 if (arg.find('=') != std::string::npos)
                     throw ArgumentError("Invalid field: '" + arg + "'");
-                options.tags_handler.add_handler(
-                    std::make_shared<RemovalTagsHandler>(
-                        current_streamno, arg));
+                for (const auto streamno : current_streamnos)
+                {
+                    options.tags_handler.add_handler(
+                        std::make_shared<RemovalTagsHandler>(streamno, arg));
+                }
                 break;
 
             case 'a':
@@ -106,25 +109,31 @@ Options opustags::parse_args(const int argc, char **argv)
                 std::regex regex("^(\\w+)=(.*)$");
                 if (!std::regex_match(arg, match, regex))
                     throw ArgumentError("Invalid field: '" + arg + "'");
-                if (c == 's')
+                for (const auto streamno : current_streamnos)
                 {
-                    options.tags_handler.add_handler(
-                        std::make_shared<ModificationTagsHandler>(
-                            current_streamno, match[1], match[2]));
-                }
-                else
-                {
-                    options.tags_handler.add_handler(
-                        std::make_shared<InsertionTagsHandler>(
-                            current_streamno, match[1], match[2]));
+                    if (c == 's')
+                    {
+                        options.tags_handler.add_handler(
+                            std::make_shared<ModificationTagsHandler>(
+                                streamno, match[1], match[2]));
+                    }
+                    else
+                    {
+                        options.tags_handler.add_handler(
+                            std::make_shared<InsertionTagsHandler>(
+                                streamno, match[1], match[2]));
+                    }
                 }
                 break;
             }
 
             case 'l':
-                options.tags_handler.add_handler(
-                    std::make_shared<ListingTagsHandler>(
-                        current_streamno, std::cout));
+                for (const auto streamno : current_streamnos)
+                {
+                    options.tags_handler.add_handler(
+                        std::make_shared<ListingTagsHandler>(
+                            streamno, std::cout));
+                }
                 break;
 
             case 'e':
@@ -133,15 +142,28 @@ Options opustags::parse_args(const int argc, char **argv)
                 break;
 
             case 'D':
-                options.tags_handler.add_handler(
-                    std::make_shared<RemovalTagsHandler>(current_streamno));
+                for (const auto streamno : current_streamnos)
+                {
+                    options.tags_handler.add_handler(
+                        std::make_shared<RemovalTagsHandler>(streamno));
+                }
                 break;
 
             case 0:
             {
                 std::string long_arg = long_def[option_index].name;
                 if (long_arg == "stream")
-                    current_streamno = std::atoi(optarg);
+                {
+                    int i;
+                    current_streamnos.clear();
+                    std::stringstream ss(optarg);
+                    while (ss >> i)
+                    {
+                        current_streamnos.push_back(i);
+                        if (ss.peek() == ',')
+                            ss.ignore();
+                    }
+                }
                 else if (long_arg == "full")
                     options.full = true;
                 else if (long_arg == "export")
