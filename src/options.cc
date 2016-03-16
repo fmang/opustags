@@ -56,6 +56,8 @@ Options opustags::parse_args(const int argc, char **argv)
                 break;
 
             case 'o':
+                if (arg.empty())
+                    throw ArgumentError("Output path cannot be empty");
                 options.path_out = arg;
                 break;
 

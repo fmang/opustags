@@ -92,6 +92,8 @@ TEST_CASE("option parsing", "[options]")
     SECTION("--output") {
         REQUIRE(retrieve_options({"--output", "ABC"}).path_out == "ABC");
         REQUIRE(retrieve_options({"-o", "ABC"}).path_out == "ABC");
+        REQUIRE_THROWS(retrieve_options({"--output", ""}));
+        REQUIRE_THROWS(retrieve_options({"-o", ""}));
     }
 
     SECTION("--delete-all") {
