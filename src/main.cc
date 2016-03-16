@@ -7,8 +7,8 @@ static void show_usage(const bool include_help)
 {
     static const auto usage =
         "Usage: opustags --help\n"
-        "       opustags [OPTIONS] FILE\n"
-        "       opustags OPTIONS FILE -o FILE\n";
+        "       opustags [OPTIONS] INPUT\n"
+        "       opustags [OPTIONS] -o OUTPUT INPUT\n";
 
     static const auto help =
         "Options:\n"
@@ -45,6 +45,7 @@ int main(int argc, char **argv)
         }
 
         std::cout << "Working...\n";
+        std::cout << "Input path: " << options.path_in << "\n";
     } catch (const std::exception &e) {
         std::cerr << e.what();
         return EXIT_FAILURE;

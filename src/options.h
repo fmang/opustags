@@ -16,6 +16,7 @@ namespace opustags
         bool set_all;
 
         bool in_place;
+        std::string path_in;
         std::string path_out;
 
         CompositeTagsHandler tags_handler;

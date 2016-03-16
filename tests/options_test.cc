@@ -16,13 +16,16 @@ static std::unique_ptr<char[]> string_to_uptr(const std::string &str)
     return ret;
 }
 
-static Options retrieve_options(std::vector<std::string> args)
+static Options retrieve_options(
+    std::vector<std::string> args, bool fake_input_path = true)
 {
     // need to pass non-const char*, but we got const objects. make copies
     std::vector<std::unique_ptr<char[]>> arg_holders;
     arg_holders.push_back(string_to_uptr("fake/path/to/program"));
     for (size_t i = 0; i < args.size(); i++)
         arg_holders.push_back(string_to_uptr(args[i]));
+    if (fake_input_path)
+        arg_holders.push_back(string_to_uptr("fake/path/to/input"));
 
     auto plain_args = std::make_unique<char*[]>(arg_holders.size());
     for (size_t i = 0; i < arg_holders.size(); i++)
@@ -78,10 +81,15 @@ TEST_CASE("option parsing", "[options]")
         REQUIRE(retrieve_options({"-iABC"}).path_out == "ABC");
     }
 
+    SECTION("input") {
+        REQUIRE_THROWS(retrieve_options({}, false));
+        REQUIRE_THROWS(retrieve_options({""}, false));
+        REQUIRE(retrieve_options({"input"}, false).path_in == "input");
+    }
+
     SECTION("--output") {
         REQUIRE(retrieve_options({"--output", "ABC"}).path_out == "ABC");
         REQUIRE(retrieve_options({"-o", "ABC"}).path_out == "ABC");
-        REQUIRE_THROWS(retrieve_options({"--delete", "invalid="}));
     }
 
     SECTION("--delete-all") {
