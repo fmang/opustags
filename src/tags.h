@@ -16,6 +16,9 @@ namespace opustags {
     class Tags final
     {
     public:
+        Tags();
+        Tags(const std::vector<Tag> &tags);
+
         const std::vector<Tag> get_all() const;
 
         std::string get(const std::string &key) const;

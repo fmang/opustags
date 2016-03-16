@@ -14,6 +14,14 @@ static bool iequals(const std::string &a, const std::string &b)
     return true;
 }
 
+Tags::Tags()
+{
+}
+
+Tags::Tags(const std::vector<Tag> &tags) : tags(tags)
+{
+}
+
 const std::vector<Tag> Tags::get_all() const
 {
     return tags;
