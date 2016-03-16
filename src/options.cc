@@ -18,8 +18,10 @@ ArgumentError::ArgumentError(const std::string &message)
 
 Options::Options() :
     show_help(false),
+    show_version(false),
     overwrite(false),
-    full(false)
+    full(false),
+    in_place(false)
 {
 }
 
@@ -139,7 +141,7 @@ Options opustags::parse_args(const int argc, char **argv)
             {
                 std::string long_arg = long_def[option_index].name;
                 if (long_arg == "stream")
-                    current_streamno = atoi(optarg);
+                    current_streamno = std::atoi(optarg);
                 else if (long_arg == "full")
                     options.full = true;
                 else if (long_arg == "export")
