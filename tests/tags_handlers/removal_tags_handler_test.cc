@@ -22,7 +22,7 @@ TEST_CASE("removal tags handler", "[tags_handlers]")
         REQUIRE(handler.edit(streamno, tags));
         REQUIRE(tags.get_all().size() == 1);
         REQUIRE(tags.contains(other_tag_key));
-        REQUIRE_THROWS(handler.edit(streamno, tags));
+        REQUIRE(!handler.edit(streamno, tags));
     }
 
     SECTION("removing all tags")

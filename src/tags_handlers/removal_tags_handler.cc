@@ -27,7 +27,7 @@ bool RemovalTagsHandler::edit_impl(Tags &tags)
         return anything_removed;
     } else {
         if (!tags.contains(tag_key))
-            throw TagDoesNotExistError(tag_key);
+            return false;
 
         tags.remove(tag_key);
         return true;
