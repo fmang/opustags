@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include "actions.h"
 #include "options.h"
 #include "version.h"
 
@@ -49,7 +51,7 @@ int main(int argc, char **argv)
     }
 
     try {
-        const auto options = opustags::parse_args(argc, argv);
+        auto options = opustags::parse_args(argc, argv);
         if (options.show_help) {
             show_usage(true);
             return EXIT_SUCCESS;
@@ -59,8 +61,22 @@ int main(int argc, char **argv)
             return EXIT_SUCCESS;
         }
 
-        std::cout << "Working...\n";
-        std::cout << "Input path: " << options.path_in << "\n";
+        if (options.path_out.empty())
+        {
+            std::ifstream in(options.path_in);
+            opustags::ogg::Decoder dec(in);
+            list_tags(dec, options.tags_handler);
+            // TODO: report errors if user tries to edit the stream
+        }
+        else
+        {
+            std::ifstream in(options.path_in);
+            std::ofstream out(options.path_out);
+            opustags::ogg::Decoder dec(in);
+            opustags::ogg::Encoder enc(out);
+            edit_tags(dec, enc, options.tags_handler);
+        }
+
     } catch (const std::exception &e) {
         std::cerr << e.what();
         return EXIT_FAILURE;
