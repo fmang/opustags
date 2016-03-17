@@ -47,6 +47,7 @@ void opustags::edit_tags(
 
             case ogg::TAGS_READY:
                 handler.edit(s->stream.serialno, s->tags);
+                handler.list(s->stream.serialno, s->tags);
                 out.write_tags(s->stream.serialno, s->tags);
                 break;
 
