@@ -7,13 +7,15 @@ Requirements
 ------------
 
 * A POSIX-compliant system,
-* libogg.
+* `libogg`.
 
 Installing
 ----------
 
+    mkdir build && cd build
+    cmake ..
     make
-    make DESTDIR=/usr/local install
+    make install
 
 Documentation
 -------------
