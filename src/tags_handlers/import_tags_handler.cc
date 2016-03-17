@@ -26,8 +26,7 @@ bool ImportTagsHandler::edit(const int streamno, Tags &tags)
     const auto old_tags = tags;
     tags.clear();
 
-    if (tag_map.find(streamno) != tag_map.end())
-    {
+    if (tag_map.find(streamno) != tag_map.end()) {
         const auto &source_tags = tag_map.at(streamno);
         for (const auto &source_tag : source_tags.get_all())
             tags.add(source_tag.key, source_tag.value);
@@ -55,19 +54,13 @@ void ImportTagsHandler::parse_input_stream_if_needed()
 
     int current_stream_number = 1;
     std::string line;
-    while (std::getline(input_stream, line))
-    {
+    while (std::getline(input_stream, line)) {
         std::smatch match;
-        if (std::regex_match(line, match, stream_header_regex))
-        {
+        if (std::regex_match(line, match, stream_header_regex)) {
             current_stream_number = std::atoi(match[1].str().c_str());
-        }
-        else if (std::regex_match(line, match, tag_regex))
-        {
+        } else if (std::regex_match(line, match, tag_regex)) {
             tag_map[current_stream_number].add(match[1], match[2]);
-        }
-        else if (!std::regex_match(line, match, whitespace_regex))
-        {
+        } else if (!std::regex_match(line, match, whitespace_regex)) {
             throw std::runtime_error("Malformed input data near line " + line);
         }
     }

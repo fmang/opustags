@@ -22,8 +22,7 @@ std::string ModificationTagsHandler::get_tag_value() const
 
 bool ModificationTagsHandler::edit_impl(Tags &tags)
 {
-    if (tags.contains(tag_key))
-    {
+    if (tags.contains(tag_key)) {
         if (tags.get(tag_key) == tag_value)
             return false;
         tags.remove(tag_key);

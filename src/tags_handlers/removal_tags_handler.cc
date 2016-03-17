@@ -21,14 +21,11 @@ std::string RemovalTagsHandler::get_tag_key() const
 
 bool RemovalTagsHandler::edit_impl(Tags &tags)
 {
-    if (tag_key.empty())
-    {
+    if (tag_key.empty()) {
         const auto anything_removed = tags.get_all().size() > 0;
         tags.clear();
         return anything_removed;
-    }
-    else
-    {
+    } else {
         if (!tags.contains(tag_key))
             throw TagDoesNotExistError(tag_key);
 

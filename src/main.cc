@@ -61,15 +61,12 @@ int main(int argc, char **argv)
             return EXIT_SUCCESS;
         }
 
-        if (options.path_out.empty())
-        {
+        if (options.path_out.empty()) {
             std::ifstream in(options.path_in);
             opustags::ogg::Decoder dec(in);
             list_tags(dec, options.tags_handler);
             // TODO: report errors if user tries to edit the stream
-        }
-        else
-        {
+        } else {
             std::ifstream in(options.path_in);
             std::ofstream out(options.path_out);
             opustags::ogg::Decoder dec(in);

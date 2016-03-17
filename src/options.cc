@@ -95,8 +95,7 @@ Options opustags::parse_args(const int argc, char **argv)
             case 'd':
                 if (arg.find('=') != std::string::npos)
                     throw ArgumentError("Invalid field: '" + arg + "'");
-                for (const auto streamno : current_streamnos)
-                {
+                for (const auto streamno : current_streamnos) {
                     options.tags_handler.add_handler(
                         std::make_shared<RemovalTagsHandler>(streamno, arg));
                 }
@@ -109,16 +108,12 @@ Options opustags::parse_args(const int argc, char **argv)
                 std::regex regex("^(\\w+)=(.*)$");
                 if (!std::regex_match(arg, match, regex))
                     throw ArgumentError("Invalid field: '" + arg + "'");
-                for (const auto streamno : current_streamnos)
-                {
-                    if (c == 's')
-                    {
+                for (const auto streamno : current_streamnos) {
+                    if (c == 's') {
                         options.tags_handler.add_handler(
                             std::make_shared<ModificationTagsHandler>(
                                 streamno, match[1], match[2]));
-                    }
-                    else
-                    {
+                    } else {
                         options.tags_handler.add_handler(
                             std::make_shared<InsertionTagsHandler>(
                                 streamno, match[1], match[2]));
@@ -128,8 +123,7 @@ Options opustags::parse_args(const int argc, char **argv)
             }
 
             case 'l':
-                for (const auto streamno : current_streamnos)
-                {
+                for (const auto streamno : current_streamnos) {
                     options.tags_handler.add_handler(
                         std::make_shared<ListingTagsHandler>(
                             streamno, std::cout));
@@ -142,8 +136,7 @@ Options opustags::parse_args(const int argc, char **argv)
                 break;
 
             case 'D':
-                for (const auto streamno : current_streamnos)
-                {
+                for (const auto streamno : current_streamnos) {
                     options.tags_handler.add_handler(
                         std::make_shared<RemovalTagsHandler>(streamno));
                 }
@@ -152,13 +145,11 @@ Options opustags::parse_args(const int argc, char **argv)
             case 0:
             {
                 std::string long_arg = long_def[option_index].name;
-                if (long_arg == "stream")
-                {
+                if (long_arg == "stream") {
                     int i;
                     current_streamnos.clear();
                     std::stringstream ss(optarg);
-                    while (ss >> i)
-                    {
+                    while (ss >> i) {
                         current_streamnos.push_back(i);
                         if (ss.peek() == ',')
                             ss.ignore();
@@ -184,8 +175,7 @@ Options opustags::parse_args(const int argc, char **argv)
     while (optind < argc)
         stray.push_back(argv[optind++]);
 
-    if (!options.show_help && !options.show_version)
-    {
+    if (!options.show_help && !options.show_version) {
         if (stray.empty())
             throw ArgumentError("Missing input path");
 
@@ -196,8 +186,7 @@ Options opustags::parse_args(const int argc, char **argv)
         if (stray.size() > 1)
             throw ArgumentError("Extra argument: " + stray.at(1));
 
-        if (options.path_out.empty())
-        {
+        if (options.path_out.empty()) {
             options.tags_handler.add_handler(
                 std::make_shared<ListingTagsHandler>(
                     StreamTagsHandler::ALL_STREAMS, std::cout));
