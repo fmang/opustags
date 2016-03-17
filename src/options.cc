@@ -195,6 +195,13 @@ Options opustags::parse_args(const int argc, char **argv)
 
         if (stray.size() > 1)
             throw ArgumentError("Extra argument: " + stray.at(1));
+
+        if (options.path_out.empty())
+        {
+            options.tags_handler.add_handler(
+                std::make_shared<ListingTagsHandler>(
+                    StreamTagsHandler::ALL_STREAMS, std::cout));
+        }
     }
 
     return options;
