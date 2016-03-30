@@ -2,8 +2,9 @@
 
 using namespace opustags;
 
-void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler)
+void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
 {
+    int remaining_streams = 0;
     std::shared_ptr<ogg::Stream> s;
     while (!handler.done()) {
         s = dec.read_page();
@@ -17,14 +18,16 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler)
                     ; // ignore
                 else if (!handler.relevant(s->stream.serialno))
                     s->downgrade();
+                remaining_streams++;
                 break;
             case ogg::TAGS_READY:
                 handler.list(s->stream.serialno, s->tags);
                 s->downgrade(); // no more use for it
-                break;
             default:
-                ;
+                remaining_streams--;
         }
+        if (!full && remaining_streams <= 0)
+            break; // end_of_stream not called, since we stopped early
     }
 }
 

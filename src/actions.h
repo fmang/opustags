@@ -6,7 +6,8 @@
 namespace opustags {
 
     // Decode a file and call the handler's list method every time a tags
-    // header is read.
+    // header is read. Set full to true if you want to make sure every single
+    // page of the stream is read.
     //
     // Use:
     //   std::ifstream in("in.ogg");
@@ -14,7 +15,7 @@ namespace opustags {
     //   TagsLister lister(options);
     //   list_tags(dec, lister);
     //
-    void list_tags(ogg::Decoder&, ITagsHandler &);
+    void list_tags(ogg::Decoder&, ITagsHandler &, bool full = false);
 
     // Forward the input data to the output stream, transforming tags on-the-go
     // with the handler's edit method.
