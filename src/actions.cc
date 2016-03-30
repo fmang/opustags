@@ -4,6 +4,8 @@ using namespace opustags;
 
 void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
 {
+    std::map<long, int> sequence_numbers;
+    int stream_count = 0;
     int remaining_streams = 0;
     std::shared_ptr<ogg::Stream> s;
     while (!handler.done()) {
@@ -14,14 +16,16 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
         }
         switch (s->state) {
             case ogg::HEADER_READY:
-                if (s->type == ogg::UNKNOWN_STREAM)
-                    ; // ignore
-                else if (!handler.relevant(s->stream.serialno))
-                    s->downgrade();
+                if (s->type != ogg::UNKNOWN_STREAM) {
+                    stream_count++;
+                    sequence_numbers[s->stream.serialno] = stream_count;
+                    if (!handler.relevant(stream_count))
+                        s->downgrade();
+                }
                 remaining_streams++;
                 break;
             case ogg::TAGS_READY:
-                handler.list(s->stream.serialno, s->tags);
+                handler.list(sequence_numbers[s->stream.serialno], s->tags);
                 s->downgrade(); // no more use for it
             default:
                 remaining_streams--;
@@ -34,6 +38,8 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
 void opustags::edit_tags(
     ogg::Decoder &in, ogg::Encoder &out, ITagsHandler &handler)
 {
+    std::map<long, int> sequence_numbers;
+    int stream_count = 0;
     std::shared_ptr<ogg::Stream> s;
     for (;;) {
         s = in.read_page();
@@ -42,10 +48,13 @@ void opustags::edit_tags(
         switch (s->state) {
 
             case ogg::HEADER_READY:
+                if (s->type != ogg::UNKNOWN_STREAM) {
+                    stream_count++;
+                    sequence_numbers[s->stream.serialno] = stream_count;
+                    if (!handler.relevant(stream_count))
+                        s->downgrade(); // makes it UNKNOWN
+                }
                 if (s->type == ogg::UNKNOWN_STREAM) {
-                    out.write_raw_page(in.current_page);
-                } else if (!handler.relevant(s->stream.serialno)) {
-                    s->downgrade();
                     out.write_raw_page(in.current_page);
                 } else {
                     out.forward(*s);
@@ -53,8 +62,8 @@ void opustags::edit_tags(
                 break;
 
             case ogg::TAGS_READY:
-                handler.edit(s->stream.serialno, s->tags);
-                handler.list(s->stream.serialno, s->tags);
+                handler.edit(sequence_numbers[s->stream.serialno], s->tags);
+                handler.list(sequence_numbers[s->stream.serialno], s->tags);
                 out.write_tags(s->stream.serialno, s->tags);
                 break;
 

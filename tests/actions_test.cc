@@ -97,7 +97,7 @@ TEST_CASE("fake editing of an Opus stream should preserve the stream", "[actions
     REQUIRE(same_files(in, out));
 }
 
-TEST_CASE("editing one stream", "[actions]")
+TEST_CASE("editing a specific stream", "[actions]")
 {
     std::ifstream in("../tests/samples/mystery-beep.ogg");
     std::stringstream out;
@@ -105,7 +105,7 @@ TEST_CASE("editing one stream", "[actions]")
     {
         ogg::Decoder dec(in);
         ogg::Encoder enc(out);
-        InsertionTagsHandler editor(-336916309, "pwnd", "yes");
+        InsertionTagsHandler editor(2, "pwnd", "yes");
         edit_tags(dec, enc, editor);
     }
 
@@ -124,12 +124,11 @@ TEST_CASE("editing one stream", "[actions]")
             s2[i] = b.read_page();
         }
 
-        REQUIRE(s2[0]->stream.serialno == -336916309);
         REQUIRE(s2[0]->type == ogg::OPUS_STREAM);
         REQUIRE(s2[1]->type == ogg::UNKNOWN_STREAM);
         REQUIRE(s2[2]->type == ogg::OPUS_STREAM);
-        REQUIRE(s2[0]->tags.get("pwnd") == "yes");
-        REQUIRE(!s2[2]->tags.contains("pwnd"));
+        REQUIRE(!s2[0]->tags.contains("pwnd"));
+        REQUIRE(s2[2]->tags.get("pwnd") == "yes");
 
         REQUIRE(same_streams(a, b));
     }
