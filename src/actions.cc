@@ -13,7 +13,9 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler)
         }
         switch (s->state) {
             case ogg::HEADER_READY:
-                if (!handler.relevant(s->stream.serialno))
+                if (s->type == ogg::UNKNOWN_STREAM)
+                    ; // ignore
+                else if (!handler.relevant(s->stream.serialno))
                     s->downgrade();
                 break;
             case ogg::TAGS_READY:
@@ -37,7 +39,9 @@ void opustags::edit_tags(
         switch (s->state) {
 
             case ogg::HEADER_READY:
-                if (!handler.relevant(s->stream.serialno)) {
+                if (s->type == ogg::UNKNOWN_STREAM) {
+                    out.write_raw_page(in.current_page);
+                } else if (!handler.relevant(s->stream.serialno)) {
                     s->downgrade();
                     out.write_raw_page(in.current_page);
                 } else {

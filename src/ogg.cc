@@ -32,8 +32,10 @@ void ogg::Stream::flush_packets()
 
 bool ogg::Stream::page_in(ogg_page &og)
 {
-    if (state == ogg::RAW_READY)
+    if (state != ogg::BEGIN_OF_STREAM && type == ogg::UNKNOWN_STREAM) {
+        state = ogg::RAW_READY;
         return true;
+    }
     flush_packets(); // otherwise packet_out keeps returning the same packet
     if (ogg_stream_pagein(&stream, &og) != 0)
         throw std::runtime_error("ogg_stream_pagein failed");
@@ -75,13 +77,11 @@ void ogg::Stream::handle_packet(const ogg_packet &op)
 
 void ogg::Stream::parse_header(const ogg_packet &op)
 {
-    if (op.bytes >= 8 && memcmp(op.packet, "OpusHead", 8) == 0) {
+    if (op.bytes >= 8 && memcmp(op.packet, "OpusHead", 8) == 0)
         type = OPUS_STREAM;
-        state = HEADER_READY;
-    } else {
+    else
         type = UNKNOWN_STREAM;
-        state = RAW_READY;
-    }
+    state = HEADER_READY;
 }
 
 // For reference:

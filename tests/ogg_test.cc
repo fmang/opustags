@@ -36,8 +36,12 @@ TEST_CASE("decoding an Ogg Vorbis file", "[ogg]")
 
     std::shared_ptr<ogg::Stream> s = dec.read_page();
     REQUIRE(s != nullptr);
-    REQUIRE(s->state == ogg::RAW_READY);
+    REQUIRE(s->state == ogg::HEADER_READY);
     REQUIRE(s->type == ogg::UNKNOWN_STREAM);
+
+    s = dec.read_page();
+    REQUIRE(s != nullptr);
+    REQUIRE(s->state == ogg::RAW_READY);
 }
 
 TEST_CASE("decoding a multi-stream file", "[ogg]")
@@ -56,7 +60,7 @@ TEST_CASE("decoding a multi-stream file", "[ogg]")
     second = s;
     REQUIRE(s != nullptr);
     REQUIRE(s != first);
-    REQUIRE(s->state == ogg::RAW_READY);
+    REQUIRE(s->state == ogg::HEADER_READY);
     REQUIRE(s->type == ogg::UNKNOWN_STREAM);
 
     s = dec.read_page();

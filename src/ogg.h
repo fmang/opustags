@@ -49,7 +49,7 @@ namespace ogg
 
         // Here are the meanings of the state variable:
         //   BEGIN_OF_STREAM: the stream was just initialized,
-        //   HEADER_READY: the header is parsed and we know the type,
+        //   HEADER_READY: the header (first packet) was found,
         //   TAGS_READY: the tags are parsed and complete,
         //   DATA_READY: we've read a data page whose meaning is no concern to us,
         //   RAW_READY: we don't even know what kind of stream that is, so don't alter it,
@@ -60,6 +60,11 @@ namespace ogg
         // might require a reencoding of the current page. For example, if the
         // tags grow and span over two pages, all the following pages are gonna
         // need a new sequence number.
+
+        // For an Opus stream, the sequence will be:
+        //   BEGIN_OF_STREAM → HEADER_READY → TAGS_READY → DATA_READY* → END_OF_STREAM
+        // For an unknown stream:
+        //   BEGIN_OF_STREAM → HEADER_READY → RAW_READY* → END_OF_STREAM
 
         ogg_stream_state stream;
 
