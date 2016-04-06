@@ -1,6 +1,5 @@
-#include <getopt.h>
-#include <regex>
-#include <sstream>
+#include "options.h"
+
 #include "tags_handlers/insertion_tags_handler.h"
 #include "tags_handlers/modification_tags_handler.h"
 #include "tags_handlers/external_edit_tags_handler.h"
@@ -8,7 +7,10 @@
 #include "tags_handlers/import_tags_handler.h"
 #include "tags_handlers/listing_tags_handler.h"
 #include "tags_handlers/removal_tags_handler.h"
-#include "options.h"
+
+#include <getopt.h>
+#include <regex>
+#include <sstream>
 
 using namespace opustags;
 

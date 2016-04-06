@@ -1,8 +1,9 @@
-#include <iostream>
-#include <fstream>
 #include "actions.h"
 #include "options.h"
 #include "version.h"
+
+#include <iostream>
+#include <fstream>
 
 static void show_usage(const bool include_help)
 {

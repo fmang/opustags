@@ -1,9 +1,10 @@
 #pragma once
 
+#include "tags_handlers/composite_tags_handler.h"
+
 #include <stdexcept>
 #include <map>
 #include <vector>
-#include "tags_handlers/composite_tags_handler.h"
 
 namespace opustags
 {

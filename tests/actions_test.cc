@@ -1,12 +1,12 @@
-#include "ogg.h"
 #include "actions.h"
 #include "catch.h"
 
-#include <fstream>
-#include <cstring>
-
+#include "ogg.h"
 #include "tags_handlers/insertion_tags_handler.h"
 #include "tags_handlers/stream_tags_handler.h"
+
+#include <fstream>
+#include <cstring>
 
 using namespace opustags;
 

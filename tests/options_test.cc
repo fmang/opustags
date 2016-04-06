@@ -1,6 +1,6 @@
 #include "options.h"
-#include <memory>
 #include "catch.h"
+
 #include "tags_handlers/export_tags_handler.h"
 #include "tags_handlers/external_edit_tags_handler.h"
 #include "tags_handlers/import_tags_handler.h"
@@ -8,6 +8,8 @@
 #include "tags_handlers/listing_tags_handler.h"
 #include "tags_handlers/modification_tags_handler.h"
 #include "tags_handlers/removal_tags_handler.h"
+
+#include <memory>
 
 using namespace opustags;
 
