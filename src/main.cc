@@ -65,7 +65,7 @@ int main(int argc, char **argv)
         if (options.path_out.empty()) {
             std::ifstream in(options.path_in);
             opustags::ogg::Decoder dec(in);
-            list_tags(dec, options.tags_handler);
+            list_tags(dec, options.tags_handler, options.full);
             // TODO: report errors if user tries to edit the stream
         } else {
             std::ifstream in(options.path_in);
