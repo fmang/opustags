@@ -155,3 +155,15 @@ TEST_CASE("listing tags", "[actions]")
     REQUIRE(lister.languages[0] == "und");
     REQUIRE(lister.languages[1] == "und");
 }
+
+TEST_CASE("listing tags, full scan", "[actions]")
+{
+    std::ifstream in("../tests/samples/mystery-beep.ogg");
+    ogg::Decoder dec(in);
+    GetLanguages lister;
+    list_tags(dec, lister, true);
+
+    REQUIRE(lister.languages.size() == 2);
+    REQUIRE(lister.languages[0] == "und");
+    REQUIRE(lister.languages[1] == "und");
+}
