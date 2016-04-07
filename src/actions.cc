@@ -10,10 +10,8 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
     std::shared_ptr<ogg::Stream> s;
     while (!handler.done()) {
         s = dec.read_page();
-        if (s == nullptr) {
-            handler.end_of_stream();
+        if (s == nullptr)
             break; // end of stream
-        }
         switch (s->state) {
             case ogg::HEADER_READY:
                 if (s->type != ogg::UNKNOWN_STREAM) {
@@ -30,9 +28,13 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
             default:
                 remaining_streams--;
         }
-        if (!full && remaining_streams <= 0)
-            break; // end_of_stream not called, since we stopped early
+        if (!full && remaining_streams <= 0) {
+            break;
+            // premature exit, but calls end_of_stream anyway
+            // we want our optimization to be transparent to the TagsHandler
+        }
     }
+    handler.end_of_stream();
 }
 
 void opustags::edit_tags(
