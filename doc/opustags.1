@@ -43,9 +43,8 @@ standard output). It must be different from the input file. You may want to
 use \fB\-\-overwrite\fP if you know what you're doing. To overwrite the input
 file, use \fB\-\-in\-place\fP.
 .PP
-Tag edition can be made with the \fB\-\-add\fP, \fB\-\-delete\fP and \fB\-\-set\fP
-options. These don't conflict with each other, and you can use these options as
-many times as you wish.
+Tag edition is done with the \fB\-\-add\fP, \fB\-\-delete\fP and \fB\-\-set\fP
+options. You can use these options as many times as you wish.
 .PP
 You can delete all the tags with \fB\-\-delete\-all\fP. This operation can be
 combined with \fB\-\-add\fP to set new tags without being bothered by the old
@@ -157,22 +156,17 @@ deleted.
 .TP
 .B \-a, \-\-add \fIFIELD=VALUE\fP
 Add a tag. It doesn't matter if a tag of the same type already exist (think
-the case where there are several artists). You can use this option as many
-times as needed, with the same field names or not. When the \fB\-\-delete\fP
-is used with the same \fIFIELD\fP, only the older tags are deleted.
+about the case where there are several artists).
 .TP
 .B \-s, \-\-set \fIFIELD=VALUE\fP
 This option is provided for convenience. It deletes all the fields of the same
 type that may already exist, then adds it with the wanted value. This is
 strictly equivalent to \fB\-\-delete\fP \fIFIELD\fP \fB\-\-add\fP
-\fIFIELD=VALUE\fP. You can combine it with \fB\-\-add\fP to add tags of the
-same type. As deletion occurs before adding, \fB\-\-set\fP won't erase the tags
-added with \fB\-\-add\fP.
+\fIFIELD=VALUE\fP.
+You can combine it with \fB\-\-add\fP to add more tags with that same \fIFIELD\fP.
 .TP
 .B \-D, \-\-delete\-all
-Delete all the tags before adding any. When this option is specified, the
-\fB\-\-delete\fP options are meaningless. Tags then can then be added using
-\fB\-\-add\fP or \fB\-\-set\fP, which, in this case, are equivalent.
+Delete all the tags before adding any.
 .TP
 .B \-\-import
 Set the tags from scratch. All the original tags are deleted and new ones are
