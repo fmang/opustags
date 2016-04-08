@@ -105,7 +105,7 @@ TEST_CASE("editing a specific stream", "[actions]")
     {
         ogg::Decoder dec(in);
         ogg::Encoder enc(out);
-        InsertionTagsHandler editor(2, "pwnd", "yes");
+        InsertionTagsHandler editor(3, "pwnd", "yes");
         edit_tags(dec, enc, editor);
     }
 
