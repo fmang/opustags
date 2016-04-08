@@ -16,6 +16,7 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
             case ogg::HEADER_READY:
                 stream_count++;
                 sequence_numbers[s->stream.serialno] = stream_count;
+                handler.start_of_stream(stream_count, s->type);
                 if (!handler.relevant(stream_count))
                     s->downgrade();
                 remaining_streams++;
@@ -32,7 +33,7 @@ void opustags::list_tags(ogg::Decoder &dec, ITagsHandler &handler, bool full)
             // we want our optimization to be transparent to the TagsHandler
         }
     }
-    handler.end_of_stream();
+    handler.end_of_file();
 }
 
 void opustags::edit_tags(
@@ -50,6 +51,7 @@ void opustags::edit_tags(
             case ogg::HEADER_READY:
                 stream_count++;
                 sequence_numbers[s->stream.serialno] = stream_count;
+                handler.start_of_stream(stream_count, s->type);
                 if (!handler.relevant(stream_count))
                     s->downgrade(); // makes it UNKNOWN
                 if (s->type == ogg::UNKNOWN_STREAM) {
@@ -77,5 +79,5 @@ void opustags::edit_tags(
                 ;
         }
     }
-    handler.end_of_stream();
+    handler.end_of_file();
 }

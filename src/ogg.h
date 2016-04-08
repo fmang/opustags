@@ -21,7 +21,7 @@ namespace ogg
     };
 
     enum StreamType {
-        UNKNOWN_STREAM,
+        UNKNOWN_STREAM = 0,
         OPUS_STREAM,
     };
 

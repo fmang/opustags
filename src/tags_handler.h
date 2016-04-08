@@ -31,14 +31,20 @@ namespace opustags {
         // return value would abort any further processing.
         virtual bool done() = 0;
 
-        // Signals the end of the stream.
+        // Signals a new stream was found.
+        // The meaning of type is in ogg::StreamType, but all you should assume
+        // is that when type is null (UNKNOWN_STREAM), list or edit won't be
+        // called.
+        virtual void start_of_stream(const int streamno, const int type) {}
+
+        // Signals the end of the file (and all the streams).
         // If after this function is called, done() returns false, it's an
         // error. However, it would be better to raise the error inside
         // end_of_stream().
         // For example, if you expect to find the stream #1 and reach the
         // end-of-stream before finding it, better tell the user that you
         // didn't do what he expected.
-        virtual void end_of_stream() {}
+        virtual void end_of_file() {}
     };
 
 }
