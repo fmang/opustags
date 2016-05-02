@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 static void show_usage(const bool include_help)
 {
@@ -76,7 +77,10 @@ int main(int argc, char **argv)
         }
 
     } catch (const std::exception &e) {
-        std::cerr << e.what();
+        if (errno)
+            std::cerr << "fatal error: " << e.what() << " (" << strerror(errno) << ")" << std::endl;
+        else
+            std::cerr << "fatal error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
 
