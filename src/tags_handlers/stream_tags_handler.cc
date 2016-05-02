@@ -1,5 +1,7 @@
 #include "tags_handlers/stream_tags_handler.h"
 
+#include <iostream>
+
 using namespace opustags;
 
 const int StreamTagsHandler::ALL_STREAMS = -1;
@@ -39,6 +41,12 @@ bool StreamTagsHandler::edit(const int streamno, Tags &tags)
 bool StreamTagsHandler::done()
 {
     return work_finished;
+}
+
+void StreamTagsHandler::end_of_file()
+{
+    if (!work_finished && streamno != ALL_STREAMS)
+        std::cerr << "warning: stream " << streamno << " wasn't found" << std::endl;
 }
 
 void StreamTagsHandler::list_impl(const Tags &)

@@ -19,6 +19,7 @@ namespace opustags {
         void list(const int streamno, const Tags &) override;
         bool edit(const int streamno, Tags &) override;
         bool done() override;
+        void end_of_file() override;
 
     protected:
         virtual void list_impl(const Tags &);
