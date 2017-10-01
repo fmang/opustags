@@ -3,6 +3,26 @@ opustags
 
 View and edit Opus comments.
 
+**Please note this project is old and not actively maintained.**
+Maybe you should use something else.
+
+It was built because at the time nothing supported Opus, but now things have
+changed for the better.
+
+For alternative, check out these projects:
+
+- [EasyTAG](https://wiki.gnome.org/Apps/EasyTAG)
+- [Beets](http://beets.io/)
+- [Picard](https://picard.musicbrainz.org/)
+- [puddletag](http://docs.puddletag.net/)
+- [Quod Libet](https://quodlibet.readthedocs.io/en/latest/)
+- [Goggles Music Manager](https://gogglesmm.github.io/)
+
+See also these libraries if you need a lower-level access:
+
+- [TagLib](http://taglib.org/)
+- [mutagen](https://mutagen.readthedocs.io/en/latest/)
+
 Requirements
 ------------
 
