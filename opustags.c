@@ -56,8 +56,10 @@ int parse_tags(char *data, long len, opus_tags *tags){
         if(pos > len)
             return -1;
     }
-    if(pos != len)
-        return -1;
+
+    if(pos < len)
+        fprintf(stderr, "warning: %ld unused bytes at the end of the OpusTags packet\n", len - pos);
+
     return 0;
 }
 
