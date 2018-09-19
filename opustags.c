@@ -7,6 +7,12 @@
 #include <unistd.h>
 #include <ogg/ogg.h>
 
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#define htole32(x) OSSwapHostToLittleInt32(x)
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+#endif
+
 typedef struct {
     uint32_t vendor_length;
     const char *vendor_string;
