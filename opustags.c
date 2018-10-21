@@ -13,6 +13,9 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
+#define PNAME "opustags"
+#define PVERSION "1.1.1"
+
 typedef struct {
     uint32_t vendor_length;
     const char *vendor_string;
@@ -164,12 +167,12 @@ int write_page(ogg_page *og, FILE *stream){
     return 0;
 }
 
-const char *version = "opustags version 1.1\n";
+const char *version = PNAME " version " PVERSION "\n";
 
 const char *usage =
-    "Usage: opustags --help\n"
-    "       opustags [OPTIONS] FILE\n"
-    "       opustags OPTIONS FILE -o FILE\n";
+    "Usage: " PNAME " --help\n"
+    "       " PNAME " [OPTIONS] FILE\n"
+    "       " PNAME " OPTIONS FILE -o FILE\n";
 
 const char *help =
     "Options:\n"
