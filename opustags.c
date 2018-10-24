@@ -164,7 +164,7 @@ int write_page(ogg_page *og, FILE *stream){
     return 0;
 }
 
-const char *version = "opustags version 1.1\n";
+const char *version = "opustags version 1.1.1\n";
 
 const char *usage =
     "Usage: opustags --help\n"
