@@ -14,7 +14,7 @@
 #endif
 
 #define PNAME "opustags"
-#define PVERSION "1.1.1"
+#define PVERSION "1.1.2"
 
 typedef struct {
     uint32_t vendor_length;
@@ -144,7 +144,7 @@ int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count){
 
 void print_tags(opus_tags *tags){
     if(tags->count == 0)
-        puts("no tags");
+        puts("#no tags");
     int i;
     for(i=0; i<tags->count; i++){
         fwrite(tags->comment[i], 1, tags->lengths[i], stdout);
@@ -422,25 +422,35 @@ int main(int argc, char **argv){
                         uint32_t raw_count = 0;
                         size_t field_len = 0;
                         int caught_eq = 0;
+                        int caught_cmnt = 0;
                         size_t i = 0;
                         char *cursor = raw_tags;
                         for(i=0; i <= raw_len && raw_count < 256; i++){
                             if(raw_tags[i] == '\n' || raw_tags[i] == '\0'){
-                                if(field_len == 0)
-                                    continue;
-                                if(caught_eq)
-                                    raw_comment[raw_count++] = cursor;
-                                else
-                                    fputs("warning: skipping malformed tag\n", stderr);
+                                if(!caught_cmnt && field_len > 0)
+                                {
+                                    if(caught_eq)
+                                        raw_comment[raw_count++] = cursor;
+                                    else
+                                        fputs("warning: skipping malformed tag\n", stderr);
+                                }
                                 cursor = raw_tags + i + 1;
                                 field_len = 0;
+                                caught_cmnt = 0;
                                 caught_eq = 0;
                                 raw_tags[i] = '\0';
                                 continue;
                             }
-                            if(raw_tags[i] == '=')
-                                caught_eq = 1;
-                            field_len++;
+                            if(raw_tags[i] == ' ' && field_len == 0)
+                            {
+                                cursor = raw_tags + i + 1;
+                            } else {
+                                if(raw_tags[i] == '#' && field_len == 0)
+                                    caught_cmnt = 1;
+                                if(raw_tags[i] == '=')
+                                    caught_eq = 1;
+                                field_len++;
+                           }
                         }
                         add_tags(&tags, (const char**) raw_comment, raw_count);
                     }

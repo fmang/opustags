@@ -1,0 +1,22 @@
+1.1.2
+
+strip space, comment and blank lines in "file.opustags"
+add "sample_audiobook.opustags"
+
+1.1.1
+
+Don't croak on overlong opustags
+Become macOS compatible
+
+1.1
+
+mention utf-8
+fix long options
+refuse to read and write to the same file
+delete all, set all
+read from stdin, write to stdout
+tags manipulation
+
+1.0
+
+init version
