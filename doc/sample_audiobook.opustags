@@ -1,6 +1,6 @@
 # sample_audiobook.opustags
 # opustags audiobook sample:
-# cat sample_audiobook.opustags | opustags -S -o sample.opus source.opus
+# cat sample_audiobook.opustags | opustags -S -p cover.jpg -o sample.opus source.opus
 
 ARTIST=Titul Publishers
 TITLE=Enjoy English - Grade 2

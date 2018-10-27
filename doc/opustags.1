@@ -1,4 +1,4 @@
-.TH opustags 1 "January 2013"
+.TH OpusTags 1 "28 Oct 2018" "1.2.0" "User Manual"
 .SH NAME
 opustags \- Opus comment editor
 .SH SYNOPSIS
@@ -89,6 +89,9 @@ This is strictly equivalent to \fB--delete\fP \fIFIELD\fP \fB--add\fP
 \fIFIELD=VALUE\fP. You can combine it with \fB--add\fP to add tags of the same
 type. As deletion occurs before adding, \fB--set\fP won’t erase the tags
 added with \fB--add\fP.
+.TP
+.B \-p, \-\-picture \fIFILE\fP
+Add cover (<64k in BASE64)
 .TP
 .B \-D, \-\-delete-all
 Delete all the tags before adding any. When this option is specified, the

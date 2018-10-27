@@ -49,6 +49,7 @@ Documentation
       -d, --delete FIELD      delete all the fields of a specified type
       -a, --add FIELD=VALUE   add a field
       -s, --set FIELD=VALUE   delete then add a field
+      -p, --picture NAME      add cover (<64k in BASE64)
       -D, --delete-all        delete all the fields!
       -S, --set-all           read the fields from stdin
 
