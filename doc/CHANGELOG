@@ -1,14 +1,21 @@
-1.1.2
+opustags
+
+1.1.3 "restruct"
+
+restruct for opus-tools
+add opuspicture
+
+1.1.2 "strip"
 
 strip space, comment and blank lines in "file.opustags"
 add "sample_audiobook.opustags"
 
-1.1.1
+1.1.1 "overlong"
 
 Don't croak on overlong opustags
 Become macOS compatible
 
-1.1
+1.1 "fix"
 
 mention utf-8
 fix long options
@@ -17,6 +24,6 @@ delete all, set all
 read from stdin, write to stdout
 tags manipulation
 
-1.0
+1.0 "first"
 
 init version

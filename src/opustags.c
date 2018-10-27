@@ -5,24 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <ogg/ogg.h>
-
-#ifdef __APPLE__
-#include <libkern/OSByteOrder.h>
-#define htole32(x) OSSwapHostToLittleInt32(x)
-#define le32toh(x) OSSwapLittleToHostInt32(x)
-#endif
-
-#define PNAME "opustags"
-#define PVERSION "1.1.2"
-
-typedef struct {
-    uint32_t vendor_length;
-    const char *vendor_string;
-    uint32_t count;
-    uint32_t *lengths;
-    const char **comment;
-} opus_tags;
+#include "config.h"
+#include "opustags.h"
 
 int parse_tags(char *data, long len, opus_tags *tags){
     long pos;

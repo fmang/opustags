@@ -1,23 +1,36 @@
+PNAME=opustags
 DESTDIR=/usr/local
+SRCDIR=src
+DOCDIR=doc
 MANDEST=share/man
+DOCDEST=share/doc
+CC=gcc
 CFLAGS=-Wall
-LDFLAGS=-logg
+LDFLAGS=-logg -s
+INSTALL=install
+GZIP=gzip
+RM=rm -f
 
-all: opustags
+all: $(PNAME) man
 
-opustags: opustags.c
+$(PNAME): $(SRCDIR)/$(PNAME).c $(SRCDIR)/picture.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-man: opustags.1
-	gzip <opustags.1 >opustags.1.gz
+man: $(DOCDIR)/$(PNAME).1
+	$(GZIP) < $^ > $(PNAME).1.gz
 
-install: opustags man
-	mkdir -p $(DESTDIR)/bin $(DESTDIR)/$(MANDEST)/man1
-	install -m 755 opustags $(DESTDIR)/bin/
-	install -m 644 opustags.1.gz $(DESTDIR)/$(MANDEST)/man1/
+install: $(PNAME) man
+	$(INSTALL) -d $(DESTDIR)/bin
+	$(INSTALL) -m 755 $(PNAME) $(DESTDIR)/bin/
+	$(INSTALL) -d $(DESTDIR)/$(MANDEST)/man1
+	$(INSTALL) -m 644 $(PNAME).1.gz $(DESTDIR)/$(MANDEST)/man1/
+	$(INSTALL) -d $(DESTDIR)/$(DOCDEST)/$(PNAME)
+	$(INSTALL) -m 644 $(DOCDIR)/sample_audiobook.opustags $(DOCDIR)/CHANGELOG LICENSE README.md $(DESTDIR)/$(DOCDEST)/$(PNAME)
 
 uninstall:
-	rm -f $(DESTDIR)/bin/opustags
-	rm -f $(DESTDIR)/$(MANDEST)/man1/opustags.1.gz
+	$(RM) $(DESTDIR)/bin/$(PNAME)
+	$(RM) $(DESTDIR)/$(MANDEST)/man1/$(PNAME).1.gz
+	$(RM) -r $(DESTDIR)/$(DOCDEST)/$(PNAME)
 
 clean:
-	rm -f opustags opustags.1.gz
+	$(RM) $(PNAME) $(PNAME).1.gz
