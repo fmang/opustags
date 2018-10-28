@@ -113,9 +113,13 @@ void delete_tags(opus_tags *tags, const char *field){
     uint32_t i;
     for(i=0; i<tags->count; i++){
         if(match_field(tags->comment[i], tags->lengths[i], field)){
+            // We want to delete the current element, so we move the last tag at position i, then
+            // decrease the array size. We need decrease i to inspect at the next iteration the tag
+            // we just moved.
             tags->count--;
             tags->lengths[i] = tags->lengths[tags->count];
             tags->comment[i] = tags->comment[tags->count];
+            --i;
             // No need to resize the arrays.
         }
     }
