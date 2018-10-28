@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 my $opustags = './opustags';
 chomp(my $version = `git describe --tags --abbrev=0`);
@@ -18,7 +18,7 @@ Usage: opustags --help
        opustags OPTIONS FILE -o FILE
 EOF
 
-is(`$opustags --help`, <<"EOF", '--help displays the help message');
+my $help = <<"EOF";
 opustags version $version
 
 Usage: opustags --help
@@ -38,7 +38,11 @@ Options:
 
 See the man page for extensive documentation.
 EOF
+
+is(`$opustags --help`, $help, '--help displays the help message');
 is($?, 0, '--help returns 0');
+
+is(`$opustags --h`, $help, '-h displays the help message too');
 
 is(`$opustags --derp 2>&1`, <<'EOF', 'unrecognized option shows an error');
 ./opustags: unrecognized option '--derp'
