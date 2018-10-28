@@ -7,18 +7,19 @@ use warnings;
 use Test::More tests => 5;
 
 my $opustags = './opustags';
+chomp(my $version = `git describe --tags --abbrev=0`);
 
 BAIL_OUT("$opustags does not exist or is not executable") if (! -x $opustags);
 
-is(`$opustags`, <<'EOF', 'no options show the usage');
-opustags version 1.1.1
+is(`$opustags`, <<"EOF", 'no options show the usage');
+opustags version $version
 Usage: opustags --help
        opustags [OPTIONS] FILE
        opustags OPTIONS FILE -o FILE
 EOF
 
-is(`$opustags --help`, <<'EOF', '--help displays the help message');
-opustags version 1.1.1
+is(`$opustags --help`, <<"EOF", '--help displays the help message');
+opustags version $version
 
 Usage: opustags --help
        opustags [OPTIONS] FILE
