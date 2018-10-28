@@ -18,6 +18,9 @@ Stay objective in your changes. Adding a feature or fixing a bug is a clear
 improvement, but stylistic changes like renaming a function or moving a few
 braces around won't help the project move forward.
 
+You should check that your changes don't break the test suite by running
+`make check`
+
 Following these practices is important to keep the history clean, and to allow
 for better code reviews.
 

@@ -21,3 +21,8 @@ uninstall:
 
 clean:
 	rm -f opustags opustags.1.gz
+
+check: opustags
+	prove
+
+.PHONY: all man install uninstall clean check
