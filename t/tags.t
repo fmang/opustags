@@ -1,6 +1,10 @@
 # Test the main features of opustags on an Ogg Opus sample file.
 
-use Test::More tests => 14;
+use strict;
+use warnings;
+use utf8;
+
+use Test::More tests => 16;
 
 use Digest::MD5;
 
@@ -12,18 +16,15 @@ sub md5 {
 	$ctx->hexdigest
 }
 
+my $fh;
+
 is(md5('t/gobble.opus'), '111a483596ac32352fbce4d14d16abd2', 'the sample is the one we expect');
 is(`./opustags t/gobble.opus`, <<'EOF', 'read the initial tags');
 encoder=Lavc58.18.100 libopus
 EOF
 
-unlink('t/out.opus');
-is(`./opustags t/gobble.opus -o t/out.opus 2>&1`, '', 'copy the file without changes');
-is(md5('t/out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
-is($?, 0, 'check the error code');
-
 # empty out.opus
-open(my $fh, '> t/out.opus') or die;
+open($fh, '> t/out.opus') or die;
 close($fh);
 is(`./opustags t/gobble.opus -o t/out.opus 2>&1 >/dev/null`, <<'EOF', 'refuse to override');
 't/out.opus' already exists (use -y to overwrite)
@@ -36,15 +37,38 @@ error: the input and output files are the same
 EOF
 is($?, 256, 'check the error code');
 
-is(`./opustags t/gobble.opus -a A=B`, <<'EOF', 'dry add');
-encoder=Lavc58.18.100 libopus
-A=B
-EOF
+unlink('t/out.opus');
+is(`./opustags t/gobble.opus -o t/out.opus 2>&1`, '', 'copy the file without changes');
+is(md5('t/out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
+is($?, 0, 'check the error code');
 
-is(`./opustags t/gobble.opus --add A=B --output t/out.opus -y 2>&1`, '', 'add a tag');
-is(md5('t/out.opus'), '7a0bb7f46edf7d5bb735c32635f145fd', 'check the footprint of the result');
+is(`./opustags --in-place t/out.opus -a A=B --add="A=C" --add "TITLE=Foo Bar" --delete A --add TITLE=七面鳥 --set encoder=whatever -s 1=2 -s X=1 -a X=2 -s X=3`, '', 'editing tags is quiet');
+is($?, 0, 'updating the tags went well');
+is(md5('t/out.opus'), '66780307a6081523dc9040f3c47b0448', 'check the footprint');
 
-is(`./opustags t/out.opus`, <<'EOF', 'the added tag is read');
-encoder=Lavc58.18.100 libopus
+$/ = undef;
+open($fh, './opustags t/out.opus |');
+binmode($fh, ':utf8');
+is(<$fh>, <<'EOF', 'check the tags written');
 A=B
+A=C
+TITLE=Foo Bar
+TITLE=七面鳥
+encoder=whatever
+1=2
+X=1
+X=2
+X=3
 EOF
+close($fh);
+
+open($fh, './opustags t/out.opus -d A -d foo -s X=4 -a TITLE=gobble -d TITLE |');
+binmode($fh, ':utf8');
+is(<$fh>, <<'EOF', 'dry editing');
+1=2
+encoder=whatever
+X=4
+TITLE=gobble
+EOF
+close($fh);
+is(md5('t/out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
