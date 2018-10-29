@@ -7,6 +7,7 @@ use utf8;
 use Test::More tests => 18;
 
 use Digest::MD5;
+use IPC::Open3;
 
 sub md5 {
 	my ($file) = @_;
@@ -74,8 +75,27 @@ is(`./opustags t/out.opus --delete-all -a OK=yes`, <<'EOF', 'delete all');
 OK=yes
 EOF
 
-is(`echo OK='yes again' | ./opustags t/out.opus --set-all`, <<'EOF', 'set all');
+my ($pin, $pout, $perr);
+my $pid = open3($pin, $pout, $perr, './opustags t/out.opus --set-all -a A=B -s X=Z -d OK');
+binmode($pin, ':utf8');
+print $pin <<'EOF';
 OK=yes again
+ARTIST=七面鳥
+A=A
+X=Y
 EOF
+close($pin);
+
+binmode($pout, ':utf8');
+is(<$pout>, <<'EOF', 'set all');
+OK=yes again
+ARTIST=七面鳥
+A=A
+X=Y
+A=B
+X=Z
+EOF
+
+waitpid($pid, 0);
 
 unlink('t/out.opus');
