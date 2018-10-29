@@ -4,10 +4,11 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 18;
+use Test::More tests => 27;
 
 use Digest::MD5;
 use IPC::Open3;
+use Symbol 'gensym';
 
 sub md5 {
 	my ($file) = @_;
@@ -71,13 +72,28 @@ TITLE=gobble
 EOF
 is(md5('t/out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
 
+is(`./opustags -i t/out.opus -a fatal=yes -a FOO -a BAR 2>&1`, <<'EOF', 'bad tag with --add');
+invalid comment: 'FOO'
+EOF
+is($?, 256, 'exited with a failure code');
+is(md5('t/out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
+
+is(`./opustags -i t/out.opus -s fatal=yes -s FOO -s BAR 2>&1`, <<'EOF', 'bad tag with --set');
+invalid comment: 'FOO'
+EOF
+is($?, 256, 'exited with a failure code');
+is(md5('t/out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
+
 is(`./opustags t/out.opus --delete-all -a OK=yes`, <<'EOF', 'delete all');
 OK=yes
 EOF
 
-my ($pin, $pout, $perr);
-my $pid = open3($pin, $pout, $perr, './opustags t/out.opus --set-all -a A=B -s X=Z -d OK');
+my ($pid, $pin, $pout, $perr);
+$perr = gensym;
+
+$pid = open3($pin, $pout, $perr, './opustags t/out.opus --set-all -a A=B -s X=Z -d OK');
 binmode($pin, ':utf8');
+binmode($pout, ':utf8');
 print $pin <<'EOF';
 OK=yes again
 ARTIST=七面鳥
@@ -85,8 +101,6 @@ A=A
 X=Y
 EOF
 close($pin);
-
-binmode($pout, ':utf8');
 is(<$pout>, <<'EOF', 'set all');
 OK=yes again
 ARTIST=七面鳥
@@ -95,7 +109,26 @@ X=Y
 A=B
 X=Z
 EOF
-
 waitpid($pid, 0);
+
+$pid = open3($pin, $pout, $perr, './opustags t/out.opus --set-all');
+print $pin <<'EOF';
+whatever
+
+# thing
+!
+wrong=yes
+EOF
+close($pin);
+is(<$pout>, <<'EOF', 'bad tags are skipped with --set-all');
+wrong=yes
+EOF
+is(<$perr>, <<'EOF', 'get warnings for malformed tags');
+warning: skipping malformed tag
+warning: skipping malformed tag
+warning: skipping malformed tag
+EOF
+waitpid($pid, 0);
+is($?, 0, 'non fatal');
 
 unlink('t/out.opus');
