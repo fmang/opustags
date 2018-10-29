@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 16;
+use Test::More tests => 18;
 
 use Digest::MD5;
 
@@ -42,7 +42,7 @@ is(`./opustags t/gobble.opus -o t/out.opus 2>&1`, '', 'copy the file without cha
 is(md5('t/out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
 is($?, 0, 'check the error code');
 
-is(`./opustags --in-place t/out.opus -a A=B --add="A=C" --add "TITLE=Foo Bar" --delete A --add TITLE=七面鳥 --set encoder=whatever -s 1=2 -s X=1 -a X=2 -s X=3`, '', 'editing tags is quiet');
+is(`./opustags --in-place t/out.opus -a A=B --add="A=C" --add "TITLE=Foo Bar" --delete A --add TITLE=七面鳥 --set encoder=whatever -s 1=2 -s X=1 -a X=2 -s X=3`, '', 'complex tag editing');
 is($?, 0, 'updating the tags went well');
 is(md5('t/out.opus'), '66780307a6081523dc9040f3c47b0448', 'check the footprint');
 
@@ -62,13 +62,18 @@ X=3
 EOF
 close($fh);
 
-open($fh, './opustags t/out.opus -d A -d foo -s X=4 -a TITLE=gobble -d TITLE |');
-binmode($fh, ':utf8');
-is(<$fh>, <<'EOF', 'dry editing');
+is(`./opustags t/out.opus -d A -d foo -s X=4 -a TITLE=gobble -d TITLE`, <<'EOF', 'dry editing');
 1=2
 encoder=whatever
 X=4
 TITLE=gobble
 EOF
-close($fh);
 is(md5('t/out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
+
+is(`./opustags t/out.opus --delete-all -a OK=yes`, <<'EOF', 'delete all');
+OK=yes
+EOF
+
+is(`echo OK='yes again' | ./opustags t/out.opus --set-all`, <<'EOF', 'set all');
+OK=yes again
+EOF
