@@ -77,3 +77,5 @@ EOF
 is(`echo OK='yes again' | ./opustags t/out.opus --set-all`, <<'EOF', 'set all');
 OK=yes again
 EOF
+
+unlink('t/out.opus');
