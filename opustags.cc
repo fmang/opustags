@@ -144,8 +144,6 @@ int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count){
 }
 
 void print_tags(opus_tags *tags){
-    if(tags->count == 0)
-        puts("no tags");
     for(uint32_t i=0; i<tags->count; i++){
         fwrite(tags->comment[i], 1, tags->lengths[i], stdout);
         puts("");
