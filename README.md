@@ -27,14 +27,24 @@ Requirements
 ------------
 
 * a C++14 compiler,
+* CMake,
 * a POSIX-compliant system,
 * libogg.
 
 Installing
 ----------
 
+opustags is a commonplace CMake project.
+
+Here's how to install it in your .local, under your home:
+
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=~/.local ..
     make
-    make DESTDIR=/usr/local install
+    make install
+
+Note that you don't need to install opustags in order to run it, as the executable is standalone.
 
 Documentation
 -------------
