@@ -26,7 +26,8 @@ See also these libraries if you need a lower-level access:
 Requirements
 ------------
 
-* A POSIX-compliant system,
+* a C++14 compiler,
+* a POSIX-compliant system,
 * libogg.
 
 Installing

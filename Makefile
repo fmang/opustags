@@ -1,11 +1,11 @@
 DESTDIR=/usr/local
 MANDEST=share/man
-CFLAGS=-Wall
+CXXFLAGS=-Wall -std=c++14
 LDFLAGS=-logg
 
 all: opustags
 
-opustags: opustags.c
+opustags: opustags.cc
 
 man: opustags.1
 	gzip <opustags.1 >opustags.1.gz

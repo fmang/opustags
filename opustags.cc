@@ -38,10 +38,10 @@ int parse_tags(char *data, long len, opus_tags *tags){
     tags->count = le32toh(*((uint32_t*) (data + pos)));
     if(tags->count == 0)
         return 0;
-    tags->lengths = calloc(tags->count, sizeof(uint32_t));
+    tags->lengths = static_cast<uint32_t*>(calloc(tags->count, sizeof(uint32_t)));
     if(tags->lengths == NULL)
         return -1;
-    tags->comment = calloc(tags->count, sizeof(char*));
+    tags->comment = static_cast<const char**>(calloc(tags->count, sizeof(char*)));
     if(tags->comment == NULL){
         free(tags->lengths);
         return -1;
@@ -74,7 +74,7 @@ int render_tags(opus_tags *tags, ogg_packet *op){
     for(i=0; i<tags->count; i++)
         len += 4 + tags->lengths[i];
     op->bytes = len;
-    char *data = malloc(len);
+    char *data = static_cast<char*>(malloc(len));
     if(!data)
         return -1;
     op->packet = (unsigned char*) data;
@@ -128,8 +128,8 @@ void delete_tags(opus_tags *tags, const char *field){
 int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count){
     if(count == 0)
         return 0;
-    uint32_t *lengths = realloc(tags->lengths, (tags->count + count) * sizeof(uint32_t));
-    const char **comment = realloc(tags->comment, (tags->count + count) * sizeof(char*));
+    uint32_t *lengths = static_cast<uint32_t*>(realloc(tags->lengths, (tags->count + count) * sizeof(uint32_t)));
+    const char **comment = static_cast<const char**>(realloc(tags->comment, (tags->count + count) * sizeof(char*)));
     if(lengths == NULL || comment == NULL)
         return -1;
     tags->lengths = lengths;
@@ -146,8 +146,7 @@ int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count){
 void print_tags(opus_tags *tags){
     if(tags->count == 0)
         puts("no tags");
-    int i;
-    for(i=0; i<tags->count; i++){
+    for(uint32_t i=0; i<tags->count; i++){
         fwrite(tags->comment[i], 1, tags->lengths[i], stdout);
         puts("");
     }
@@ -161,9 +160,9 @@ void free_tags(opus_tags *tags){
 }
 
 int write_page(ogg_page *og, FILE *stream){
-    if(fwrite(og->header, 1, og->header_len, stream) < og->header_len)
+    if((ssize_t) fwrite(og->header, 1, og->header_len, stream) < og->header_len)
         return -1;
-    if(fwrite(og->body, 1, og->body_len, stream) < og->body_len)
+    if((ssize_t) fwrite(og->body, 1, og->body_len, stream) < og->body_len)
         return -1;
     return 0;
 }
@@ -206,7 +205,8 @@ int main(int argc, char **argv){
         fputs(usage, stdout);
         return EXIT_SUCCESS;
     }
-    char *path_in, *path_out = NULL, *inplace = NULL;
+    char *path_in, *path_out = NULL;
+    const char *inplace = NULL;
     const char* to_add[argc];
     const char* to_delete[argc];
     int count_add = 0, count_delete = 0;
@@ -300,7 +300,7 @@ int main(int argc, char **argv){
     }
     FILE *out = NULL;
     if(inplace != NULL){
-        path_out = malloc(strlen(path_in) + strlen(inplace) + 1);
+        path_out = static_cast<char*>(malloc(strlen(path_in) + strlen(inplace) + 1));
         if(path_out == NULL){
             fputs("failure to allocate memory\n", stderr);
             fclose(in);
@@ -338,7 +338,7 @@ int main(int argc, char **argv){
     ogg_sync_init(&oy);
     char *buf;
     size_t len;
-    char *error = NULL;
+    const char *error = NULL;
     int packet_count = -1;
     while(error == NULL){
         // Read until we complete a page.
@@ -408,7 +408,7 @@ int main(int argc, char **argv){
                 }
                 char *raw_tags = NULL;
                 if(set_all){
-                    raw_tags = malloc(16384);
+                    raw_tags = static_cast<char*>(malloc(16384));
                     if(raw_tags == NULL){
                         error = "malloc: not enough memory for buffering stdin";
                         free(raw_tags);
