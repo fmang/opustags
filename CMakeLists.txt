@@ -23,4 +23,4 @@ include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
 install(FILES opustags.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
 
-add_custom_target(check COMMAND prove "${CMAKE_SOURCE_DIR}/t")
+add_custom_target(check COMMAND prove "${CMAKE_SOURCE_DIR}/t" DEPENDS opustags)
