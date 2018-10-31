@@ -4,22 +4,23 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
+use Test::More tests => 7;
 
 my $opustags = './opustags';
-chomp(my $version = `git describe --tags --abbrev=0`);
-
 BAIL_OUT("$opustags does not exist or is not executable") if (! -x $opustags);
 
+chomp(my $version = `$opustags --help | head -n 1`);
+like($version, qr/^opustags version \d+\.\d+\.\d+$/, 'get the version string');
+
 is(`$opustags`, <<"EOF", 'no options show the usage');
-opustags version $version
+$version
 Usage: opustags --help
        opustags [OPTIONS] FILE
        opustags OPTIONS FILE -o FILE
 EOF
 
 my $help = <<"EOF";
-opustags version $version
+$version
 
 Usage: opustags --help
        opustags [OPTIONS] FILE

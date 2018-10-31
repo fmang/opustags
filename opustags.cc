@@ -1,3 +1,5 @@
+#include <config.h>
+
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
@@ -165,7 +167,7 @@ int write_page(ogg_page *og, FILE *stream){
     return 0;
 }
 
-const char *version = "opustags version 1.1.1\n";
+const char *version = PROJECT_NAME " version " PROJECT_VERSION "\n";
 
 const char *usage =
     "Usage: opustags --help\n"

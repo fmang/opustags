@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FindPkgConfig)
 pkg_check_modules(OGG REQUIRED ogg)
 
+configure_file(config.h.in config.h @ONLY)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 add_executable(opustags opustags.cc)
 target_compile_options(opustags PUBLIC ${OGG_CFLAGS})
 target_link_libraries(opustags PUBLIC ${OGG_LIBRARIES})
