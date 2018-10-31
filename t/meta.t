@@ -4,7 +4,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 my $opustags = './opustags';
 BAIL_OUT("$opustags does not exist or is not executable") if (! -x $opustags);
@@ -18,6 +18,7 @@ Usage: opustags --help
        opustags [OPTIONS] FILE
        opustags OPTIONS FILE -o FILE
 EOF
+is($?, 0, 'no option is not an error'); # should it be?
 
 my $help = <<"EOF";
 $version
