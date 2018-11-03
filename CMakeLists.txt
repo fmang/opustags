@@ -15,7 +15,11 @@ pkg_check_modules(OGG REQUIRED ogg)
 configure_file(src/config.h.in config.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(opustags src/opustags.cc)
+add_executable(
+	opustags
+	src/opus.cc
+	src/opustags.cc
+)
 target_compile_options(opustags PUBLIC ${OGG_CFLAGS})
 target_link_libraries(opustags PUBLIC ${OGG_LIBRARIES})
 
