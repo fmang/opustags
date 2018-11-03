@@ -4,6 +4,7 @@
  */
 
 #include <cstdint>
+#include <cstdio>
 #include <ogg/ogg.h>
 
 namespace ot {
@@ -11,7 +12,13 @@ namespace ot {
 /**
  * \defgroup ogg Ogg
  * \brief Helpers to work with libogg.
+ *
+ * \{
  */
+
+int write_page(ogg_page *og, FILE *stream);
+
+/** \} */
 
 /**
  * \defgroup opus Opus

@@ -17,6 +17,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(
 	opustags
+	src/ogg.cc
 	src/opus.cc
 	src/opustags.cc
 )

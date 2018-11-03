@@ -13,14 +13,6 @@
 
 using namespace ot;
 
-int write_page(ogg_page *og, FILE *stream){
-    if((ssize_t) fwrite(og->header, 1, og->header_len, stream) < og->header_len)
-        return -1;
-    if((ssize_t) fwrite(og->body, 1, og->body_len, stream) < og->body_len)
-        return -1;
-    return 0;
-}
-
 const char *version = PROJECT_NAME " version " PROJECT_VERSION "\n";
 
 const char *usage =
