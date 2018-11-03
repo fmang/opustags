@@ -11,8 +11,6 @@
 #include <unistd.h>
 #include <ogg/ogg.h>
 
-using namespace ot;
-
 const char *version = PROJECT_NAME " version " PROJECT_VERSION "\n";
 
 const char *usage =
@@ -180,7 +178,7 @@ int main(int argc, char **argv){
     ogg_stream_state os, enc;
     ogg_page og;
     ogg_packet op;
-    opus_tags tags;
+    ot::opus_tags tags;
     ogg_sync_init(&oy);
     char *buf;
     size_t len;
@@ -207,7 +205,7 @@ int main(int argc, char **argv){
         // We got a page.
         // Short-circuit when the relevant packets have been read.
         if(packet_count >= 2 && out){
-            if(write_page(&og, out) == -1){
+            if(ot::write_page(&og, out) == -1){
                 error = "write_page: fwrite error";
                 break;
             }
@@ -241,7 +239,7 @@ int main(int argc, char **argv){
                 }
             }
             else if(packet_count == 2){ // Comment header
-                if(parse_tags((char*) op.packet, op.bytes, &tags) == -1){
+                if(ot::parse_tags((char*) op.packet, op.bytes, &tags) == -1){
                     error = "opustags: invalid comment header";
                     break;
                 }
@@ -250,7 +248,7 @@ int main(int argc, char **argv){
                 else{
                     int i;
                     for(i=0; i<count_delete; i++)
-                        delete_tags(&tags, to_delete[i]);
+                        ot::delete_tags(&tags, to_delete[i]);
                 }
                 char *raw_tags = NULL;
                 if(set_all){
@@ -289,20 +287,20 @@ int main(int argc, char **argv){
                                 caught_eq = 1;
                             field_len++;
                         }
-                        add_tags(&tags, (const char**) raw_comment, raw_count);
+                        ot::add_tags(&tags, (const char**) raw_comment, raw_count);
                     }
                 }
-                add_tags(&tags, to_add, count_add);
+                ot::add_tags(&tags, to_add, count_add);
                 if(out){
                     ogg_packet packet;
-                    render_tags(&tags, &packet);
+                    ot::render_tags(&tags, &packet);
                     if(ogg_stream_packetin(&enc, &packet) == -1)
                         error = "ogg_stream_packetin: internal error";
                     free(packet.packet);
                 }
                 else
-                    print_tags(&tags);
-                free_tags(&tags);
+                    ot::print_tags(&tags);
+                ot::free_tags(&tags);
                 if(raw_tags)
                     free(raw_tags);
                 if(error || !out)
@@ -324,7 +322,7 @@ int main(int argc, char **argv){
         // Write the page.
         if(out){
             ogg_stream_flush(&enc, &og);
-            if(write_page(&og, out) == -1)
+            if(ot::write_page(&og, out) == -1)
                 error = "write_page: fwrite error";
             else if(ogg_stream_check(&enc) != 0)
                 error = "ogg_stream_check: internal error (encoder)";
