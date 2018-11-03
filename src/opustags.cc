@@ -1,5 +1,7 @@
 #include <config.h>
 
+#include "opustags.h"
+
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
@@ -15,13 +17,7 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
-typedef struct {
-    uint32_t vendor_length;
-    const char *vendor_string;
-    uint32_t count;
-    uint32_t *lengths;
-    const char **comment;
-} opus_tags;
+using namespace ot;
 
 int parse_tags(char *data, long len, opus_tags *tags){
     long pos;
