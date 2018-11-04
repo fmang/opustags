@@ -1,3 +1,27 @@
+/**
+ * \file src/opus.cc
+ * \ingroup opus
+ *
+ * The way Opus is encapsulated into an Ogg stream, and the content of the packets we're dealing
+ * with here is defined by [RFC 7584](https://tools.ietf.org/html/rfc7845.html).
+ *
+ * Section 3 "Packet Organization" is critical for us:
+ *
+ * - The first page contains exactly 1 packet, the OpusHead, and it contains it entirely.
+ * - The second page begins the OpusTags packet, which may span several pages.
+ * - The OpusTags packet must finish the page on which it completes.
+ *
+ * The structure of the OpusTags packet is defined in section 5.2 "Comment Header" of the RFC.
+ *
+ * OpusTags is similar to [Vorbis Comment](https://www.xiph.org/vorbis/doc/v-comment.html), which
+ * gives us some context, but let's stick to the RFC for the technical details.
+ *
+ * \todo Validate that the vendor string and comments are valid UTF-8.
+ * \todo Validate that field names are ASCII: 0x20 through 0x7D, 0x3D ('=') excluded.
+ * \todo Field names are case insensitive, respect that.
+ *
+ */
+
 #include "opustags.h"
 
 #include <cstdlib>

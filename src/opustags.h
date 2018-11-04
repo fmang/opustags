@@ -27,6 +27,11 @@ int write_page(ogg_page *og, FILE *stream);
  * \{
  */
 
+/**
+ * Represent all the data in an OpusTags packet.
+ *
+ * \todo The comment list may be followed by arbitrary binary data, which we should keep here.
+ */
 struct opus_tags {
 	uint32_t vendor_length;
 	const char *vendor_string;
