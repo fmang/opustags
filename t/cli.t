@@ -1,18 +1,68 @@
-# Test the main features of opustags on an Ogg Opus sample file.
-
 use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 27;
+use Test::More tests => 35;
 
 use Digest::MD5;
 use File::Basename;
 use IPC::Open3;
 use Symbol 'gensym';
 
+my $opustags = './opustags';
+BAIL_OUT("$opustags does not exist or is not executable") if (! -x $opustags);
+
 my $t = dirname(__FILE__);
 BAIL_OUT("'$t' contains unsupported characters") if $t !~ m|^[\w/]*$|;
+
+####################################################################################################
+# Tests related to the overall opustags executable, like the help message.
+# No Opus file is manipulated here.
+
+chomp(my $version = `$opustags --help | head -n 1`);
+like($version, qr/^opustags version \d+\.\d+\.\d+$/, 'get the version string');
+
+is(`$opustags`, <<"EOF", 'no options show the usage');
+$version
+Usage: opustags --help
+       opustags [OPTIONS] FILE
+       opustags OPTIONS FILE -o FILE
+EOF
+is($?, 0, 'no option is not an error'); # should it be?
+
+my $help = <<"EOF";
+$version
+
+Usage: opustags --help
+       opustags [OPTIONS] FILE
+       opustags OPTIONS FILE -o FILE
+
+Options:
+  -h, --help              print this help
+  -o, --output            write the modified tags to a file
+  -i, --in-place [SUFFIX] use a temporary file then replace the original file
+  -y, --overwrite         overwrite the output file if it already exists
+  -d, --delete FIELD      delete all the fields of a specified type
+  -a, --add FIELD=VALUE   add a field
+  -s, --set FIELD=VALUE   delete then add a field
+  -D, --delete-all        delete all the fields!
+  -S, --set-all           read the fields from stdin
+
+See the man page for extensive documentation.
+EOF
+
+is(`$opustags --help`, $help, '--help displays the help message');
+is($?, 0, '--help returns 0');
+
+is(`$opustags --h`, $help, '-h displays the help message too');
+
+is(`$opustags --derp 2>&1`, <<'EOF', 'unrecognized option shows an error');
+./opustags: unrecognized option '--derp'
+EOF
+is($?, 256, 'unrecognized option causes return code 256');
+
+####################################################################################################
+# Test the main features of opustags on an Ogg Opus sample file.
 
 sub md5 {
 	my ($file) = @_;
