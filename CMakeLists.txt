@@ -13,13 +13,19 @@ include(FindPkgConfig)
 pkg_check_modules(OGG REQUIRED ogg)
 
 configure_file(src/config.h.in config.h @ONLY)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(BEFORE src "${CMAKE_BINARY_DIR}")
+
+add_library(
+	libopustags
+	OBJECT
+	src/ogg.cc
+	src/opus.cc
+)
 
 add_executable(
 	opustags
-	src/ogg.cc
-	src/opus.cc
 	src/opustags.cc
+	$<TARGET_OBJECTS:libopustags>
 )
 target_compile_options(opustags PUBLIC ${OGG_CFLAGS})
 target_link_libraries(opustags PUBLIC ${OGG_LIBRARIES})
@@ -28,4 +34,4 @@ include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
 install(FILES opustags.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
 
-add_custom_target(check COMMAND prove "${CMAKE_SOURCE_DIR}/t" DEPENDS opustags)
+add_subdirectory(t)
