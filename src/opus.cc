@@ -34,7 +34,7 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
-int ot::parse_tags(char *data, long len, opus_tags *tags)
+int ot::parse_tags(const char *data, long len, opus_tags *tags)
 {
 	long pos;
 	if (len < 8+4+4)
