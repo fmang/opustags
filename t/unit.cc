@@ -54,6 +54,8 @@ static bool parse_standard()
 		throw failure("bad title comment");
 	if (memcmp(tags.comment[1], "ARTIST=Bar", tags.lengths[1]) != 0)
 		throw failure("bad artist comment");
+	if (tags.extra_data.size != 0)
+		throw failure("found mysterious padding data");
 	ot::free_tags(&tags);
 	return true;
 }
@@ -94,6 +96,11 @@ static bool recode_padding()
 	int rc = ot::parse_tags(padded_OpusTags.data(), padded_OpusTags.size(), &tags);
 	if (rc != 0)
 		throw failure("ot::parse_tags did not return 0");
+	if (tags.extra_data.size != 6)
+		throw failure("unexpected amount of extra bytes");
+	if (memcmp(tags.extra_data.data, "\0hello", 6) != 0)
+		throw failure("corrupted extra data");
+	// recode the packet and ensure it's exactly the same
 	ogg_packet packet;
 	rc = ot::render_tags(&tags, &packet);
 	if (packet.bytes < padded_OpusTags.size())

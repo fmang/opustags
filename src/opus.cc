@@ -34,6 +34,9 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
+/**
+ * \todo Use RAII. Here the allocated objects are not even properly freed on error.
+ */
 int ot::parse_tags(const char *data, long len, opus_tags *tags)
 {
 	long pos;
@@ -70,10 +73,8 @@ int ot::parse_tags(const char *data, long len, opus_tags *tags)
 		if (pos > len)
 			return -1;
 	}
-
-	if (pos < len)
-		fprintf(stderr, "warning: %ld unused bytes at the end of the OpusTags packet\n", len - pos);
-
+	// Extra data
+	tags->extra_data = ot::string_view{data + pos, static_cast<size_t>(len - pos)};
 	return 0;
 }
 
@@ -88,6 +89,7 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	uint32_t i;
 	for (i=0; i<tags->count; i++)
 		len += 4 + tags->lengths[i];
+	len += tags->extra_data.size;
 	op->bytes = len;
 	char *data = static_cast<char*>(malloc(len));
 	if (!data)
@@ -108,6 +110,7 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 		memcpy(data+4, tags->comment[i], tags->lengths[i]);
 		data += 4 + tags->lengths[i];
 	}
+	memcpy(data, tags->extra_data.data, tags->extra_data.size);
 	return 0;
 }
 
