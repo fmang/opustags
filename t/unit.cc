@@ -85,10 +85,33 @@ static bool recode_standard()
 	return true;
 }
 
+static bool recode_padding()
+{
+	ot::opus_tags tags;
+	std::string padded_OpusTags(standard_OpusTags, sizeof(standard_OpusTags));
+	// ^ note: padded_OpusTags ends with a null byte here
+	padded_OpusTags += "hello";
+	int rc = ot::parse_tags(padded_OpusTags.data(), padded_OpusTags.size(), &tags);
+	if (rc != 0)
+		throw failure("ot::parse_tags did not return 0");
+	ogg_packet packet;
+	rc = ot::render_tags(&tags, &packet);
+	if (packet.bytes < padded_OpusTags.size())
+		throw failure("the packet was truncated");
+	if (packet.bytes > padded_OpusTags.size())
+		throw failure("the packet got too big");
+	if (memcmp(packet.packet, padded_OpusTags.data(), packet.bytes) != 0)
+		throw failure("the rendered packet is not what we expected");
+	ot::free_tags(&tags);
+	free(packet.packet);
+	return true;
+}
+
 int main()
 {
-	std::cout << "1..2\n";
+	std::cout << "1..3\n";
 	run(parse_standard, "parse a standard OpusTags packet");
 	run(recode_standard, "recode a standard OpusTags packet");
+	run(recode_padding, "recode a OpusTags packet with padding");
 	return 0;
 }
