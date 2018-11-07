@@ -124,13 +124,3 @@ void ot::delete_tags(opus_tags *tags, const char *field)
 			tags->comments.erase(current);
 	}
 }
-
-/**
- * \todo Return void.
- */
-int ot::add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count)
-{
-	for (uint32_t i = 0; i < count; ++i)
-		tags->comments.emplace_back(tags_to_add[i]);
-	return 0;
-}

@@ -304,10 +304,12 @@ int main(int argc, char **argv){
                                 caught_eq = 1;
                             field_len++;
                         }
-                        ot::add_tags(&tags, (const char**) raw_comment, raw_count);
+                        for (size_t i = 0; i < raw_count; ++i)
+                            tags.comments.emplace_back(raw_comment[i]);
                     }
                 }
-                ot::add_tags(&tags, to_add, count_add);
+                for (size_t i = 0; i < count_add; ++i)
+                    tags.comments.emplace_back(to_add[i]);
                 if(out){
                     ogg_packet packet;
                     ot::render_tags(&tags, &packet);
