@@ -126,8 +126,8 @@ X=3
 EOF
 
 is_deeply(opustags("$t/out.opus", qw(-d A -d foo -s X=4 -a TITLE=gobble -d TITLE), undef), [<<'EOF', '', 0], 'dry editing');
-1=2
 encoder=whatever
+1=2
 X=4
 TITLE=gobble
 EOF

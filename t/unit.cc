@@ -46,14 +46,14 @@ static bool parse_standard()
 		throw failure("the vendor string length is invalid");
 	if (memcmp(tags.vendor_string, "opustags test packet", 20) != 0)
 		throw failure("the vendor string is invalid");
-	if (tags.count != 2)
+	if (tags.comments.size() != 2)
 		throw failure("bad number of comments");
-	if (tags.lengths[0] != 9 || tags.lengths[1] != 10)
-		throw failure("bad comment lengths");
-	if (memcmp(tags.comment[0], "TITLE=Foo", tags.lengths[0]) != 0)
-		throw failure("bad title comment");
-	if (memcmp(tags.comment[1], "ARTIST=Bar", tags.lengths[1]) != 0)
-		throw failure("bad artist comment");
+	auto it = tags.comments.begin();
+	if (*it != ot::string_view("TITLE=Foo"))
+		throw failure("bad title");
+	++it;
+	if (*it != ot::string_view("ARTIST=Bar"))
+		throw failure("bad artist");
 	if (tags.extra_data.size != 0)
 		throw failure("found mysterious padding data");
 	ot::free_tags(&tags);

@@ -244,7 +244,7 @@ int main(int argc, char **argv){
                     break;
                 }
                 if(delete_all)
-                    tags.count = 0;
+                    tags.comments.clear();
                 else{
                     int i;
                     for(i=0; i<count_delete; i++)

@@ -34,9 +34,6 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
-/**
- * \todo Use RAII. Here the allocated objects are not even properly freed on error.
- */
 int ot::parse_tags(const char *data, long len, opus_tags *tags)
 {
 	long pos;
@@ -52,29 +49,19 @@ int ot::parse_tags(const char *data, long len, opus_tags *tags)
 	if (pos + 4 > len)
 		return -1;
 	// Count
-	tags->count = le32toh(*((uint32_t*) (data + pos)));
-	if (tags->count == 0)
-		return 0;
-	tags->lengths = static_cast<uint32_t*>(calloc(tags->count, sizeof(uint32_t)));
-	if (tags->lengths == NULL)
-		return -1;
-	tags->comment = static_cast<const char**>(calloc(tags->count, sizeof(char*)));
-	if (tags->comment == NULL) {
-		free(tags->lengths);
-		return -1;
-	}
+	uint32_t count = le32toh(*((uint32_t*) (data + pos)));
 	pos += 4;
-	// Comment
-	uint32_t i;
-	for (i=0; i<tags->count; i++) {
-		tags->lengths[i] = le32toh(*((uint32_t*) (data + pos)));
-		tags->comment[i] = data + pos + 4;
-		pos += 4 + tags->lengths[i];
+	// Comments
+	for (uint32_t i = 0; i < count; ++i) {
+		uint32_t comment_length = le32toh(*((uint32_t*) (data + pos)));
+		const char *comment_value = data + pos + 4;
+		tags->comments.emplace_back(comment_value, comment_length);
+		pos += 4 + comment_length;
 		if (pos > len)
 			return -1;
 	}
 	// Extra data
-	tags->extra_data = ot::string_view{data + pos, static_cast<size_t>(len - pos)};
+	tags->extra_data = ot::string_view(data + pos, static_cast<size_t>(len - pos));
 	return 0;
 }
 
@@ -86,9 +73,8 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	op->granulepos = 0;
 	op->packetno = 1;
 	long len = 8 + 4 + tags->vendor_length + 4;
-	uint32_t i;
-	for (i=0; i<tags->count; i++)
-		len += 4 + tags->lengths[i];
+	for (const string_view &comment : tags->comments)
+		len += 4 + comment.size;
 	len += tags->extra_data.size;
 	op->bytes = len;
 	char *data = static_cast<char*>(malloc(len));
@@ -101,19 +87,22 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	memcpy(data+8, &n, 4);
 	memcpy(data+12, tags->vendor_string, tags->vendor_length);
 	data += 12 + tags->vendor_length;
-	n = htole32(tags->count);
+	n = htole32(tags->comments.size());
 	memcpy(data, &n, 4);
 	data += 4;
-	for (i=0; i<tags->count; i++) {
-		n = htole32(tags->lengths[i]);
+	for (const string_view &comment : tags->comments) {
+		n = htole32(comment.size);
 		memcpy(data, &n, 4);
-		memcpy(data+4, tags->comment[i], tags->lengths[i]);
-		data += 4 + tags->lengths[i];
+		memcpy(data+4, comment.data, comment.size);
+		data += 4 + comment.size;
 	}
 	memcpy(data, tags->extra_data.data, tags->extra_data.size);
 	return 0;
 }
 
+/**
+ * \todo Make the field name case-insensitive?
+ */
 static int match_field(const char *comment, uint32_t len, const char *field)
 {
 	size_t field_len;
@@ -129,52 +118,35 @@ static int match_field(const char *comment, uint32_t len, const char *field)
 
 void ot::delete_tags(opus_tags *tags, const char *field)
 {
-	uint32_t i;
-	for (i=0; i<tags->count; i++) {
-		if (match_field(tags->comment[i], tags->lengths[i], field)) {
-			// We want to delete the current element, so we move the last tag at
-			// position i, then decrease the array size. We need decrease i to inspect
-			// at the next iteration the tag we just moved.
-			tags->count--;
-			tags->lengths[i] = tags->lengths[tags->count];
-			tags->comment[i] = tags->comment[tags->count];
-			--i;
-			// No need to resize the arrays.
-		}
+	auto it = tags->comments.begin(), end = tags->comments.end();
+	while (it != end) {
+		auto current = it++;
+		if (match_field(current->data, current->size, field))
+			tags->comments.erase(current);
 	}
 }
 
+/**
+ * \todo Return void.
+ */
 int ot::add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count)
 {
-	if (count == 0)
-		return 0;
-	uint32_t *lengths = static_cast<uint32_t*>(realloc(tags->lengths, (tags->count + count) * sizeof(uint32_t)));
-	const char **comment = static_cast<const char**>(realloc(tags->comment, (tags->count + count) * sizeof(char*)));
-	if (lengths == NULL || comment == NULL)
-		return -1;
-	tags->lengths = lengths;
-	tags->comment = comment;
-	uint32_t i;
-	for (i=0; i<count; i++) {
-		tags->lengths[tags->count + i] = strlen(tags_to_add[i]);
-		tags->comment[tags->count + i] = tags_to_add[i];
-	}
-	tags->count += count;
+	for (uint32_t i = 0; i < count; ++i)
+		tags->comments.emplace_back(tags_to_add[i]);
 	return 0;
 }
 
 void ot::print_tags(opus_tags *tags)
 {
-	for (uint32_t i=0; i<tags->count; i++) {
-		fwrite(tags->comment[i], 1, tags->lengths[i], stdout);
+	for (const string_view &comment : tags->comments) {
+		fwrite(comment.data, 1, comment.size, stdout);
 		puts("");
 	}
 }
 
+/**
+ * \todo Delete this function.
+ */
 void ot::free_tags(opus_tags *tags)
 {
-	if (tags->count > 0) {
-		free(tags->lengths);
-		free(tags->comment);
-	}
 }

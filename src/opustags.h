@@ -3,9 +3,12 @@
  * \brief Interface of all the submodules of opustags.
  */
 
+#include <ogg/ogg.h>
+
 #include <cstdint>
 #include <cstdio>
-#include <ogg/ogg.h>
+#include <cstring>
+#include <list>
 
 namespace ot {
 
@@ -13,8 +16,15 @@ namespace ot {
  * Non-owning string, similar to what std::string_view is in C++17.
  */
 struct string_view {
-	const char *data;
-	size_t size;
+	string_view() {};
+	string_view(const char *data) : data(data), size(strlen(data)) {};
+	string_view(const char *data, size_t size) : data(data), size(size) {}
+	bool operator==(const string_view &other) const {
+		return size == other.size && memcmp(data, other.data, size) == 0;
+	}
+	bool operator!=(const string_view &other) const { return !(*this == other); }
+	const char *data = nullptr;
+	size_t size = 0;
 };
 
 /**
@@ -40,10 +50,16 @@ int write_page(ogg_page *og, FILE *stream);
  */
 struct opus_tags {
 	uint32_t vendor_length;
+	/** \todo Convert to a string view. */
 	const char *vendor_string;
-	uint32_t count;
-	uint32_t *lengths;
-	const char **comment;
+	/**
+	 * Comments. These are a list of string following the NAME=Value format.
+	 * A comment may also be called a field, or a tag.
+	 *
+	 * The field name in vorbis comment is case-insensitive and ASCII,
+	 * while the value can be any valid UTF-8 string.
+	 */
+	std::list<string_view> comments;
 	/**
 	 * According to RFC 7845:
 	 * > Immediately following the user comment list, the comment header MAY contain
