@@ -43,9 +43,8 @@ int ot::parse_tags(const char *data, long len, opus_tags *tags)
 		return -1;
 	// Vendor
 	pos = 8;
-	tags->vendor.size = le32toh(*((uint32_t*) (data + pos)));
-	tags->vendor.data = data + pos + 4;
-	pos += 4 + tags->vendor.size;
+	tags->vendor = ot::string_view(data + pos + 4, le32toh(*((uint32_t*) (data + pos))));
+	pos += 4 + tags->vendor.size();
 	if (pos + 4 > len)
 		return -1;
 	// Count
@@ -72,10 +71,10 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	op->e_o_s = 0;
 	op->granulepos = 0;
 	op->packetno = 1;
-	long len = 8 + 4 + tags->vendor.size + 4;
+	long len = 8 + 4 + tags->vendor.size() + 4;
 	for (const string_view &comment : tags->comments)
-		len += 4 + comment.size;
-	len += tags->extra_data.size;
+		len += 4 + comment.size();
+	len += tags->extra_data.size();
 	op->bytes = len;
 	char *data = static_cast<char*>(malloc(len));
 	if (!data)
@@ -83,20 +82,20 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	op->packet = (unsigned char*) data;
 	uint32_t n;
 	memcpy(data, "OpusTags", 8);
-	n = htole32(tags->vendor.size);
+	n = htole32(tags->vendor.size());
 	memcpy(data+8, &n, 4);
-	memcpy(data+12, tags->vendor.data, tags->vendor.size);
-	data += 12 + tags->vendor.size;
+	memcpy(data+12, tags->vendor.data(), tags->vendor.size());
+	data += 12 + tags->vendor.size();
 	n = htole32(tags->comments.size());
 	memcpy(data, &n, 4);
 	data += 4;
 	for (const string_view &comment : tags->comments) {
-		n = htole32(comment.size);
+		n = htole32(comment.size());
 		memcpy(data, &n, 4);
-		memcpy(data+4, comment.data, comment.size);
-		data += 4 + comment.size;
+		memcpy(data+4, comment.data(), comment.size());
+		data += 4 + comment.size();
 	}
-	memcpy(data, tags->extra_data.data, tags->extra_data.size);
+	memcpy(data, tags->extra_data.data(), tags->extra_data.size());
 	return 0;
 }
 
@@ -121,7 +120,7 @@ void ot::delete_tags(opus_tags *tags, const char *field)
 	auto it = tags->comments.begin(), end = tags->comments.end();
 	while (it != end) {
 		auto current = it++;
-		if (match_field(current->data, current->size, field))
+		if (match_field(current->data(), current->size(), field))
 			tags->comments.erase(current);
 	}
 }
@@ -139,7 +138,7 @@ int ot::add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count)
 void ot::print_tags(opus_tags *tags)
 {
 	for (const string_view &comment : tags->comments) {
-		fwrite(comment.data, 1, comment.size, stdout);
+		fwrite(comment.data(), 1, comment.size(), stdout);
 		puts("");
 	}
 }

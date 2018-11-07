@@ -13,18 +13,25 @@
 namespace ot {
 
 /**
- * Non-owning string, similar to what std::string_view is in C++17.
+ * Non-owning string.
+ *
+ * The interface is meant to be compatible with std::string_view from C++17, so
+ * that we'll be able to delete it as soon as C++17 is widely supported.
  */
-struct string_view {
-	string_view() {};
-	string_view(const char *data) : data(data), size(strlen(data)) {};
-	string_view(const char *data, size_t size) : data(data), size(size) {}
+class string_view {
+public:
+	string_view() {}
+	string_view(const char *data) : _data(data), _size(strlen(data)) {}
+	string_view(const char *data, size_t size) : _data(data), _size(size) {}
+	const char *data() const { return _data; }
+	size_t size() const { return _size; }
 	bool operator==(const string_view &other) const {
-		return size == other.size && memcmp(data, other.data, size) == 0;
+		return _size == other._size && memcmp(_data, other._data, _size) == 0;
 	}
 	bool operator!=(const string_view &other) const { return !(*this == other); }
-	const char *data = nullptr;
-	size_t size = 0;
+private:
+	const char *_data = nullptr;
+	size_t _size = 0;
 };
 
 /**
