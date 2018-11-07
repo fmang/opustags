@@ -87,7 +87,6 @@ int parse_tags(const char *data, long len, opus_tags *tags);
 int render_tags(opus_tags *tags, ogg_packet *op);
 void delete_tags(opus_tags *tags, const char *field);
 int add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count);
-void print_tags(opus_tags *tags);
 
 /** \} */
 

@@ -43,6 +43,23 @@ struct option options[] = {
     {NULL, 0, 0, 0}
 };
 
+/**
+ * Display the tags on stdout.
+ *
+ * Print all the comments, separated by line breaks. Since a comment may
+ * contain line breaks, this output is not completely reliable, but it fits
+ * most cases.
+ *
+ * Only the comments are displayed.
+ */
+static void print_tags(ot::opus_tags &tags)
+{
+	for (const ot::string_view &comment : tags.comments) {
+		fwrite(comment.data(), 1, comment.size(), stdout);
+		puts("");
+	}
+}
+
 int main(int argc, char **argv){
     if(argc == 1){
         fputs(version, stdout);
@@ -299,7 +316,7 @@ int main(int argc, char **argv){
                     free(packet.packet);
                 }
                 else
-                    ot::print_tags(&tags);
+                    print_tags(tags);
                 if(raw_tags)
                     free(raw_tags);
                 if(error || !out)

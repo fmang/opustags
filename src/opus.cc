@@ -134,11 +134,3 @@ int ot::add_tags(opus_tags *tags, const char **tags_to_add, uint32_t count)
 		tags->comments.emplace_back(tags_to_add[i]);
 	return 0;
 }
-
-void ot::print_tags(opus_tags *tags)
-{
-	for (const string_view &comment : tags->comments) {
-		fwrite(comment.data(), 1, comment.size(), stdout);
-		puts("");
-	}
-}
