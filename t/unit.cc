@@ -42,10 +42,8 @@ static bool parse_standard()
 	int rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
 	if (rc != 0)
 		throw failure("ot::parse_tags did not return 0");
-	if (tags.vendor_length != 20)
-		throw failure("the vendor string length is invalid");
-	if (memcmp(tags.vendor_string, "opustags test packet", 20) != 0)
-		throw failure("the vendor string is invalid");
+	if (tags.vendor != ot::string_view( "opustags test packet"))
+		throw failure("bad vendor string");
 	if (tags.comments.size() != 2)
 		throw failure("bad number of comments");
 	auto it = tags.comments.begin();

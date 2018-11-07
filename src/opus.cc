@@ -43,9 +43,9 @@ int ot::parse_tags(const char *data, long len, opus_tags *tags)
 		return -1;
 	// Vendor
 	pos = 8;
-	tags->vendor_length = le32toh(*((uint32_t*) (data + pos)));
-	tags->vendor_string = data + pos + 4;
-	pos += 4 + tags->vendor_length;
+	tags->vendor.size = le32toh(*((uint32_t*) (data + pos)));
+	tags->vendor.data = data + pos + 4;
+	pos += 4 + tags->vendor.size;
 	if (pos + 4 > len)
 		return -1;
 	// Count
@@ -72,7 +72,7 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	op->e_o_s = 0;
 	op->granulepos = 0;
 	op->packetno = 1;
-	long len = 8 + 4 + tags->vendor_length + 4;
+	long len = 8 + 4 + tags->vendor.size + 4;
 	for (const string_view &comment : tags->comments)
 		len += 4 + comment.size;
 	len += tags->extra_data.size;
@@ -83,10 +83,10 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	op->packet = (unsigned char*) data;
 	uint32_t n;
 	memcpy(data, "OpusTags", 8);
-	n = htole32(tags->vendor_length);
+	n = htole32(tags->vendor.size);
 	memcpy(data+8, &n, 4);
-	memcpy(data+12, tags->vendor_string, tags->vendor_length);
-	data += 12 + tags->vendor_length;
+	memcpy(data+12, tags->vendor.data, tags->vendor.size);
+	data += 12 + tags->vendor.size;
 	n = htole32(tags->comments.size());
 	memcpy(data, &n, 4);
 	data += 4;

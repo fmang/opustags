@@ -49,9 +49,11 @@ int write_page(ogg_page *og, FILE *stream);
  * Represent all the data in an OpusTags packet.
  */
 struct opus_tags {
-	uint32_t vendor_length;
-	/** \todo Convert to a string view. */
-	const char *vendor_string;
+	/**
+	 * OpusTags packets begin with a vendor string, meant to identify the
+	 * implementation of the encoder. It is an arbitrary UTF-8 string.
+	 */
+	string_view vendor;
 	/**
 	 * Comments. These are a list of string following the NAME=Value format.
 	 * A comment may also be called a field, or a tag.
