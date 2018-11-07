@@ -143,10 +143,3 @@ void ot::print_tags(opus_tags *tags)
 		puts("");
 	}
 }
-
-/**
- * \todo Delete this function.
- */
-void ot::free_tags(opus_tags *tags)
-{
-}

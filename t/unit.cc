@@ -56,7 +56,6 @@ static bool parse_standard()
 		throw failure("bad artist");
 	if (tags.extra_data.size != 0)
 		throw failure("found mysterious padding data");
-	ot::free_tags(&tags);
 	return true;
 }
 
@@ -82,7 +81,6 @@ static bool recode_standard()
 		throw failure("the packet is not the right size");
 	if (memcmp(packet.packet, standard_OpusTags, packet.bytes) != 0)
 		throw failure("the rendered packet is not what we expected");
-	ot::free_tags(&tags);
 	free(packet.packet);
 	return true;
 }
@@ -109,7 +107,6 @@ static bool recode_padding()
 		throw failure("the packet got too big");
 	if (memcmp(packet.packet, padded_OpusTags.data(), packet.bytes) != 0)
 		throw failure("the rendered packet is not what we expected");
-	ot::free_tags(&tags);
 	free(packet.packet);
 	return true;
 }

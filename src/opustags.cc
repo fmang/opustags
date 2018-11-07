@@ -300,7 +300,6 @@ int main(int argc, char **argv){
                 }
                 else
                     ot::print_tags(&tags);
-                ot::free_tags(&tags);
                 if(raw_tags)
                     free(raw_tags);
                 if(error || !out)
