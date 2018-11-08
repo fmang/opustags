@@ -57,6 +57,54 @@ static bool parse_standard()
 	return true;
 }
 
+/**
+ * Try parse_tags with packets that should not valid, or that might even
+ * corrupt the memory. Run this one with valgrind to ensure we're not
+ * overflowing.
+ */
+static bool parse_corrupted()
+{
+	size_t size = sizeof(standard_OpusTags);
+	char packet[size];
+	memcpy(packet, standard_OpusTags, size);
+	ot::opus_tags tags;
+
+	char* header_data = packet;
+	char* vendor_length = header_data + 8;
+	char* vendor_string = vendor_length + 4;
+	char* comment_count = vendor_string + *vendor_length;
+	char* first_comment_length = comment_count + 4;
+	char* first_comment_data = first_comment_length + 4;
+	char* end = packet + size;
+
+	if (ot::parse_tags(packet, 7, &tags) != ot::parse_result::overflowing_magic_number)
+		throw failure("did not detect the overflowing magic number");
+	if (ot::parse_tags(packet, 11, &tags) != ot::parse_result::overflowing_vendor_length)
+		throw failure("did not detect the overflowing vendor string length");
+
+	header_data[0] = 'o';
+	if (ot::parse_tags(packet, size, &tags) != ot::parse_result::bad_magic_number)
+		throw failure("did not detect the bad magic number");
+	header_data[0] = 'O';
+
+	*vendor_length = end - vendor_string + 1;
+	if (ot::parse_tags(packet, size, &tags) != ot::parse_result::overflowing_vendor_data)
+		throw failure("did not detect the overflowing vendor string");
+	*vendor_length = end - vendor_string - 3;
+	if (ot::parse_tags(packet, size, &tags) != ot::parse_result::overflowing_comment_count)
+		throw failure("did not detect the overflowing comment count");
+	*vendor_length = comment_count - vendor_string;
+
+	++*comment_count;
+	if (ot::parse_tags(packet, size, &tags) != ot::parse_result::overflowing_comment_length)
+		throw failure("did not detect the overflowing comment length");
+	*first_comment_length = end - first_comment_data + 1;
+	if (ot::parse_tags(packet, size, &tags) != ot::parse_result::overflowing_comment_data)
+		throw failure("did not detect the overflowing comment data");
+
+	return true;
+}
+
 static bool recode_standard()
 {
 	ot::opus_tags tags;
@@ -109,8 +157,9 @@ static bool recode_padding()
 
 int main()
 {
-	std::cout << "1..3\n";
+	std::cout << "1..4\n";
 	run(parse_standard, "parse a standard OpusTags packet");
+	run(parse_corrupted, "correctly reject invalid packets");
 	run(recode_standard, "recode a standard OpusTags packet");
 	run(recode_padding, "recode a OpusTags packet with padding");
 	return 0;

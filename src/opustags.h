@@ -83,6 +83,14 @@ struct opus_tags {
 	string_view extra_data;
 };
 
+/**
+ * Possible return status of #parse_tags.
+ *
+ * The overflowing error family means that the end of packet was reached when
+ * attempting to read the overflowing value. For example,
+ * overflowing_comment_count means that after reading the vendor string, less
+ * than 4 bytes were left in the packet.
+ */
 enum class parse_result {
 	ok = 0,
 	bad_magic_number = -100,
