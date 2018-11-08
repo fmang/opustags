@@ -83,7 +83,18 @@ struct opus_tags {
 	string_view extra_data;
 };
 
-int parse_tags(const char *data, long len, opus_tags *tags);
+enum class parse_result {
+	ok = 0,
+	bad_magic_number = -100,
+	overflowing_magic_number,
+	overflowing_vendor_length,
+	overflowing_vendor_data,
+	overflowing_comment_count,
+	overflowing_comment_length,
+	overflowing_comment_data,
+};
+
+parse_result parse_tags(const char *data, long len, opus_tags *tags);
 int render_tags(opus_tags *tags, ogg_packet *op);
 void delete_tags(opus_tags *tags, const char *field);
 

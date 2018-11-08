@@ -39,9 +39,9 @@ static const char standard_OpusTags[] =
 static bool parse_standard()
 {
 	ot::opus_tags tags;
-	int rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
-	if (rc != 0)
-		throw failure("ot::parse_tags did not return 0");
+	auto rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
+	if (rc != ot::parse_result::ok)
+		throw failure("ot::parse_tags did not return ok");
 	if (tags.vendor != ot::string_view( "opustags test packet"))
 		throw failure("bad vendor string");
 	if (tags.comments.size() != 2)
@@ -60,12 +60,11 @@ static bool parse_standard()
 static bool recode_standard()
 {
 	ot::opus_tags tags;
-	int rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
-	if (rc != 0)
-		throw failure("ot::parse_tags did not return 0");
+	auto rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
+	if (rc != ot::parse_result::ok)
+		throw failure("ot::parse_tags did not return ok");
 	ogg_packet packet;
-	rc = ot::render_tags(&tags, &packet);
-	if (rc != 0)
+	if (ot::render_tags(&tags, &packet) != 0)
 		throw failure("ot::render_tags did not return 0");
 	if (packet.b_o_s != 0)
 		throw failure("b_o_s should not be set");
@@ -89,14 +88,15 @@ static bool recode_padding()
 	std::string padded_OpusTags(standard_OpusTags, sizeof(standard_OpusTags));
 	// ^ note: padded_OpusTags ends with a null byte here
 	padded_OpusTags += "hello";
-	int rc = ot::parse_tags(padded_OpusTags.data(), padded_OpusTags.size(), &tags);
-	if (rc != 0)
-		throw failure("ot::parse_tags did not return 0");
+	auto rc = ot::parse_tags(padded_OpusTags.data(), padded_OpusTags.size(), &tags);
+	if (rc != ot::parse_result::ok)
+		throw failure("ot::parse_tags did not return ok");
 	if (tags.extra_data != ot::string_view("\0hello", 6))
 		throw failure("corrupted extra data");
 	// recode the packet and ensure it's exactly the same
 	ogg_packet packet;
-	rc = ot::render_tags(&tags, &packet);
+	if (ot::render_tags(&tags, &packet) != 0)
+		throw failure("ot::render_tags did not return 0");
 	if (packet.bytes < padded_OpusTags.size())
 		throw failure("the packet was truncated");
 	if (packet.bytes > padded_OpusTags.size())

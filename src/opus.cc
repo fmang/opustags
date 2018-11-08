@@ -34,34 +34,41 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
-int ot::parse_tags(const char *data, long len, opus_tags *tags)
+ot::parse_result ot::parse_tags(const char *data, long len, opus_tags *tags)
 {
 	long pos;
-	if (len < 8+4+4)
-		return -1;
-	if (strncmp(data, "OpusTags", 8) != 0)
-		return -1;
+	if (8 > len)
+		return parse_result::overflowing_magic_number;
+	if (memcmp(data, "OpusTags", 8) != 0)
+		return parse_result::bad_magic_number;
 	// Vendor
 	pos = 8;
-	tags->vendor = ot::string_view(data + pos + 4, le32toh(*((uint32_t*) (data + pos))));
-	pos += 4 + tags->vendor.size();
 	if (pos + 4 > len)
-		return -1;
+		return parse_result::overflowing_vendor_length;
+	size_t vendor_length = le32toh(*((uint32_t*) (data + pos)));
+	if (pos + 4 + vendor_length > len)
+		return parse_result::overflowing_vendor_data;
+	tags->vendor = ot::string_view(data + pos + 4, vendor_length);
+	pos += 4 + tags->vendor.size();
 	// Count
+	if (pos + 4 > len)
+		return parse_result::overflowing_comment_count;
 	uint32_t count = le32toh(*((uint32_t*) (data + pos)));
 	pos += 4;
 	// Comments
 	for (uint32_t i = 0; i < count; ++i) {
+		if (pos + 4 > len)
+			return parse_result::overflowing_comment_length;
 		uint32_t comment_length = le32toh(*((uint32_t*) (data + pos)));
+		if (pos + 4 + comment_length > len)
+			return parse_result::overflowing_comment_data;
 		const char *comment_value = data + pos + 4;
 		tags->comments.emplace_back(comment_value, comment_length);
 		pos += 4 + comment_length;
-		if (pos > len)
-			return -1;
 	}
 	// Extra data
 	tags->extra_data = ot::string_view(data + pos, static_cast<size_t>(len - pos));
-	return 0;
+	return parse_result::ok;
 }
 
 int ot::render_tags(opus_tags *tags, ogg_packet *op)

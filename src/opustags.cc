@@ -256,7 +256,7 @@ int main(int argc, char **argv){
                 }
             }
             else if(packet_count == 2){ // Comment header
-                if(ot::parse_tags((char*) op.packet, op.bytes, &tags) == -1){
+                if(ot::parse_tags((char*) op.packet, op.bytes, &tags) != ot::parse_result::ok){
                     error = "opustags: invalid comment header";
                     break;
                 }
