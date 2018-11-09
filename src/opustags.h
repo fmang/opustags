@@ -35,6 +35,30 @@ private:
 };
 
 /**
+ * Possible error status.
+ *
+ * The overflowing error family means that the end of packet was reached when
+ * attempting to read the overflowing value. For example,
+ * overflowing_comment_count means that after reading the vendor string, less
+ * than 4 bytes were left in the packet.
+ */
+enum class status {
+	ok,
+	/** On standard error, errno will give more details. */
+	standard_error,
+	end_of_file,
+	libogg_error,
+	/* OpusTags parsing errors */
+	bad_magic_number,
+	overflowing_magic_number,
+	overflowing_vendor_length,
+	overflowing_vendor_data,
+	overflowing_comment_count,
+	overflowing_comment_length,
+	overflowing_comment_data,
+};
+
+/**
  * \defgroup ogg Ogg
  * \brief Helpers to work with libogg.
  *
@@ -164,26 +188,7 @@ struct opus_tags {
 	string_view extra_data;
 };
 
-/**
- * Possible return status of #parse_tags.
- *
- * The overflowing error family means that the end of packet was reached when
- * attempting to read the overflowing value. For example,
- * overflowing_comment_count means that after reading the vendor string, less
- * than 4 bytes were left in the packet.
- */
-enum class parse_result {
-	ok = 0,
-	bad_magic_number = -100,
-	overflowing_magic_number,
-	overflowing_vendor_length,
-	overflowing_vendor_data,
-	overflowing_comment_count,
-	overflowing_comment_length,
-	overflowing_comment_data,
-};
-
-parse_result parse_tags(const char *data, long len, opus_tags *tags);
+status parse_tags(const char *data, long len, opus_tags *tags);
 int render_tags(opus_tags *tags, ogg_packet *op);
 void delete_tags(opus_tags *tags, const char *field);
 
