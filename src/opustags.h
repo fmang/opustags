@@ -69,6 +69,8 @@ struct ogg_reader {
 	/**
 	 * Initialize the sync state and zero-initialize the stream. You'll need to initialize the
 	 * stream yourself once you have the serialno.
+	 *
+	 * \todo Take a FILE*.
 	 */
 	ogg_reader();
 	/**
@@ -78,6 +80,12 @@ struct ogg_reader {
 	 * The input file is not closed.
 	 */
 	~ogg_reader();
+	/**
+	 * Read the next page from the input file. The result, provided the status is #status::ok,
+	 * is available in the #page field, is owned by the Ogg reader, and is valid until the next
+	 * call to #read_page. Make sure you also check #status::end_of_file.
+	 */
+	status read_page();
 	/**
 	 * The file is our source of binary data. It is not integrated to libogg, so we need to
 	 * handle it ourselves.

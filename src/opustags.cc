@@ -193,29 +193,20 @@ int main(int argc, char **argv){
         }
     }
     ot::opus_tags tags;
-    char *buf;
-    size_t len;
     const char *error = NULL;
     int packet_count = -1;
     while(error == NULL){
-        // Read until we complete a page.
-        if(ogg_sync_pageout(&reader.sync, &reader.page) != 1){
-            if(feof(reader.file))
-                break;
-            buf = ogg_sync_buffer(&reader.sync, 65536);
-            if(buf == NULL){
-                error = "ogg_sync_buffer: out of memory";
-                break;
-            }
-            len = fread(buf, 1, 65536, reader.file);
-            if(ferror(reader.file))
+        // Read the next page.
+        ot::status rc = reader.read_page();
+        if (rc == ot::status::end_of_file) {
+            break;
+        } else if (rc != ot::status::ok) {
+            if (rc == ot::status::standard_error)
                 error = strerror(errno);
-            ogg_sync_wrote(&reader.sync, len);
-            if(ogg_sync_check(&reader.sync) != 0)
-                error = "ogg_sync_check: internal error";
-            continue;
+            else
+                error = "error reading the next ogg page";
+            break;
         }
-        // We got a page.
         // Short-circuit when the relevant packets have been read.
         if(packet_count >= 2 && writer.file){
             if(ot::write_page(&reader.page, writer.file) == -1){

@@ -14,6 +14,25 @@ ot::ogg_reader::~ogg_reader()
 	ogg_stream_clear(&stream);
 }
 
+ot::status ot::ogg_reader::read_page()
+{
+	while (ogg_sync_pageout(&sync, &page) != 1) {
+		if (feof(file))
+			return status::end_of_file;
+		char* buf = ogg_sync_buffer(&sync, 65536);
+		if (buf == nullptr)
+			return status::libogg_error;
+		size_t len = fread(buf, 1, 65536, file);
+		if (ferror(file))
+			return status::standard_error;
+		if (ogg_sync_wrote(&sync, len) != 0)
+			return status::libogg_error;
+		if (ogg_sync_check(&sync) != 0)
+			return status::libogg_error;
+	}
+	return status::ok;
+}
+
 ot::ogg_writer::ogg_writer()
 {
 	memset(&stream, 0, sizeof(stream));
