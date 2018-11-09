@@ -41,6 +41,63 @@ private:
  * \{
  */
 
+struct ogg_reader {
+	/**
+	 * The file is our source of binary data. It is not integrated to libogg, so we need to
+	 * handle it ourselves.
+	 *
+	 * In the future, we should use an std::istream or something.
+	 */
+	FILE* file;
+	/**
+	 * The sync layer gets binary data and yields a sequence of pages.
+	 *
+	 * A page contains packets that we can extract using the #stream state, but we only do that
+	 * for the headers. Once we got the OpusHead and OpusTags packets, all the following pages
+	 * are simply forwarded to the Ogg writer.
+	 */
+	ogg_sync_state sync;
+	/**
+	 * Current page from the sync state.
+	 *
+	 * Its memory is managed by libogg, inside the sync state, and is valid until the next call
+	 * to ogg_sync_pageout.
+	 */
+	ogg_page page;
+	/**
+	 * The stream layer receives pages and yields a sequence of packets.
+	 *
+	 * A single page may contain several packets, and a single packet may span on multiple
+	 * pages. The 2 packets we're interested in occupy whole pages though, in theory, but we'd
+	 * better ensure there are no extra packets anyway.
+	 *
+	 * After we've read OpusHead and OpusTags, we don't need the stream layer anymore.
+	 */
+	ogg_stream_state stream;
+	/**
+	 * Current packet from the stream state.
+	 *
+	 * Its memory is managed by libogg, inside the stream state, and is valid until the next
+	 * call to ogg_stream_packetout.
+	 */
+	ogg_packet packet;
+};
+
+struct ogg_writer {
+	/**
+	 * The stream state receives packets and generates pages.
+	 *
+	 * We only need it to put the OpusHead and OpusTags packets into their own pages. The other
+	 * pages are naively written to the output stream.
+	 */
+	ogg_stream_state stream;
+	/**
+	 * Output file. It should be opened in binary mode. We use it to write whole pages,
+	 * represented as a block of data and a length.
+	 */
+	FILE* file;
+};
+
 int write_page(ogg_page *og, FILE *stream);
 
 /** \} */

@@ -76,6 +76,8 @@ int main(int argc, char **argv){
     int overwrite = 0;
     int print_help = 0;
     int c;
+    ot::ogg_reader reader;
+    ot::ogg_writer writer;
     while((c = getopt_long(argc, argv, "ho:i::yd:a:s:DS", options, NULL)) != -1){
         switch(c){
             case 'h':
@@ -141,7 +143,6 @@ int main(int argc, char **argv){
             }
         }
     }
-    FILE *in;
     if(strcmp(path_in, "-") == 0){
         if(set_all){
             fputs("can't open stdin for input when -S is specified\n", stderr);
@@ -151,20 +152,20 @@ int main(int argc, char **argv){
             fputs("cannot modify stdin 'in-place'\n", stderr);
             return EXIT_FAILURE;
         }
-        in = stdin;
+        reader.file = stdin;
     }
     else
-        in = fopen(path_in, "r");
-    if(!in){
+        reader.file = fopen(path_in, "r");
+    if(!reader.file){
         perror("fopen");
         return EXIT_FAILURE;
     }
-    FILE *out = NULL;
+    writer.file = NULL;
     if(inplace != NULL){
         path_out = static_cast<char*>(malloc(strlen(path_in) + strlen(inplace) + 1));
         if(path_out == NULL){
             fputs("failure to allocate memory\n", stderr);
-            fclose(in);
+            fclose(reader.file);
             return EXIT_FAILURE;
         }
         strcpy(path_out, path_in);
@@ -172,57 +173,53 @@ int main(int argc, char **argv){
     }
     if(path_out != NULL){
         if(strcmp(path_out, "-") == 0)
-            out = stdout;
+            writer.file = stdout;
         else{
             if(!overwrite && !inplace){
                 if(access(path_out, F_OK) == 0){
                     fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", path_out);
-                    fclose(in);
+                    fclose(reader.file);
                     return EXIT_FAILURE;
                 }
             }
-            out = fopen(path_out, "w");
-            if(!out){
+            writer.file = fopen(path_out, "w");
+            if(!writer.file){
                 perror("fopen");
-                fclose(in);
+                fclose(reader.file);
                 if(inplace)
                     free(path_out);
                 return EXIT_FAILURE;
             }
         }
     }
-    ogg_sync_state oy;
-    ogg_stream_state os, enc;
-    ogg_page og;
-    ogg_packet op;
     ot::opus_tags tags;
-    ogg_sync_init(&oy);
+    ogg_sync_init(&reader.sync);
     char *buf;
     size_t len;
     const char *error = NULL;
     int packet_count = -1;
     while(error == NULL){
         // Read until we complete a page.
-        if(ogg_sync_pageout(&oy, &og) != 1){
-            if(feof(in))
+        if(ogg_sync_pageout(&reader.sync, &reader.page) != 1){
+            if(feof(reader.file))
                 break;
-            buf = ogg_sync_buffer(&oy, 65536);
+            buf = ogg_sync_buffer(&reader.sync, 65536);
             if(buf == NULL){
                 error = "ogg_sync_buffer: out of memory";
                 break;
             }
-            len = fread(buf, 1, 65536, in);
-            if(ferror(in))
+            len = fread(buf, 1, 65536, reader.file);
+            if(ferror(reader.file))
                 error = strerror(errno);
-            ogg_sync_wrote(&oy, len);
-            if(ogg_sync_check(&oy) != 0)
+            ogg_sync_wrote(&reader.sync, len);
+            if(ogg_sync_check(&reader.sync) != 0)
                 error = "ogg_sync_check: internal error";
             continue;
         }
         // We got a page.
         // Short-circuit when the relevant packets have been read.
-        if(packet_count >= 2 && out){
-            if(ot::write_page(&og, out) == -1){
+        if(packet_count >= 2 && writer.file){
+            if(ot::write_page(&reader.page, writer.file) == -1){
                 error = "write_page: fwrite error";
                 break;
             }
@@ -230,33 +227,33 @@ int main(int argc, char **argv){
         }
         // Initialize the streams from the first page.
         if(packet_count == -1){
-            if(ogg_stream_init(&os, ogg_page_serialno(&og)) == -1){
+            if(ogg_stream_init(&reader.stream, ogg_page_serialno(&reader.page)) == -1){
                 error = "ogg_stream_init: couldn't create a decoder";
                 break;
             }
-            if(out){
-                if(ogg_stream_init(&enc, ogg_page_serialno(&og)) == -1){
+            if(writer.file){
+                if(ogg_stream_init(&writer.stream, ogg_page_serialno(&reader.page)) == -1){
                     error = "ogg_stream_init: couldn't create an encoder";
                     break;
                 }
             }
             packet_count = 0;
         }
-        if(ogg_stream_pagein(&os, &og) == -1){
+        if(ogg_stream_pagein(&reader.stream, &reader.page) == -1){
             error = "ogg_stream_pagein: invalid page";
             break;
         }
         // Read all the packets.
-        while(ogg_stream_packetout(&os, &op) == 1){
+        while(ogg_stream_packetout(&reader.stream, &reader.packet) == 1){
             packet_count++;
             if(packet_count == 1){ // Identification header
-                if(strncmp((char*) op.packet, "OpusHead", 8) != 0){
+                if(strncmp((char*) reader.packet.packet, "OpusHead", 8) != 0){
                     error = "opustags: invalid identification header";
                     break;
                 }
             }
             else if(packet_count == 2){ // Comment header
-                if(ot::parse_tags((char*) op.packet, op.bytes, &tags) != ot::parse_result::ok){
+                if(ot::parse_tags((char*) reader.packet.packet, reader.packet.bytes, &tags) != ot::parse_result::ok){
                     error = "opustags: invalid comment header";
                     break;
                 }
@@ -310,10 +307,10 @@ int main(int argc, char **argv){
                 }
                 for (size_t i = 0; i < count_add; ++i)
                     tags.comments.emplace_back(to_add[i]);
-                if(out){
+                if(writer.file){
                     ogg_packet packet;
                     ot::render_tags(&tags, &packet);
-                    if(ogg_stream_packetin(&enc, &packet) == -1)
+                    if(ogg_stream_packetin(&writer.stream, &packet) == -1)
                         error = "ogg_stream_packetin: internal error";
                     free(packet.packet);
                 }
@@ -321,13 +318,13 @@ int main(int argc, char **argv){
                     print_tags(tags);
                 if(raw_tags)
                     free(raw_tags);
-                if(error || !out)
+                if(error || !writer.file)
                     break;
                 else
                     continue;
             }
-            if(out){
-                if(ogg_stream_packetin(&enc, &op) == -1){
+            if(writer.file){
+                if(ogg_stream_packetin(&writer.stream, &reader.packet) == -1){
                     error = "ogg_stream_packetin: internal error";
                     break;
                 }
@@ -335,33 +332,34 @@ int main(int argc, char **argv){
         }
         if(error != NULL)
             break;
-        if(ogg_stream_check(&os) != 0)
+        if(ogg_stream_check(&reader.stream) != 0)
             error = "ogg_stream_check: internal error (decoder)";
         // Write the page.
-        if(out){
-            ogg_stream_flush(&enc, &og);
-            if(ot::write_page(&og, out) == -1)
+        if(writer.file){
+            ogg_page page;
+            ogg_stream_flush(&writer.stream, &page);
+            if(ot::write_page(&page, writer.file) == -1)
                 error = "write_page: fwrite error";
-            else if(ogg_stream_check(&enc) != 0)
+            else if(ogg_stream_check(&writer.stream) != 0)
                 error = "ogg_stream_check: internal error (encoder)";
         }
         else if(packet_count >= 2) // Read-only mode
             break;
     }
     if(packet_count >= 0){
-        ogg_stream_clear(&os);
-        if(out)
-            ogg_stream_clear(&enc);
+        ogg_stream_clear(&reader.stream);
+        if(writer.file)
+            ogg_stream_clear(&writer.stream);
     }
-    ogg_sync_clear(&oy);
-    fclose(in);
-    if(out)
-        fclose(out);
+    ogg_sync_clear(&reader.sync);
+    fclose(reader.file);
+    if(writer.file)
+        fclose(writer.file);
     if(!error && packet_count < 2)
         error = "opustags: invalid file";
     if(error){
         fprintf(stderr, "%s\n", error);
-        if(path_out != NULL && out != stdout)
+        if(path_out != NULL && writer.file != stdout)
             remove(path_out);
         if(inplace)
             free(path_out);
