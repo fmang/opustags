@@ -43,12 +43,26 @@ private:
 
 struct ogg_reader {
 	/**
+	 * Initialize the sync state and zero-initialize the stream. You'll need to initialize the
+	 * stream yourself once you have the serialno.
+	 */
+	ogg_reader();
+	/**
+	 * Clear all the internal memory allocated by libogg for the sync and stream state. The
+	 * page and the packet are owned by these states, so nothing to do with them.
+	 *
+	 * The input file is not closed.
+	 */
+	~ogg_reader();
+	/**
 	 * The file is our source of binary data. It is not integrated to libogg, so we need to
 	 * handle it ourselves.
 	 *
+	 * The file is not owned by the reader, you need to close it yourself when you're done.
+	 *
 	 * In the future, we should use an std::istream or something.
 	 */
-	FILE* file;
+	FILE* file = nullptr;
 	/**
 	 * The sync layer gets binary data and yields a sequence of pages.
 	 *
@@ -85,6 +99,14 @@ struct ogg_reader {
 
 struct ogg_writer {
 	/**
+	 * Zeroes the stream state. You need to initialize it with the serialno.
+	 */
+	ogg_writer();
+	/**
+	 * Clears the stream state and any internal memory. Does not close the output file.
+	 */
+	~ogg_writer();
+	/**
 	 * The stream state receives packets and generates pages.
 	 *
 	 * We only need it to put the OpusHead and OpusTags packets into their own pages. The other
@@ -94,8 +116,10 @@ struct ogg_writer {
 	/**
 	 * Output file. It should be opened in binary mode. We use it to write whole pages,
 	 * represented as a block of data and a length.
+	 *
+	 * The file is not owner by the writer. You need to close it yourself.
 	 */
-	FILE* file;
+	FILE* file = nullptr;
 };
 
 int write_page(ogg_page *og, FILE *stream);

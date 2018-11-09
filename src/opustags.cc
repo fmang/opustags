@@ -193,7 +193,6 @@ int main(int argc, char **argv){
         }
     }
     ot::opus_tags tags;
-    ogg_sync_init(&reader.sync);
     char *buf;
     size_t len;
     const char *error = NULL;
@@ -346,12 +345,6 @@ int main(int argc, char **argv){
         else if(packet_count >= 2) // Read-only mode
             break;
     }
-    if(packet_count >= 0){
-        ogg_stream_clear(&reader.stream);
-        if(writer.file)
-            ogg_stream_clear(&writer.stream);
-    }
-    ogg_sync_clear(&reader.sync);
     fclose(reader.file);
     if(writer.file)
         fclose(writer.file);
