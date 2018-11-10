@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <list>
+#include <string>
 
 namespace ot {
 
@@ -20,18 +21,19 @@ namespace ot {
  */
 class string_view {
 public:
-	string_view() {}
-	string_view(const char *data) : _data(data), _size(strlen(data)) {}
-	string_view(const char *data, size_t size) : _data(data), _size(size) {}
-	const char *data() const { return _data; }
+	string_view()                              : _data(nullptr),   _size(0)            {}
+	string_view(const char* data)              : _data(data),      _size(strlen(data)) {}
+	string_view(const char* data, size_t size) : _data(data),      _size(size)         {}
+	string_view(const std::string& str)        : _data(str.data()), _size(str.size())  {}
+	const char* data() const { return _data; }
 	size_t size() const { return _size; }
 	bool operator==(const string_view &other) const {
 		return _size == other._size && memcmp(_data, other._data, _size) == 0;
 	}
-	bool operator!=(const string_view &other) const { return !(*this == other); }
+	bool operator!=(const string_view& other) const { return !(*this == other); }
 private:
-	const char *_data = nullptr;
-	size_t _size = 0;
+	const char* _data;
+	size_t _size;
 };
 
 /**
