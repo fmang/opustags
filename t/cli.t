@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 24;
+use Test::More tests => 25;
 
 use Digest::MD5;
 use File::Basename;
@@ -174,5 +174,34 @@ warning: skipping malformed tag
 warning: skipping malformed tag
 warning: skipping malformed tag
 END_ERR
+
+sub slurp {
+	my ($filename) = @_;
+	local $/;
+	open(my $fh, '<', $filename);
+	binmode($fh);
+	my $data = <$fh>;
+	$data
+}
+
+sub opustags_binary {
+	my $in = pop @_;
+	my ($pid, $pin, $pout, $perr);
+	local $/;
+	$perr = gensym;
+	$pid = open3($pin, $pout, $perr, $opustags, @_);
+	binmode($pin);
+	binmode($pout);
+	binmode($perr, ':utf8');
+	print $pin $in if defined $in;
+	close $pin;
+	my $out = <$pout>;
+	my $err = <$perr>;
+	waitpid($pid, 0);
+	[$out, $err, $?]
+}
+
+my $data = slurp "$t/out.opus";
+is_deeply(opustags_binary('-', '-o', '-', $data), [$data, '', 0], 'read opus from stdin and write to stdout');
 
 unlink("$t/out.opus");
