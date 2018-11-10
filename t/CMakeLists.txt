@@ -1,11 +1,5 @@
-add_executable(
-	unit.t
-	EXCLUDE_FROM_ALL
-	unit.cc
-	$<TARGET_OBJECTS:libopustags>
-)
-target_compile_options(unit.t PUBLIC ${OGG_CFLAGS})
-target_link_libraries(unit.t PUBLIC ${OGG_LIBRARIES})
+add_executable(unit.t EXCLUDE_FROM_ALL unit.cc)
+target_link_libraries(unit.t libopustags)
 
 add_custom_target(
 	check

@@ -9,8 +9,9 @@ project(
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(FindPkgConfig)
+find_package(PkgConfig REQUIRED)
 pkg_check_modules(OGG REQUIRED ogg)
+add_compile_options(${OGG_CFLAGS})
 
 configure_file(src/config.h.in config.h @ONLY)
 include_directories(BEFORE src "${CMAKE_BINARY_DIR}")
@@ -22,14 +23,10 @@ add_library(
 	src/ogg.cc
 	src/opus.cc
 )
+target_link_libraries(libopustags PUBLIC ${OGG_LIBRARIES})
 
-add_executable(
-	opustags
-	src/opustags.cc
-	$<TARGET_OBJECTS:libopustags>
-)
-target_compile_options(opustags PUBLIC ${OGG_CFLAGS})
-target_link_libraries(opustags PUBLIC ${OGG_LIBRARIES})
+add_executable(opustags src/opustags.cc)
+target_link_libraries(opustags libopustags)
 
 include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
