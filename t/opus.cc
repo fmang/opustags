@@ -1,5 +1,5 @@
 /**
- * \file t/unit.cc
+ * \file t/opus.cc
  *
  * Entry point of the unit test suite.
  * Follows the TAP protocol.
