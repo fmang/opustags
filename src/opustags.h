@@ -10,6 +10,7 @@
 #include <cstring>
 #include <list>
 #include <string>
+#include <vector>
 
 namespace ot {
 
@@ -178,6 +179,31 @@ struct opus_tags {
 status parse_tags(const char *data, long len, opus_tags *tags);
 int render_tags(opus_tags *tags, ogg_packet *op);
 void delete_tags(opus_tags *tags, const char *field);
+
+/** \} */
+
+/**
+ * \defgroup cli Command-Line Interface
+ * \{
+ */
+
+struct options {
+	std::string path_in;
+	std::string path_out;
+	/**
+	 * If null, in-place editing is disabled.
+	 * Otherwise, it contains the suffix to add to the file name.
+	 */
+	const char *inplace = nullptr;
+	std::vector<std::string> to_add;
+	std::vector<std::string> to_delete;
+	bool delete_all = false;
+	bool set_all = false;
+	bool overwrite = false;
+	bool print_help = false;
+};
+
+int parse_options(int argc, char** argv, options& opt);
 
 /** \} */
 

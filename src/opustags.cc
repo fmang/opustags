@@ -3,15 +3,12 @@
 #include "opustags.h"
 
 #include <errno.h>
-#include <getopt.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <ogg/ogg.h>
-
-#include <vector>
 
 const char *version = PROJECT_NAME " version " PROJECT_VERSION "\n";
 
@@ -31,35 +28,6 @@ const char *help =
     "  -s, --set FIELD=VALUE   delete then add a field\n"
     "  -D, --delete-all        delete all the fields!\n"
     "  -S, --set-all           read the fields from stdin\n";
-
-struct option options[] = {
-    {"help", no_argument, 0, 'h'},
-    {"output", required_argument, 0, 'o'},
-    {"in-place", optional_argument, 0, 'i'},
-    {"overwrite", no_argument, 0, 'y'},
-    {"delete", required_argument, 0, 'd'},
-    {"add", required_argument, 0, 'a'},
-    {"set", required_argument, 0, 's'},
-    {"delete-all", no_argument, 0, 'D'},
-    {"set-all", no_argument, 0, 'S'},
-    {NULL, 0, 0, 0}
-};
-
-struct opustags_options {
-	std::string path_in;
-	std::string path_out;
-	/**
-	 * If null, in-place editing is disabled.
-	 * Otherwise, it contains the suffix to add to the file name.
-	 */
-	const char *inplace = nullptr;
-	std::vector<std::string> to_add;
-	std::vector<std::string> to_delete;
-	bool delete_all = false;
-	bool set_all = false;
-	bool overwrite = false;
-	bool print_help = false;
-};
 
 /**
  * Display the tags on stdout.
@@ -84,54 +52,10 @@ int main(int argc, char **argv){
         fputs(usage, stdout);
         return EXIT_SUCCESS;
     }
-    opustags_options opt;
-    ot::ogg_reader reader;
-    ot::ogg_writer writer;
-    int c;
-    while((c = getopt_long(argc, argv, "ho:i::yd:a:s:DS", options, NULL)) != -1){
-        switch(c){
-            case 'h':
-                opt.print_help = true;
-                break;
-            case 'o':
-                opt.path_out = optarg;
-                if (opt.path_out.empty()) {
-                    fputs("output's file path cannot be empty\n", stderr);
-                    return EXIT_FAILURE;
-                }
-                break;
-            case 'i':
-                opt.inplace = optarg == nullptr ? ".otmp" : optarg;
-                break;
-            case 'y':
-                opt.overwrite = true;
-                break;
-            case 'd':
-                if(strchr(optarg, '=') != NULL){
-                    fprintf(stderr, "invalid field: '%s'\n", optarg);
-                    return EXIT_FAILURE;
-                }
-                opt.to_delete.emplace_back(optarg);
-                break;
-            case 'a':
-            case 's':
-                if(strchr(optarg, '=') == NULL){
-                    fprintf(stderr, "invalid comment: '%s'\n", optarg);
-                    return EXIT_FAILURE;
-                }
-                opt.to_add.emplace_back(optarg);
-                if(c == 's')
-                    opt.to_delete.emplace_back(optarg);
-                break;
-            case 'S':
-                opt.set_all = true;
-            case 'D':
-                opt.delete_all = true;
-                break;
-            default:
-                return EXIT_FAILURE;
-        }
-    }
+    ot::options opt;
+    int exit_code = parse_options(argc, argv, opt);
+    if (exit_code != EXIT_SUCCESS)
+        return exit_code;
     if (opt.print_help) {
         puts(version);
         puts(usage);
@@ -161,6 +85,8 @@ int main(int argc, char **argv){
             }
         }
     }
+    ot::ogg_reader reader;
+    ot::ogg_writer writer;
     if (opt.path_in == "-") {
         if (opt.set_all) {
             fputs("can't open stdin for input when -S is specified\n", stderr);
