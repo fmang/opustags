@@ -104,8 +104,7 @@ is_deeply(opustags("$t/out.opus", '-o', "$t/out.opus", undef), ['', <<'EOF', 256
 error: the input and output files are the same
 EOF
 
-unlink("$t/out.opus");
-is_deeply(opustags("$t/gobble.opus", '-o', "$t/out.opus", undef), ['', '', 0], 'copy the file without changes');
+is_deeply(opustags("$t/gobble.opus", '-o', "$t/out.opus", '--overwrite', undef), ['', '', 0], 'copy the file without changes');
 is(md5("$t/out.opus"), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
 
 is_deeply(opustags('--in-place', "$t/out.opus", qw(-a A=B --add=A=C --add), "TITLE=Foo Bar",
