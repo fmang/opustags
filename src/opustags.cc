@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <ogg/ogg.h>
 
+#include <vector>
+
 const char *version = PROJECT_NAME " version " PROJECT_VERSION "\n";
 
 const char *usage =
@@ -68,9 +70,8 @@ int main(int argc, char **argv){
     }
     char *path_in, *path_out = NULL;
     const char *inplace = NULL;
-    const char* to_add[argc];
-    const char* to_delete[argc];
-    int count_add = 0, count_delete = 0;
+    std::vector<std::string> to_add;
+    std::vector<std::string> to_delete;
     int delete_all = 0;
     int set_all = 0;
     int overwrite = 0;
@@ -97,7 +98,7 @@ int main(int argc, char **argv){
                     fprintf(stderr, "invalid field: '%s'\n", optarg);
                     return EXIT_FAILURE;
                 }
-                to_delete[count_delete++] = optarg;
+                to_delete.emplace_back(optarg);
                 break;
             case 'a':
             case 's':
@@ -105,9 +106,9 @@ int main(int argc, char **argv){
                     fprintf(stderr, "invalid comment: '%s'\n", optarg);
                     return EXIT_FAILURE;
                 }
-                to_add[count_add++] = optarg;
+                to_add.emplace_back(optarg);
                 if(c == 's')
-                    to_delete[count_delete++] = optarg;
+                    to_delete.emplace_back(optarg);
                 break;
             case 'S':
                 set_all = 1;
@@ -250,9 +251,8 @@ int main(int argc, char **argv){
                 if(delete_all)
                     tags.comments.clear();
                 else{
-                    int i;
-                    for(i=0; i<count_delete; i++)
-                        ot::delete_tags(&tags, to_delete[i]);
+                    for (const std::string& name : to_delete)
+                        ot::delete_tags(&tags, name.c_str());
                 }
                 char *raw_tags = NULL;
                 if(set_all){
@@ -295,8 +295,8 @@ int main(int argc, char **argv){
                             tags.comments.emplace_back(raw_comment[i]);
                     }
                 }
-                for (size_t i = 0; i < count_add; ++i)
-                    tags.comments.emplace_back(to_add[i]);
+                for (const std::string& comment : to_add)
+                    tags.comments.emplace_back(comment);
                 if(writer.file){
                     ogg_packet packet;
                     ot::render_tags(&tags, &packet);
