@@ -46,8 +46,8 @@ struct option options[] = {
 };
 
 struct opustags_options {
-	char* path_in = nullptr;
-	char* path_out = nullptr;
+	std::string path_in;
+	std::string path_out;
 	/**
 	 * If null, in-place editing is disabled.
 	 * Otherwise, it contains the suffix to add to the file name.
@@ -95,6 +95,10 @@ int main(int argc, char **argv){
                 break;
             case 'o':
                 opt.path_out = optarg;
+                if (opt.path_out.empty()) {
+                    fputs("output's file path cannot be empty\n", stderr);
+                    return EXIT_FAILURE;
+                }
                 break;
             case 'i':
                 opt.inplace = optarg == nullptr ? ".otmp" : optarg;
@@ -139,21 +143,25 @@ int main(int argc, char **argv){
         fputs("invalid arguments\n", stderr);
         return EXIT_FAILURE;
     }
-    if (opt.inplace && opt.path_out) {
+    if (opt.inplace != nullptr && !opt.path_out.empty()) {
         fputs("cannot combine --in-place and --output\n", stderr);
         return EXIT_FAILURE;
     }
     opt.path_in = argv[optind];
-    if (opt.path_out != NULL && strcmp(opt.path_in, "-") != 0) {
+    if (opt.path_in.empty()) {
+        fputs("input's file path cannot be empty\n", stderr);
+        return EXIT_FAILURE;
+    }
+    if (!opt.path_out.empty() && opt.path_in != "-" && opt.path_out != "-") {
         char canon_in[PATH_MAX+1], canon_out[PATH_MAX+1];
-        if(realpath(opt.path_in, canon_in) && realpath(opt.path_out, canon_out)){
-            if(strcmp(canon_in, canon_out) == 0){
+        if (realpath(opt.path_in.c_str(), canon_in) && realpath(opt.path_out.c_str(), canon_out)) {
+            if (strcmp(canon_in, canon_out) == 0) {
                 fputs("error: the input and output files are the same\n", stderr);
                 return EXIT_FAILURE;
             }
         }
     }
-    if (strcmp(opt.path_in, "-") == 0) {
+    if (opt.path_in == "-") {
         if (opt.set_all) {
             fputs("can't open stdin for input when -S is specified\n", stderr);
             return EXIT_FAILURE;
@@ -165,39 +173,29 @@ int main(int argc, char **argv){
         reader.file = stdin;
     }
     else
-        reader.file = fopen(opt.path_in, "r");
+        reader.file = fopen(opt.path_in.c_str(), "r");
     if(!reader.file){
         perror("fopen");
         return EXIT_FAILURE;
     }
     writer.file = NULL;
-    if (opt.inplace != nullptr){
-        opt.path_out = static_cast<char*>(malloc(strlen(opt.path_in) + strlen(opt.inplace) + 1));
-        if (opt.path_out == NULL) {
-            fputs("failure to allocate memory\n", stderr);
-            fclose(reader.file);
-            return EXIT_FAILURE;
-        }
-        strcpy(opt.path_out, opt.path_in);
-        strcat(opt.path_out, opt.inplace);
-    }
-    if (opt.path_out != nullptr) {
-        if (strcmp(opt.path_out, "-") == 0) {
+    if (opt.inplace != nullptr)
+        opt.path_out = opt.path_in + opt.inplace;
+    if (!opt.path_out.empty()) {
+        if (opt.path_out == "-") {
             writer.file = stdout;
         } else {
             if (!opt.overwrite && !opt.inplace){
-                if(access(opt.path_out, F_OK) == 0){
-                    fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", opt.path_out);
+                if (access(opt.path_out.c_str(), F_OK) == 0) {
+                    fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", opt.path_out.c_str());
                     fclose(reader.file);
                     return EXIT_FAILURE;
                 }
             }
-            writer.file = fopen(opt.path_out, "w");
+            writer.file = fopen(opt.path_out.c_str(), "w");
             if(!writer.file){
                 perror("fopen");
                 fclose(reader.file);
-                if (opt.inplace)
-                    free(opt.path_out);
                 return EXIT_FAILURE;
             }
         }
@@ -352,19 +350,15 @@ int main(int argc, char **argv){
         error = "opustags: invalid file";
     if(error){
         fprintf(stderr, "%s\n", error);
-        if (opt.path_out != nullptr && writer.file != stdout)
-            remove(opt.path_out);
-        if (opt.inplace)
-            free(opt.path_out);
+        if (!opt.path_out.empty() && writer.file != stdout)
+            remove(opt.path_out.c_str());
         return EXIT_FAILURE;
     }
     else if (opt.inplace) {
-        if (rename(opt.path_out, opt.path_in) == -1) {
+        if (rename(opt.path_out.c_str(), opt.path_in.c_str()) == -1) {
             perror("rename");
-            free(opt.path_out);
             return EXIT_FAILURE;
         }
-        free(opt.path_out);
     }
     return EXIT_SUCCESS;
 }
