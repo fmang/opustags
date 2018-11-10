@@ -12,6 +12,8 @@
 #include <exception>
 #include <iostream>
 
+using namespace std::literals::string_literals;
+
 class failure : public std::runtime_error {
 public:
 	failure(const char *message) : std::runtime_error(message) {}
@@ -42,15 +44,15 @@ static bool parse_standard()
 	auto rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
 	if (rc != ot::status::ok)
 		throw failure("ot::parse_tags did not return ok");
-	if (tags.vendor != ot::string_view( "opustags test packet"))
+	if (tags.vendor != "opustags test packet")
 		throw failure("bad vendor string");
 	if (tags.comments.size() != 2)
 		throw failure("bad number of comments");
 	auto it = tags.comments.begin();
-	if (*it != ot::string_view("TITLE=Foo"))
+	if (*it != "TITLE=Foo")
 		throw failure("bad title");
 	++it;
-	if (*it != ot::string_view("ARTIST=Bar"))
+	if (*it != "ARTIST=Bar")
 		throw failure("bad artist");
 	if (tags.extra_data.size() != 0)
 		throw failure("found mysterious padding data");
@@ -139,7 +141,7 @@ static bool recode_padding()
 	auto rc = ot::parse_tags(padded_OpusTags.data(), padded_OpusTags.size(), &tags);
 	if (rc != ot::status::ok)
 		throw failure("ot::parse_tags did not return ok");
-	if (tags.extra_data != ot::string_view("\0hello", 6))
+	if (tags.extra_data != "\0hello"s)
 		throw failure("corrupted extra data");
 	// recode the packet and ensure it's exactly the same
 	ogg_packet packet;

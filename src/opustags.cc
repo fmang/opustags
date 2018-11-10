@@ -72,7 +72,7 @@ struct opustags_options {
  */
 static void print_tags(ot::opus_tags &tags)
 {
-	for (const ot::string_view &comment : tags.comments) {
+	for (const std::string& comment : tags.comments) {
 		fwrite(comment.data(), 1, comment.size(), stdout);
 		puts("");
 	}

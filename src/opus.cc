@@ -48,7 +48,7 @@ ot::status ot::parse_tags(const char *data, long len, opus_tags *tags)
 	size_t vendor_length = le32toh(*((uint32_t*) (data + pos)));
 	if (pos + 4 + vendor_length > len)
 		return status::overflowing_vendor_data;
-	tags->vendor = ot::string_view(data + pos + 4, vendor_length);
+	tags->vendor = std::string(data + pos + 4, vendor_length);
 	pos += 4 + tags->vendor.size();
 	// Count
 	if (pos + 4 > len)
@@ -67,7 +67,7 @@ ot::status ot::parse_tags(const char *data, long len, opus_tags *tags)
 		pos += 4 + comment_length;
 	}
 	// Extra data
-	tags->extra_data = ot::string_view(data + pos, static_cast<size_t>(len - pos));
+	tags->extra_data = std::string(data + pos, static_cast<size_t>(len - pos));
 	return status::ok;
 }
 
@@ -79,7 +79,7 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	op->granulepos = 0;
 	op->packetno = 1;
 	long len = 8 + 4 + tags->vendor.size() + 4;
-	for (const string_view &comment : tags->comments)
+	for (const std::string& comment : tags->comments)
 		len += 4 + comment.size();
 	len += tags->extra_data.size();
 	op->bytes = len;
@@ -96,7 +96,7 @@ int ot::render_tags(opus_tags *tags, ogg_packet *op)
 	n = htole32(tags->comments.size());
 	memcpy(data, &n, 4);
 	data += 4;
-	for (const string_view &comment : tags->comments) {
+	for (const std::string& comment : tags->comments) {
 		n = htole32(comment.size());
 		memcpy(data, &n, 4);
 		memcpy(data+4, comment.data(), comment.size());

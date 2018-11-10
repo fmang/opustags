@@ -14,29 +14,6 @@
 namespace ot {
 
 /**
- * Non-owning string.
- *
- * The interface is meant to be compatible with std::string_view from C++17, so
- * that we'll be able to delete it as soon as C++17 is widely supported.
- */
-class string_view {
-public:
-	string_view()                              : _data(nullptr),   _size(0)            {}
-	string_view(const char* data)              : _data(data),      _size(strlen(data)) {}
-	string_view(const char* data, size_t size) : _data(data),      _size(size)         {}
-	string_view(const std::string& str)        : _data(str.data()), _size(str.size())  {}
-	const char* data() const { return _data; }
-	size_t size() const { return _size; }
-	bool operator==(const string_view &other) const {
-		return _size == other._size && memcmp(_data, other._data, _size) == 0;
-	}
-	bool operator!=(const string_view& other) const { return !(*this == other); }
-private:
-	const char* _data;
-	size_t _size;
-};
-
-/**
  * Possible error status.
  *
  * The overflowing error family means that the end of packet was reached when
@@ -175,7 +152,7 @@ struct opus_tags {
 	 * OpusTags packets begin with a vendor string, meant to identify the
 	 * implementation of the encoder. It is an arbitrary UTF-8 string.
 	 */
-	string_view vendor;
+	std::string vendor;
 	/**
 	 * Comments. These are a list of string following the NAME=Value format.
 	 * A comment may also be called a field, or a tag.
@@ -183,7 +160,7 @@ struct opus_tags {
 	 * The field name in vorbis comment is case-insensitive and ASCII,
 	 * while the value can be any valid UTF-8 string.
 	 */
-	std::list<string_view> comments;
+	std::list<std::string> comments;
 	/**
 	 * According to RFC 7845:
 	 * > Immediately following the user comment list, the comment header MAY contain
@@ -195,7 +172,7 @@ struct opus_tags {
 	 * In the future, we could add options to manipulate this data: view it, edit it, truncate
 	 * it if it's marked as padding, truncate it unconditionally.
 	 */
-	string_view extra_data;
+	std::string extra_data;
 };
 
 status parse_tags(const char *data, long len, opus_tags *tags);
