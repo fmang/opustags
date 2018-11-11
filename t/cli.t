@@ -17,7 +17,8 @@ BAIL_OUT("$opustags does not exist or is not executable") if (! -x $opustags);
 my $t = dirname(__FILE__);
 
 sub opustags {
-	my $in = pop @_;
+	my %opt;
+	%opt = %{pop @_} if ref $_[-1];
 	my ($pid, $pin, $pout, $perr);
 	local $/ = undef;
 	$perr = gensym;
@@ -25,7 +26,7 @@ sub opustags {
 	binmode($pin, ':utf8');
 	binmode($pout, ':utf8');
 	binmode($perr, ':utf8');
-	print $pin $in if defined $in;
+	print $pin $opt{in} if defined $opt{in};
 	close $pin;
 	my $out = <$pout>;
 	my $err = <$perr>;
@@ -37,7 +38,7 @@ sub opustags {
 # Tests related to the overall opustags executable, like the help message.
 # No Opus file is manipulated here.
 
-my $usage = opustags(undef);
+my $usage = opustags();
 $usage->[0] =~ /^([^\n]*+)/;
 my $version = $1;
 like($version, qr/^opustags version (\d+\.\d+\.\d+)/, 'get the version string');
@@ -70,10 +71,10 @@ Options:
 See the man page for extensive documentation.
 EOF
 
-is_deeply(opustags('--help', undef), [$help, '', 0], '--help displays the help message');
-is_deeply(opustags('-h', undef), [$help, '', 0], '-h displays the help message too');
+is_deeply(opustags('--help'), [$help, '', 0], '--help displays the help message');
+is_deeply(opustags('-h'), [$help, '', 0], '-h displays the help message too');
 
-is_deeply(opustags('--derp', undef), ['', <<"EOF", 256], 'unrecognized option shows an error');
+is_deeply(opustags('--derp'), ['', <<"EOF", 256], 'unrecognized option shows an error');
 $opustags: unrecognized option '--derp'
 EOF
 
@@ -89,34 +90,34 @@ sub md5 {
 }
 
 is(md5("$t/gobble.opus"), '111a483596ac32352fbce4d14d16abd2', 'the sample is the one we expect');
-is_deeply(opustags("$t/gobble.opus", undef), [<<'EOF', '', 0], 'read the initial tags');
+is_deeply(opustags("$t/gobble.opus"), [<<'EOF', '', 0], 'read the initial tags');
 encoder=Lavc58.18.100 libopus
 EOF
 
 unlink('out.opus');
-is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus', undef), ['', '', 0], 'copy the file without changes');
+is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus'), ['', '', 0], 'copy the file without changes');
 is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
 
 # empty out.opus
 { my $fh; open($fh, '>', 'out.opus') and close($fh) or die }
-is_deeply(opustags("$t/gobble.opus", '-o' , 'out.opus', undef), ['', <<'EOF', 256], 'refuse to override');
+is_deeply(opustags("$t/gobble.opus", '-o' , 'out.opus'), ['', <<'EOF', 256], 'refuse to override');
 'out.opus' already exists (use -y to overwrite)
 EOF
 is(md5('out.opus'), 'd41d8cd98f00b204e9800998ecf8427e', 'the output wasn\'t written');
 
-is_deeply(opustags('out.opus', '-o', 'out.opus', undef), ['', <<'EOF', 256], 'output and input can\'t be the same');
+is_deeply(opustags(qw(out.opus -o out.opus)), ['', <<'EOF', 256], 'output and input can\'t be the same');
 error: the input and output files are the same
 EOF
 
-is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus', '--overwrite', undef), ['', '', 0], 'overwrite');
+is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus', '--overwrite'), ['', '', 0], 'overwrite');
 is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'successfully overwritten');
 
-is_deeply(opustags('--in-place', 'out.opus', qw(-a A=B --add=A=C --add), "TITLE=Foo Bar",
-                   qw(--delete A --add TITLE=七面鳥 --set encoder=whatever -s 1=2 -s X=1 -a X=2 -s X=3), undef),
+is_deeply(opustags(qw(--in-place out.opus -a A=B --add=A=C --add), "TITLE=Foo Bar",
+                   qw(--delete A --add TITLE=七面鳥 --set encoder=whatever -s 1=2 -s X=1 -a X=2 -s X=3)),
           ['', '', 0], 'complex tag editing');
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'check the footprint');
 
-is_deeply(opustags('out.opus', undef), [<<'EOF', '', 0], 'check the tags written');
+is_deeply(opustags('out.opus'), [<<'EOF', '', 0], 'check the tags written');
 A=B
 A=C
 TITLE=Foo Bar
@@ -128,7 +129,7 @@ X=2
 X=3
 EOF
 
-is_deeply(opustags('out.opus', qw(-d A -d foo -s X=4 -a TITLE=gobble -d TITLE), undef), [<<'EOF', '', 0], 'dry editing');
+is_deeply(opustags(qw(out.opus -d A -d foo -s X=4 -a TITLE=gobble -d TITLE)), [<<'EOF', '', 0], 'dry editing');
 encoder=whatever
 1=2
 X=4
@@ -136,21 +137,21 @@ TITLE=gobble
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
 
-is_deeply(opustags('-i', 'out.opus', qw(-a fatal=yes -a FOO -a BAR), undef), ['', <<'EOF', 256], 'bad tag with --add');
+is_deeply(opustags(qw(-i out.opus -a fatal=yes -a FOO -a BAR)), ['', <<'EOF', 256], 'bad tag with --add');
 invalid comment: 'FOO'
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
 
-is_deeply(opustags('-i', 'out.opus', qw(-s fatal=yes -s FOO -s BAR), undef), ['', <<'EOF', 256], 'bad tag with --set');
+is_deeply(opustags(qw(-i out.opus -s fatal=yes -s FOO -s BAR)), ['', <<'EOF', 256], 'bad tag with --set');
 invalid comment: 'FOO'
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
 
-is_deeply(opustags('out.opus', qw(--delete-all -a OK=yes), undef), [<<'EOF', '', 0], 'delete all');
+is_deeply(opustags(qw(out.opus --delete-all -a OK=yes)), [<<'EOF', '', 0], 'delete all');
 OK=yes
 EOF
 
-is_deeply(opustags('out.opus', qw(--set-all -a A=B -s X=Z -d OK), <<'END_IN'), [<<'END_OUT', '', 0], 'set all');
+is_deeply(opustags(qw(out.opus --set-all -a A=B -s X=Z -d OK), {in => <<'END_IN'}), [<<'END_OUT', '', 0], 'set all');
 OK=yes again
 ARTIST=七面鳥
 A=A
@@ -164,7 +165,7 @@ A=B
 X=Z
 END_OUT
 
-is_deeply(opustags('out.opus', '-S', <<'END_IN'), [<<'END_OUT', <<'END_ERR', 0], 'set all with bad tags');
+is_deeply(opustags(qw(out.opus -S), {in => <<'END_IN'}), [<<'END_OUT', <<'END_ERR', 0], 'set all with bad tags');
 whatever
 
 # thing
