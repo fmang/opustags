@@ -24,6 +24,7 @@ namespace ot {
  */
 enum class status {
 	ok,
+	int_overflow,
 	/** On standard error, errno will give more details. */
 	standard_error,
 	end_of_file,

@@ -147,9 +147,9 @@ static bool recode_padding()
 	ogg_packet packet;
 	if (ot::render_tags(&tags, &packet) != 0)
 		throw failure("ot::render_tags did not return 0");
-	if (packet.bytes < padded_OpusTags.size())
+	if (static_cast<size_t>(packet.bytes) < padded_OpusTags.size())
 		throw failure("the packet was truncated");
-	if (packet.bytes > padded_OpusTags.size())
+	if (static_cast<size_t>(packet.bytes) > padded_OpusTags.size())
 		throw failure("the packet got too big");
 	if (memcmp(packet.packet, padded_OpusTags.data(), packet.bytes) != 0)
 		throw failure("the rendered packet is not what we expected");
