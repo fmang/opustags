@@ -2,6 +2,8 @@
 
 #include <getopt.h>
 
+#include <memory>
+
 static struct option getopt_options[] = {
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'},
@@ -78,4 +80,39 @@ int ot::parse_options(int argc, char** argv, ot::options& opt)
 		}
 	}
 	return EXIT_SUCCESS;
+}
+
+/**
+ * \todo Use an std::istream or getline. Lift the 16 KiB limitation and whatever's hardcoded here.
+ */
+std::list<std::string> ot::read_tags(FILE* file)
+{
+	std::list<std::string> comments;
+	auto raw_tags = std::make_unique<char[]>(16383);
+	size_t raw_len = fread(raw_tags.get(), 1, 16382, stdin);
+	if (raw_len == 16382)
+		fputs("warning: truncating comment to 16 KiB\n", stderr);
+	raw_tags[raw_len] = '\0';
+	size_t field_len = 0;
+	bool caught_eq = false;
+	char* cursor = raw_tags.get();
+	for (size_t i = 0; i <= raw_len; ++i) {
+		if (raw_tags[i] == '\n' || raw_tags[i] == '\0') {
+			raw_tags[i] = '\0';
+			if (field_len == 0)
+				continue;
+			if (caught_eq)
+				comments.emplace_back(cursor);
+			else
+				fputs("warning: skipping malformed tag\n", stderr);
+			cursor = raw_tags.get() + i + 1;
+			field_len = 0;
+			caught_eq = false;
+			continue;
+		}
+		if (raw_tags[i] == '=')
+			caught_eq = true;
+		++field_len;
+	}
+	return comments;
 }

@@ -187,47 +187,8 @@ int main(int argc, char **argv){
                     for (const std::string& name : opt.to_delete)
                         ot::delete_tags(&tags, name.c_str());
                 }
-                char *raw_tags = NULL;
-                if (opt.set_all) {
-                    raw_tags = static_cast<char*>(malloc(16384));
-                    if(raw_tags == NULL){
-                        error = "malloc: not enough memory for buffering stdin";
-                        free(raw_tags);
-                        break;
-                    }
-                    else{
-                        char *raw_comment[256];
-                        size_t raw_len = fread(raw_tags, 1, 16383, stdin);
-                        if(raw_len == 16383)
-                            fputs("warning: truncating comment to 16 KiB\n", stderr);
-                        raw_tags[raw_len] = '\0';
-                        uint32_t raw_count = 0;
-                        size_t field_len = 0;
-                        int caught_eq = 0;
-                        size_t i = 0;
-                        char *cursor = raw_tags;
-                        for(i=0; i <= raw_len && raw_count < 256; i++){
-                            if(raw_tags[i] == '\n' || raw_tags[i] == '\0'){
-                                if(field_len == 0)
-                                    continue;
-                                if(caught_eq)
-                                    raw_comment[raw_count++] = cursor;
-                                else
-                                    fputs("warning: skipping malformed tag\n", stderr);
-                                cursor = raw_tags + i + 1;
-                                field_len = 0;
-                                caught_eq = 0;
-                                raw_tags[i] = '\0';
-                                continue;
-                            }
-                            if(raw_tags[i] == '=')
-                                caught_eq = 1;
-                            field_len++;
-                        }
-                        for (size_t i = 0; i < raw_count; ++i)
-                            tags.comments.emplace_back(raw_comment[i]);
-                    }
-                }
+                if (opt.set_all)
+                    tags.comments = ot::read_tags(stdin);
                 for (const std::string& comment : opt.to_add)
                     tags.comments.emplace_back(comment);
                 if(writer.file){
@@ -239,8 +200,6 @@ int main(int argc, char **argv){
                 }
                 else
                     print_tags(tags);
-                if(raw_tags)
-                    free(raw_tags);
                 if(error || !writer.file)
                     break;
                 else

@@ -204,6 +204,7 @@ struct options {
 };
 
 int parse_options(int argc, char** argv, options& opt);
+std::list<std::string> read_tags(FILE* file);
 
 /** \} */
 
