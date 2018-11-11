@@ -120,12 +120,24 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 		return status::exit_now;
 	}
 	if (optind != argc - 1) {
-		fputs("invalid arguments\n", stderr);
+		fputs("exactly one input file must be specified\n", stderr);
 		return status::bad_arguments;
 	}
 	opt.path_in = argv[optind];
 	if (opt.path_in.empty()) {
 		fputs("input's file path cannot be empty\n", stderr);
+		return status::bad_arguments;
+	}
+	if (opt.inplace != nullptr && !opt.path_out.empty()) {
+		fputs("cannot combine --in-place and --output\n", stderr);
+		return status::bad_arguments;
+	}
+	if (opt.path_in == "-" && opt.set_all) {
+		fputs("can't open stdin for input when -S is specified\n", stderr);
+		return status::bad_arguments;
+	}
+	if (opt.path_in == "-" && opt.inplace) {
+		fputs("cannot modify stdin in-place\n", stderr);
 		return status::bad_arguments;
 	}
 	return status::ok;

@@ -29,10 +29,6 @@ static void print_tags(ot::opus_tags &tags)
 
 static int run(ot::options& opt)
 {
-    if (opt.inplace != nullptr && !opt.path_out.empty()) {
-        fputs("cannot combine --in-place and --output\n", stderr);
-        return EXIT_FAILURE;
-    }
     if (!opt.path_out.empty() && opt.path_in != "-" && opt.path_out != "-") {
         char canon_in[PATH_MAX+1], canon_out[PATH_MAX+1];
         if (realpath(opt.path_in.c_str(), canon_in) && realpath(opt.path_out.c_str(), canon_out)) {
@@ -45,21 +41,13 @@ static int run(ot::options& opt)
     ot::ogg_reader reader;
     ot::ogg_writer writer;
     if (opt.path_in == "-") {
-        if (opt.set_all) {
-            fputs("can't open stdin for input when -S is specified\n", stderr);
-            return EXIT_FAILURE;
-        }
-        if (opt.inplace) {
-            fputs("cannot modify stdin in-place\n", stderr);
-            return EXIT_FAILURE;
-        }
         reader.file = stdin;
-    }
-    else
+    } else {
         reader.file = fopen(opt.path_in.c_str(), "r");
-    if(!reader.file){
-        perror("fopen");
-        return EXIT_FAILURE;
+        if (reader.file == nullptr) {
+            perror("fopen");
+            return EXIT_FAILURE;
+        }
     }
     writer.file = NULL;
     if (opt.inplace != nullptr)
