@@ -144,9 +144,30 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 }
 
 /**
+ * Display the tags on stdout.
+ *
+ * Print all the comments, separated by line breaks. Since a comment may
+ * contain line breaks, this output is not completely reliable, but it fits
+ * most cases.
+ *
+ * The output generated is meant to be parseable by #ot::read_tags.
+ *
+ * \todo Escape new lines.
+ */
+void ot::print_comments(const std::list<std::string>& comments, FILE* output)
+{
+	for (const std::string& comment : comments) {
+		fwrite(comment.data(), 1, comment.size(), output);
+		puts("");
+	}
+}
+
+/**
+ * Parse the comments outputted by #ot::print_comments.
+ *
  * \todo Use an std::istream or getline. Lift the 16 KiB limitation and whatever's hardcoded here.
  */
-std::list<std::string> ot::read_tags(FILE* file)
+std::list<std::string> ot::read_comments(FILE* input)
 {
 	std::list<std::string> comments;
 	auto raw_tags = std::make_unique<char[]>(16383);

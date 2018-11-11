@@ -11,23 +11,6 @@
 #include <ogg/ogg.h>
 
 /**
- * Display the tags on stdout.
- *
- * Print all the comments, separated by line breaks. Since a comment may
- * contain line breaks, this output is not completely reliable, but it fits
- * most cases.
- *
- * Only the comments are displayed.
- */
-static void print_tags(ot::opus_tags &tags)
-{
-	for (const std::string& comment : tags.comments) {
-		fwrite(comment.data(), 1, comment.size(), stdout);
-		puts("");
-	}
-}
-
-/**
  * Check if two filepaths point to the same file, after path canonicalization.
  * The path "-" is treated specially, meaning stdin for path_in and stdout for path_out.
  */
@@ -143,7 +126,7 @@ static int run(ot::options& opt)
                         ot::delete_tags(&tags, name.c_str());
                 }
                 if (opt.set_all)
-                    tags.comments = ot::read_tags(stdin);
+                    tags.comments = ot::read_comments(stdin);
                 for (const std::string& comment : opt.to_add)
                     tags.comments.emplace_back(comment);
                 if(writer.file){
@@ -154,7 +137,7 @@ static int run(ot::options& opt)
                     free(packet.packet);
                 }
                 else
-                    print_tags(tags);
+                    ot::print_comments(tags.comments, stdout);
                 if(error || !writer.file)
                     break;
                 else

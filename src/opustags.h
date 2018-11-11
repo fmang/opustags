@@ -207,7 +207,9 @@ struct options {
 };
 
 status process_options(int argc, char** argv, options& opt);
-std::list<std::string> read_tags(FILE* file);
+
+void print_comments(const std::list<std::string>& comments, FILE* output);
+std::list<std::string> read_comments(FILE* input);
 
 /** \} */
 
