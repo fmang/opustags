@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 25;
+use Test::More tests => 27;
 
 use Digest::MD5;
 use File::Basename;
@@ -93,6 +93,10 @@ is_deeply(opustags("$t/gobble.opus", undef), [<<'EOF', '', 0], 'read the initial
 encoder=Lavc58.18.100 libopus
 EOF
 
+unlink('out.opus');
+is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus', undef), ['', '', 0], 'copy the file without changes');
+is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
+
 # empty out.opus
 { my $fh; open($fh, '>', 'out.opus') and close($fh) or die }
 is_deeply(opustags("$t/gobble.opus", '-o' , 'out.opus', undef), ['', <<'EOF', 256], 'refuse to override');
@@ -104,8 +108,8 @@ is_deeply(opustags('out.opus', '-o', 'out.opus', undef), ['', <<'EOF', 256], 'ou
 error: the input and output files are the same
 EOF
 
-is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus', '--overwrite', undef), ['', '', 0], 'copy the file without changes');
-is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
+is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus', '--overwrite', undef), ['', '', 0], 'overwrite');
+is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'successfully overwritten');
 
 is_deeply(opustags('--in-place', 'out.opus', qw(-a A=B --add=A=C --add), "TITLE=Foo Bar",
                    qw(--delete A --add TITLE=七面鳥 --set encoder=whatever -s 1=2 -s X=1 -a X=2 -s X=3), undef),
