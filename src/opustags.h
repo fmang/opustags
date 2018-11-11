@@ -24,6 +24,8 @@ namespace ot {
  */
 enum class status {
 	ok,
+	exit_now,
+	bad_arguments,
 	int_overflow,
 	/** On standard error, errno will give more details. */
 	standard_error,
@@ -204,7 +206,7 @@ struct options {
 	bool print_help = false;
 };
 
-int parse_options(int argc, char** argv, options& opt);
+status process_options(int argc, char** argv, options& opt);
 std::list<std::string> read_tags(FILE* file);
 
 /** \} */

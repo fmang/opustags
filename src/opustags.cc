@@ -10,25 +10,6 @@
 #include <unistd.h>
 #include <ogg/ogg.h>
 
-const char *version = PROJECT_NAME " version " PROJECT_VERSION "\n";
-
-const char *usage =
-    "Usage: opustags --help\n"
-    "       opustags [OPTIONS] FILE\n"
-    "       opustags OPTIONS FILE -o FILE\n";
-
-const char *help =
-    "Options:\n"
-    "  -h, --help              print this help\n"
-    "  -o, --output            write the modified tags to a file\n"
-    "  -i, --in-place [SUFFIX] use a temporary file then replace the original file\n"
-    "  -y, --overwrite         overwrite the output file if it already exists\n"
-    "  -d, --delete FIELD      delete all the fields of a specified type\n"
-    "  -a, --add FIELD=VALUE   add a field\n"
-    "  -s, --set FIELD=VALUE   delete then add a field\n"
-    "  -D, --delete-all        delete all the fields!\n"
-    "  -S, --set-all           read the fields from stdin\n";
-
 /**
  * Display the tags on stdout.
  *
@@ -46,34 +27,10 @@ static void print_tags(ot::opus_tags &tags)
 	}
 }
 
-int main(int argc, char **argv){
-    if(argc == 1){
-        fputs(version, stdout);
-        fputs(usage, stdout);
-        return EXIT_SUCCESS;
-    }
-    ot::options opt;
-    int exit_code = parse_options(argc, argv, opt);
-    if (exit_code != EXIT_SUCCESS)
-        return exit_code;
-    if (opt.print_help) {
-        puts(version);
-        puts(usage);
-        puts(help);
-        puts("See the man page for extensive documentation.");
-        return EXIT_SUCCESS;
-    }
-    if(optind != argc - 1){
-        fputs("invalid arguments\n", stderr);
-        return EXIT_FAILURE;
-    }
+static int run(ot::options& opt)
+{
     if (opt.inplace != nullptr && !opt.path_out.empty()) {
         fputs("cannot combine --in-place and --output\n", stderr);
-        return EXIT_FAILURE;
-    }
-    opt.path_in = argv[optind];
-    if (opt.path_in.empty()) {
-        fputs("input's file path cannot be empty\n", stderr);
         return EXIT_FAILURE;
     }
     if (!opt.path_out.empty() && opt.path_in != "-" && opt.path_out != "-") {
@@ -246,4 +203,15 @@ int main(int argc, char **argv){
         }
     }
     return EXIT_SUCCESS;
+}
+
+int main(int argc, char** argv) {
+	ot::status rc;
+	ot::options opt;
+	rc = process_options(argc, argv, opt);
+	if (rc == ot::status::exit_now)
+		return EXIT_SUCCESS;
+	else if (rc != ot::status::ok)
+		return EXIT_FAILURE;
+	return run(opt);
 }
