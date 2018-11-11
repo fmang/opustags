@@ -20,12 +20,12 @@ sub opustags {
 	my %opt;
 	%opt = %{pop @_} if ref $_[-1];
 	my ($pid, $pin, $pout, $perr);
-	local $/ = undef;
 	$perr = gensym;
 	$pid = open3($pin, $pout, $perr, $opustags, @_);
-	binmode($pin, ':utf8');
-	binmode($pout, ':utf8');
+	binmode($pin, $opt{mode} // ':utf8');
+	binmode($pout, $opt{mode} // ':utf8');
 	binmode($perr, ':utf8');
+	local $/;
 	print $pin $opt{in} if defined $opt{in};
 	close $pin;
 	my $out = <$pout>;
@@ -188,24 +188,7 @@ sub slurp {
 	$data
 }
 
-sub opustags_binary {
-	my $in = pop @_;
-	my ($pid, $pin, $pout, $perr);
-	local $/;
-	$perr = gensym;
-	$pid = open3($pin, $pout, $perr, $opustags, @_);
-	binmode($pin);
-	binmode($pout);
-	binmode($perr, ':utf8');
-	print $pin $in if defined $in;
-	close $pin;
-	my $out = <$pout>;
-	my $err = <$perr>;
-	waitpid($pid, 0);
-	[$out, $err, $?]
-}
-
 my $data = slurp 'out.opus';
-is_deeply(opustags_binary('-', '-o', '-', $data), [$data, '', 0], 'read opus from stdin and write to stdout');
+is_deeply(opustags('-', '-o', '-', {in => $data, mode => ':raw'}), [$data, '', 0], 'read opus from stdin and write to stdout');
 
 unlink('out.opus');
