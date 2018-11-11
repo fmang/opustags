@@ -27,16 +27,26 @@ static void print_tags(ot::opus_tags &tags)
 	}
 }
 
+/**
+ * Check if two filepaths point to the same file, after path canonicalization.
+ * The path "-" is treated specially, meaning stdin for path_in and stdout for path_out.
+ */
+static bool same_file(const std::string& path_in, const std::string& path_out)
+{
+	if (path_in == "-" || path_out == "-")
+		return false;
+	char canon_in[PATH_MAX+1], canon_out[PATH_MAX+1];
+	if (realpath(path_in.c_str(), canon_in) && realpath(path_out.c_str(), canon_out)) {
+		return (strcmp(canon_in, canon_out) == 0);
+	}
+	return false;
+}
+
 static int run(ot::options& opt)
 {
-    if (!opt.path_out.empty() && opt.path_in != "-" && opt.path_out != "-") {
-        char canon_in[PATH_MAX+1], canon_out[PATH_MAX+1];
-        if (realpath(opt.path_in.c_str(), canon_in) && realpath(opt.path_out.c_str(), canon_out)) {
-            if (strcmp(canon_in, canon_out) == 0) {
-                fputs("error: the input and output files are the same\n", stderr);
-                return EXIT_FAILURE;
-            }
-        }
+    if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out)) {
+        fputs("error: the input and output files are the same\n", stderr);
+        return EXIT_FAILURE;
     }
     ot::ogg_reader reader;
     ot::ogg_writer writer;
