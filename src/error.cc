@@ -5,7 +5,7 @@ static const char* messages[] = {
 	"Need to exit",
 	"Bad command-line arguments",
 	"Integer overflow",
-	"Standard error",
+	nullptr, /* standard error: call stderror */
 	"End of file",
 	"libogg error",
 	"Bad magic number",
@@ -19,8 +19,10 @@ static const char* messages[] = {
 
 const char* ot::error_message(ot::status code)
 {
-if (code >= ot::status::sentinel)
-	return nullptr;
-auto index = static_cast<size_t>(code);
-return messages[index];
+	if (code == ot::status::standard_error)
+		return strerror(errno);
+	if (code >= ot::status::sentinel)
+		return nullptr;
+	auto index = static_cast<size_t>(code);
+	return messages[index];
 }

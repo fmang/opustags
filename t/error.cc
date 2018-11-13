@@ -9,6 +9,24 @@ static void check_message()
 		throw failure("unexpected message for overflowing_comment_data");
 }
 
+static void check_errno()
+{
+	/* copy the messages in case strerror changes something */
+	std::string got, expected;
+
+	errno = EINVAL;
+	got = ot::error_message(ot::status::standard_error);
+	expected = strerror(errno);
+	if (got != expected)
+		throw failure("unexpected message for errno EINVAL");
+
+	errno = 0;
+	got = ot::error_message(ot::status::standard_error);
+	expected = strerror(errno);
+	if (got != expected)
+		throw failure("unexpected message for errno 0");
+}
+
 static void check_sentinel()
 {
 	if (ot::error_message(ot::status::sentinel) != nullptr)
@@ -20,8 +38,9 @@ static void check_sentinel()
 
 int main()
 {
-	std::cout << "1..2\n";
+	std::cout << "1..3\n";
 	run(check_message, "check a few error messages");
+	run(check_errno, "check the message for standard errors");
 	run(check_sentinel, "ensure the sentinel is respected");
 	return 0;
 }
