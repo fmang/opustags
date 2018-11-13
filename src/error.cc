@@ -17,6 +17,8 @@ static const char* messages[] = {
 	"Overflowing comment data",
 };
 
+static_assert(sizeof(messages) / sizeof(*messages) == static_cast<size_t>(ot::status::sentinel));
+
 const char* ot::error_message(ot::status code)
 {
 	if (code == ot::status::standard_error)
