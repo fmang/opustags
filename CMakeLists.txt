@@ -20,6 +20,7 @@ add_library(
 	libopustags
 	OBJECT
 	src/cli.cc
+	src/error.cc
 	src/ogg.cc
 	src/opus.cc
 )

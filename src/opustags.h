@@ -15,15 +15,16 @@
 namespace ot {
 
 /**
- * Possible error status.
+ * Possible error status, ranging from #ok (0) to #sentinel.
  *
- * The overflowing error family means that the end of packet was reached when
- * attempting to read the overflowing value. For example,
- * overflowing_comment_count means that after reading the vendor string, less
- * than 4 bytes were left in the packet.
+ * Use #error_message to get an error message from a status code.
+ *
+ * The overflowing error family means that the end of packet was reached when attempting to read the
+ * overflowing value. For example, overflowing_comment_count means that after reading the vendor
+ * string, less than 4 bytes were left in the packet.
  */
 enum class status {
-	ok,
+	ok = 0,
 	exit_now,
 	bad_arguments,
 	int_overflow,
@@ -39,7 +40,14 @@ enum class status {
 	overflowing_comment_count,
 	overflowing_comment_length,
 	overflowing_comment_data,
+	/**
+	 * Last error code, for integrity checking.
+	 * Do not use it, it does not represent any error.
+	 */
+	sentinel,
 };
+
+const char* error_message(status code);
 
 /**
  * \defgroup ogg Ogg
