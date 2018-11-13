@@ -7,29 +7,11 @@
  */
 
 #include <opustags.h>
+#include "tap.h"
 
 #include <cstring>
-#include <exception>
-#include <iostream>
 
 using namespace std::literals::string_literals;
-
-class failure : public std::runtime_error {
-public:
-	failure(const char *message) : std::runtime_error(message) {}
-};
-
-template <typename F>
-static void run(F test, const char *name)
-{
-	bool result = false;
-	try {
-		result = test();
-	} catch (failure& e) {
-		std::cout << "# " << e.what() << "\n";
-	}
-	std::cout << (result ? "ok" : "not ok") << " - " << name << "\n";
-}
 
 static const char standard_OpusTags[] =
 	"OpusTags"
@@ -38,7 +20,7 @@ static const char standard_OpusTags[] =
 	"\x09\x00\x00\x00" "TITLE=Foo"
 	"\x0a\x00\x00\x00" "ARTIST=Bar";
 
-static bool parse_standard()
+static void parse_standard()
 {
 	ot::opus_tags tags;
 	auto rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
@@ -56,7 +38,6 @@ static bool parse_standard()
 		throw failure("bad artist");
 	if (tags.extra_data.size() != 0)
 		throw failure("found mysterious padding data");
-	return true;
 }
 
 /**
@@ -64,7 +45,7 @@ static bool parse_standard()
  * corrupt the memory. Run this one with valgrind to ensure we're not
  * overflowing.
  */
-static bool parse_corrupted()
+static void parse_corrupted()
 {
 	size_t size = sizeof(standard_OpusTags);
 	char packet[size];
@@ -103,11 +84,9 @@ static bool parse_corrupted()
 	*first_comment_length = end - first_comment_data + 1;
 	if (ot::parse_tags(packet, size, &tags) != ot::status::overflowing_comment_data)
 		throw failure("did not detect the overflowing comment data");
-
-	return true;
 }
 
-static bool recode_standard()
+static void recode_standard()
 {
 	ot::opus_tags tags;
 	auto rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
@@ -129,10 +108,9 @@ static bool recode_standard()
 	if (memcmp(packet.packet, standard_OpusTags, packet.bytes) != 0)
 		throw failure("the rendered packet is not what we expected");
 	free(packet.packet);
-	return true;
 }
 
-static bool recode_padding()
+static void recode_padding()
 {
 	ot::opus_tags tags;
 	std::string padded_OpusTags(standard_OpusTags, sizeof(standard_OpusTags));
@@ -154,7 +132,6 @@ static bool recode_padding()
 	if (memcmp(packet.packet, padded_OpusTags.data(), packet.bytes) != 0)
 		throw failure("the rendered packet is not what we expected");
 	free(packet.packet);
-	return true;
 }
 
 int main()
