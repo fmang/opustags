@@ -108,9 +108,10 @@ static int run(ot::options& opt)
         // Read all the packets.
         while(ogg_stream_packetout(&reader.stream, &reader.packet) == 1){
             packet_count++;
-            if(packet_count == 1){ // Identification header
-                if(strncmp((char*) reader.packet.packet, "OpusHead", 8) != 0){
-                    error = "opustags: invalid identification header";
+            if (packet_count == 1) { // Identification header
+                rc = ot::validate_identification_header(reader.packet.packet, reader.packet.bytes);
+                if (rc != ot::status::ok) {
+                    error = ot::error_message(rc);
                     break;
                 }
             }

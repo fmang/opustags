@@ -34,6 +34,7 @@ enum class status {
 	standard_error,
 	end_of_file,
 	libogg_error,
+	bad_identification_header,
 	/* OpusTags parsing errors */
 	bad_magic_number,
 	overflowing_magic_number,
@@ -196,6 +197,12 @@ struct opus_tags {
 	 */
 	std::string extra_data;
 };
+
+/**
+ * Validate the content of the first packet of an Ogg stream to ensure it's a valid OpusHead.
+ * Returns #ot::status::ok on success, #ot::status::bad_identification_header on error.
+ */
+status validate_identification_header(const unsigned char* data, size_t size);
 
 status parse_tags(const char *data, long len, opus_tags *tags);
 int render_tags(opus_tags *tags, ogg_packet *op);

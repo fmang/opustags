@@ -13,6 +13,22 @@
 
 using namespace std::literals::string_literals;
 
+static void check_identification()
+{
+	ot::status rc;
+	rc = ot::validate_identification_header(reinterpret_cast<const unsigned char*>("OpusHead.."), 10);
+	if (rc != ot::status::ok)
+		throw failure("did not accept a good OpusHead");
+
+	rc = ot::validate_identification_header(reinterpret_cast<const unsigned char*>("OpusHead"), 7);
+	if (rc != ot::status::bad_identification_header)
+		throw failure("accepted an OpusHead that is too short");
+
+	rc = ot::validate_identification_header(reinterpret_cast<const unsigned char*>("NotOpusHead"), 11);
+	if (rc != ot::status::bad_identification_header)
+		throw failure("did not report the right status for a bad OpusHead");
+}
+
 static const char standard_OpusTags[] =
 	"OpusTags"
 	"\x14\x00\x00\x00" "opustags test packet"
@@ -136,7 +152,8 @@ static void recode_padding()
 
 int main()
 {
-	std::cout << "1..4\n";
+	std::cout << "1..5\n";
+	run(check_identification, "check the OpusHead packet");
 	run(parse_standard, "parse a standard OpusTags packet");
 	run(parse_corrupted, "correctly reject invalid packets");
 	run(recode_standard, "recode a standard OpusTags packet");

@@ -34,6 +34,15 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
+ot::status ot::validate_identification_header(const unsigned char* data, size_t size)
+{
+	if (size < 8)
+		return ot::status::bad_identification_header;
+	if (memcmp(data, "OpusHead", 8) != 0)
+		return ot::status::bad_identification_header;
+	return ot::status::ok;
+}
+
 ot::status ot::parse_tags(const char *data, long len, opus_tags *tags)
 {
 	if (len < 0)

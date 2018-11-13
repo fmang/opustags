@@ -8,6 +8,7 @@ static const char* messages[] = {
 	nullptr, /* standard error: call stderror */
 	"End of file",
 	"libogg error",
+	"Invalid identification header, not an Opus stream",
 	"Bad magic number",
 	"Overflowing magic number",
 	"Overflowing vendor length",
