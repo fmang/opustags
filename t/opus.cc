@@ -15,17 +15,19 @@ using namespace std::literals::string_literals;
 
 static void check_identification()
 {
-	ot::status rc;
-	rc = ot::validate_identification_header(reinterpret_cast<const unsigned char*>("OpusHead.."), 10);
-	if (rc != ot::status::ok)
+	ogg_packet packet {};
+	packet.packet = (unsigned char*) "OpusHead..";
+	packet.bytes = 10;
+	if (ot::validate_identification_header(packet) != ot::status::ok)
 		throw failure("did not accept a good OpusHead");
 
-	rc = ot::validate_identification_header(reinterpret_cast<const unsigned char*>("OpusHead"), 7);
-	if (rc != ot::status::bad_identification_header)
+	packet.bytes = 7;
+	if (ot::validate_identification_header(packet) != ot::status::bad_identification_header)
 		throw failure("accepted an OpusHead that is too short");
 
-	rc = ot::validate_identification_header(reinterpret_cast<const unsigned char*>("NotOpusHead"), 11);
-	if (rc != ot::status::bad_identification_header)
+	packet.packet = (unsigned char*) "NotOpusHead";
+	packet.bytes = 11;
+	if (ot::validate_identification_header(packet) != ot::status::bad_identification_header)
 		throw failure("did not report the right status for a bad OpusHead");
 }
 

@@ -109,7 +109,7 @@ static int run(ot::options& opt)
         while(ogg_stream_packetout(&reader.stream, &reader.packet) == 1){
             packet_count++;
             if (packet_count == 1) { // Identification header
-                rc = ot::validate_identification_header(reader.packet.packet, reader.packet.bytes);
+                rc = ot::validate_identification_header(reader.packet);
                 if (rc != ot::status::ok) {
                     error = ot::error_message(rc);
                     break;

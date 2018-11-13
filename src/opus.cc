@@ -34,11 +34,14 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
-ot::status ot::validate_identification_header(const unsigned char* data, size_t size)
+/**
+ * \todo Validate more properties of the packet, like the sequence number.
+ */
+ot::status ot::validate_identification_header(const ogg_packet& packet)
 {
-	if (size < 8)
+	if (packet.bytes < 8)
 		return ot::status::bad_identification_header;
-	if (memcmp(data, "OpusHead", 8) != 0)
+	if (memcmp(packet.packet, "OpusHead", 8) != 0)
 		return ot::status::bad_identification_header;
 	return ot::status::ok;
 }
