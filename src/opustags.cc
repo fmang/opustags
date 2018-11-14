@@ -25,6 +25,39 @@ static bool same_file(const std::string& path_in, const std::string& path_out)
 	return false;
 }
 
+/**
+ * Parse the packet as an OpusTags comment header, apply the user's modifications, and write the new
+ * packet to the writer.
+ */
+static ot::status process_tags(const ogg_packet& packet, const ot::options& opt, ot::ogg_writer& writer)
+{
+	ot::opus_tags tags;
+	if(ot::parse_tags((char*) packet.packet, packet.bytes, &tags) != ot::status::ok)
+		return ot::status::bad_comment_header;
+
+	if (opt.delete_all) {
+		tags.comments.clear();
+	} else {
+		for (const std::string& name : opt.to_delete)
+			ot::delete_tags(&tags, name.c_str());
+	}
+
+	if (opt.set_all)
+		tags.comments = ot::read_comments(stdin);
+	for (const std::string& comment : opt.to_add)
+		tags.comments.emplace_back(comment);
+
+	if (writer.file) {
+		auto packet = ot::render_tags(tags);
+		if(ogg_stream_packetin(&writer.stream, &packet) == -1)
+			return ot::status::libogg_error;
+	} else {
+		ot::print_comments(tags.comments, stdout);
+	}
+
+	return ot::status::ok;
+}
+
 static int run(ot::options& opt)
 {
     if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out)) {
@@ -64,7 +97,6 @@ static int run(ot::options& opt)
             }
         }
     }
-    ot::opus_tags tags;
     const char *error = NULL;
     int packet_count = -1;
     while(error == NULL){
@@ -114,33 +146,16 @@ static int run(ot::options& opt)
                     error = ot::error_message(rc);
                     break;
                 }
-            }
-            else if(packet_count == 2){ // Comment header
-                if(ot::parse_tags((char*) reader.packet.packet, reader.packet.bytes, &tags) != ot::status::ok){
-                    error = "opustags: invalid comment header";
+            } else if (packet_count == 2) { // Comment header
+                rc = process_tags(reader.packet, opt, writer);
+                if (rc != ot::status::ok) {
+                    error = ot::error_message(rc);
                     break;
                 }
-                if (opt.delete_all) {
-                    tags.comments.clear();
-                } else {
-                    for (const std::string& name : opt.to_delete)
-                        ot::delete_tags(&tags, name.c_str());
-                }
-                if (opt.set_all)
-                    tags.comments = ot::read_comments(stdin);
-                for (const std::string& comment : opt.to_add)
-                    tags.comments.emplace_back(comment);
-                if(writer.file){
-                    auto packet = ot::render_tags(tags);
-                    if(ogg_stream_packetin(&writer.stream, &packet) == -1)
-                        error = "ogg_stream_packetin: internal error";
-                }
+                if (!writer.file)
+                    break; /* nothing else to do */
                 else
-                    ot::print_comments(tags.comments, stdout);
-                if(error || !writer.file)
-                    break;
-                else
-                    continue;
+                    continue; /* process_tags wrote the new packet */
             }
             if(writer.file){
                 if(ogg_stream_packetin(&writer.stream, &reader.packet) == -1){

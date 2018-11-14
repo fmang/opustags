@@ -36,6 +36,7 @@ enum class status {
 	end_of_file,
 	libogg_error,
 	bad_identification_header,
+	bad_comment_header,
 	/* OpusTags parsing errors */
 	bad_magic_number,
 	overflowing_magic_number,

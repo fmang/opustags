@@ -9,6 +9,7 @@ static const char* messages[] = {
 	"End of file",
 	"libogg error",
 	"Invalid identification header, not an Opus stream",
+	"Invalid comment header",
 	"Bad magic number",
 	"Overflowing magic number",
 	"Overflowing vendor length",
