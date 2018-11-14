@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <list>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -158,6 +159,23 @@ struct ogg_writer {
 
 int write_page(ogg_page *og, FILE *stream);
 
+/**
+ * Ogg packet with dynamically allocated data.
+ *
+ * Provides a wrapper around libogg's ogg_packet with RAII.
+ */
+struct dynamic_ogg_packet : ogg_packet {
+	/** Construct an ogg_packet of the given size. */
+	explicit dynamic_ogg_packet(size_t size) {
+		bytes = size;
+		data = std::make_unique<unsigned char[]>(size);
+		packet = data.get();
+	}
+private:
+	/** Owning reference to the data. Use the packet field from ogg_packet instead. */
+	std::unique_ptr<unsigned char[]> data;
+};
+
 /** \} */
 
 /**
@@ -206,7 +224,7 @@ struct opus_tags {
 status validate_identification_header(const ogg_packet& packet);
 
 status parse_tags(const char *data, long len, opus_tags *tags);
-int render_tags(opus_tags *tags, ogg_packet *op);
+dynamic_ogg_packet render_tags(const opus_tags& tags);
 void delete_tags(opus_tags *tags, const char *field);
 
 /** \} */

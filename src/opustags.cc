@@ -131,11 +131,9 @@ static int run(ot::options& opt)
                 for (const std::string& comment : opt.to_add)
                     tags.comments.emplace_back(comment);
                 if(writer.file){
-                    ogg_packet packet;
-                    ot::render_tags(&tags, &packet);
+                    auto packet = ot::render_tags(tags);
                     if(ogg_stream_packetin(&writer.stream, &packet) == -1)
                         error = "ogg_stream_packetin: internal error";
-                    free(packet.packet);
                 }
                 else
                     ot::print_comments(tags.comments, stdout);

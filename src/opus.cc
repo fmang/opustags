@@ -86,39 +86,38 @@ ot::status ot::parse_tags(const char *data, long len, opus_tags *tags)
 	return status::ok;
 }
 
-int ot::render_tags(opus_tags *tags, ogg_packet *op)
+ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)
 {
-	// Note: op->packet must be manually freed.
-	op->b_o_s = 0;
-	op->e_o_s = 0;
-	op->granulepos = 0;
-	op->packetno = 1;
-	long len = 8 + 4 + tags->vendor.size() + 4;
-	for (const std::string& comment : tags->comments)
-		len += 4 + comment.size();
-	len += tags->extra_data.size();
-	op->bytes = len;
-	char *data = static_cast<char*>(malloc(len));
-	if (!data)
-		return -1;
-	op->packet = (unsigned char*) data;
+	size_t size = 8 + 4 + tags.vendor.size() + 4;
+	for (const std::string& comment : tags.comments)
+		size += 4 + comment.size();
+	size += tags.extra_data.size();
+
+	dynamic_ogg_packet op(size);
+	op.b_o_s = 0;
+	op.e_o_s = 0;
+	op.granulepos = 0;
+	op.packetno = 1;
+
+	unsigned char* data = op.packet;
 	uint32_t n;
 	memcpy(data, "OpusTags", 8);
-	n = htole32(tags->vendor.size());
+	n = htole32(tags.vendor.size());
 	memcpy(data+8, &n, 4);
-	memcpy(data+12, tags->vendor.data(), tags->vendor.size());
-	data += 12 + tags->vendor.size();
-	n = htole32(tags->comments.size());
+	memcpy(data+12, tags.vendor.data(), tags.vendor.size());
+	data += 12 + tags.vendor.size();
+	n = htole32(tags.comments.size());
 	memcpy(data, &n, 4);
 	data += 4;
-	for (const std::string& comment : tags->comments) {
+	for (const std::string& comment : tags.comments) {
 		n = htole32(comment.size());
 		memcpy(data, &n, 4);
 		memcpy(data+4, comment.data(), comment.size());
 		data += 4 + comment.size();
 	}
-	memcpy(data, tags->extra_data.data(), tags->extra_data.size());
-	return 0;
+	memcpy(data, tags.extra_data.data(), tags.extra_data.size());
+
+	return op;
 }
 
 /**

@@ -110,9 +110,7 @@ static void recode_standard()
 	auto rc = ot::parse_tags(standard_OpusTags, sizeof(standard_OpusTags) - 1, &tags);
 	if (rc != ot::status::ok)
 		throw failure("ot::parse_tags did not return ok");
-	ogg_packet packet;
-	if (ot::render_tags(&tags, &packet) != 0)
-		throw failure("ot::render_tags did not return 0");
+	auto packet = ot::render_tags(tags);
 	if (packet.b_o_s != 0)
 		throw failure("b_o_s should not be set");
 	if (packet.e_o_s != 0)
@@ -125,7 +123,6 @@ static void recode_standard()
 		throw failure("the packet is not the right size");
 	if (memcmp(packet.packet, standard_OpusTags, packet.bytes) != 0)
 		throw failure("the rendered packet is not what we expected");
-	free(packet.packet);
 }
 
 static void recode_padding()
@@ -140,16 +137,13 @@ static void recode_padding()
 	if (tags.extra_data != "\0hello"s)
 		throw failure("corrupted extra data");
 	// recode the packet and ensure it's exactly the same
-	ogg_packet packet;
-	if (ot::render_tags(&tags, &packet) != 0)
-		throw failure("ot::render_tags did not return 0");
+	auto packet = ot::render_tags(tags);
 	if (static_cast<size_t>(packet.bytes) < padded_OpusTags.size())
 		throw failure("the packet was truncated");
 	if (static_cast<size_t>(packet.bytes) > padded_OpusTags.size())
 		throw failure("the packet got too big");
 	if (memcmp(packet.packet, padded_OpusTags.data(), packet.bytes) != 0)
 		throw failure("the rendered packet is not what we expected");
-	free(packet.packet);
 }
 
 int main()
