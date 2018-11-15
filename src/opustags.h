@@ -256,6 +256,8 @@ status process_options(int argc, char** argv, options& opt);
 void print_comments(const std::list<std::string>& comments, FILE* output);
 std::list<std::string> read_comments(FILE* input);
 
+ot::status process(ogg_reader& reader, ogg_writer& writer, const ot::options &opt);
+
 /** \} */
 
 }
