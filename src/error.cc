@@ -3,6 +3,7 @@
 static const char* messages[] = {
 	"OK",
 	"Need to exit",
+	"Fatal error",
 	"Bad command-line arguments",
 	"Integer overflow",
 	nullptr, /* standard error: call stderror */
