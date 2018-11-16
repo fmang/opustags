@@ -2,7 +2,8 @@
 
 #include <cstdio>
 
-ot::ogg_reader::ogg_reader()
+ot::ogg_reader::ogg_reader(FILE* input)
+	: file(input)
 {
 	ogg_sync_init(&sync);
 	memset(&stream, 0, sizeof(stream));
@@ -33,7 +34,8 @@ ot::status ot::ogg_reader::read_page()
 	return status::ok;
 }
 
-ot::ogg_writer::ogg_writer()
+ot::ogg_writer::ogg_writer(FILE* output)
+	: file(output)
 {
 	memset(&stream, 0, sizeof(stream));
 }

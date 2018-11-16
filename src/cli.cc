@@ -130,9 +130,12 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 		fputs("input's file path cannot be empty\n", stderr);
 		return status::bad_arguments;
 	}
-	if (opt.inplace != nullptr && !opt.path_out.empty()) {
-		fputs("cannot combine --in-place and --output\n", stderr);
-		return status::bad_arguments;
+	if (opt.inplace != nullptr) {
+		if (!opt.path_out.empty()) {
+			fputs("cannot combine --in-place and --output\n", stderr);
+			return status::bad_arguments;
+		}
+		opt.path_out = opt.path_in + opt.inplace;
 	}
 	if (opt.path_in == "-" && opt.set_all) {
 		fputs("can't open stdin for input when -S is specified\n", stderr);
@@ -347,6 +350,9 @@ static bool same_file(const std::string& path_in, const std::string& path_out)
 
 /**
  * Open the input and output streams, then call #ot::process.
+ *
+ * This is the main entry point to the opustags program, and pretty much the same as calling
+ * opustags from the command-line.
  */
 ot::status ot::run(ot::options& opt)
 {
@@ -354,52 +360,58 @@ ot::status ot::run(ot::options& opt)
 		fputs("error: the input and output files are the same\n", stderr);
 		return ot::status::fatal_error;
 	}
-	ot::ogg_reader reader;
-	ot::ogg_writer writer;
+
+	std::unique_ptr<FILE, decltype(&fclose)> input(nullptr, &fclose);
 	if (opt.path_in == "-") {
-		reader.file = stdin;
+		input.reset(stdin);
 	} else {
-		reader.file = fopen(opt.path_in.c_str(), "r");
-		if (reader.file == nullptr) {
+		FILE* input_file = fopen(opt.path_in.c_str(), "r");
+		if (input_file == nullptr) {
 			perror("fopen");
 			return ot::status::fatal_error;
 		}
+		input.reset(input_file);
 	}
-	writer.file = NULL;
-	if (opt.inplace != nullptr)
-		opt.path_out = opt.path_in + opt.inplace;
-	if (!opt.path_out.empty()) {
-		if (opt.path_out == "-") {
-			writer.file = stdout;
-		} else {
-			if (!opt.overwrite && !opt.inplace) {
-				if (access(opt.path_out.c_str(), F_OK) == 0) {
-					fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", opt.path_out.c_str());
-					fclose(reader.file);
-					return ot::status::fatal_error;
-				}
-			}
-			writer.file = fopen(opt.path_out.c_str(), "w");
-			if (!writer.file) {
-				perror("fopen");
-				fclose(reader.file);
-				return ot::status::fatal_error;
-			}
+
+	std::unique_ptr<FILE, decltype(&fclose)> output(nullptr, &fclose);
+	if (opt.path_out == "-") {
+		output.reset(stdout);
+	} else if (!opt.path_out.empty()) {
+		if (!opt.overwrite && access(opt.path_out.c_str(), F_OK) == 0) {
+			fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", opt.path_out.c_str());
+			return ot::status::fatal_error;
 		}
+		FILE* output_file = fopen(opt.path_out.c_str(), "w");
+		if (output_file == nullptr) {
+			perror("fopen");
+			return ot::status::fatal_error;
+		}
+		output.reset(output_file);
 	}
-	ot::status rc = process(reader, writer, opt);
-	fclose(reader.file);
-	if (writer.file)
-		fclose(writer.file);
+
+	ot::status rc;
+	{
+		ot::ogg_reader reader(input.get());
+		ot::ogg_writer writer(output.get());
+		rc = process(reader, writer, opt);
+		/* delete reader and writer before closing the files */
+	}
+
+	input.release();
+	output.release();
+
 	if (rc != ot::status::ok) {
-		if (!opt.path_out.empty() && writer.file != stdout)
+		if (!opt.path_out.empty() && opt.path_out != "-")
 			remove(opt.path_out.c_str());
 		return ot::status::fatal_error;
-	} else if (opt.inplace) {
+	}
+
+	if (opt.inplace) {
 		if (rename(opt.path_out.c_str(), opt.path_in.c_str()) == -1) {
 			perror("rename");
 			return ot::status::fatal_error;
 		}
 	}
+
 	return ot::status::ok;
 }
