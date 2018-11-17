@@ -6,13 +6,13 @@ ot::ogg_reader::ogg_reader(FILE* input)
 	: file(input)
 {
 	ogg_sync_init(&sync);
-	memset(&stream, 0, sizeof(stream));
 }
 
 ot::ogg_reader::~ogg_reader()
 {
+	if (stream_ready)
+		ogg_stream_clear(&stream);
 	ogg_sync_clear(&sync);
-	ogg_stream_clear(&stream);
 }
 
 ot::status ot::ogg_reader::read_page()
@@ -31,7 +31,29 @@ ot::status ot::ogg_reader::read_page()
 		if (ogg_sync_check(&sync) != 0)
 			return status::libogg_error;
 	}
+	if (!stream_ready) {
+		if (ogg_stream_init(&stream, ogg_page_serialno(&page)) == -1)
+			return status::libogg_error;
+		stream_ready = true;
+	}
+	stream_in_sync = false;
 	return status::ok;
+}
+
+ot::status ot::ogg_reader::read_packet()
+{
+	if (!stream_ready)
+		return status::stream_not_ready;
+	/* If the stream is on a different page, feed the current page. */
+	if (!stream_in_sync) {
+		if (ogg_stream_pagein(&stream, &page) == -1)
+			return status::libogg_error;
+		stream_in_sync = true;
+	}
+	int rc = ogg_stream_packetout(&stream, &packet);
+	return rc == 0 ? status::end_of_page :
+	       rc == 1 ? status::ok :
+	                 status::libogg_error;
 }
 
 ot::ogg_writer::ogg_writer(FILE* output)

@@ -8,6 +8,8 @@ static const char* messages[] = {
 	"Integer overflow",
 	nullptr, /* standard error: call stderror */
 	"End of file",
+	"End of page",
+	"Stream is not ready",
 	"libogg error",
 	"Invalid identification header, not an Opus stream",
 	"Invalid comment header",

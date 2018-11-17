@@ -35,6 +35,8 @@ enum class status {
 	/** On standard error, errno will give more details. */
 	standard_error,
 	end_of_file,
+	end_of_page,
+	stream_not_ready,
 	libogg_error,
 	bad_identification_header,
 	bad_comment_header,
@@ -93,6 +95,13 @@ struct ogg_reader {
 	 */
 	status read_page();
 	/**
+	 * Read the next available packet from the current #page. The packet is available in the
+	 * #packet field.
+	 *
+	 * If the end of page was reached, return #status::end_of_page.
+	 */
+	status read_packet();
+	/**
 	 * The file is our source of binary data. It is not integrated to libogg, so we need to
 	 * handle it ourselves.
 	 *
@@ -115,6 +124,22 @@ struct ogg_reader {
 	 */
 	ogg_page page;
 	/**
+	 * Current packet from the stream state.
+	 *
+	 * Its memory is managed by libogg, inside the stream state, and is valid until the next
+	 * call to ogg_stream_packetout.
+	 */
+	ogg_packet packet;
+private:
+	/**
+	 * Indicates whether the stream has been initialized or not.
+	 */
+	bool stream_ready = false;
+	/**
+	 * Indicates if the stream's last fed page is the current one.
+	 */
+	bool stream_in_sync;
+	/**
 	 * The stream layer receives pages and yields a sequence of packets.
 	 *
 	 * A single page may contain several packets, and a single packet may span on multiple
@@ -124,13 +149,6 @@ struct ogg_reader {
 	 * After we've read OpusHead and OpusTags, we don't need the stream layer anymore.
 	 */
 	ogg_stream_state stream;
-	/**
-	 * Current packet from the stream state.
-	 *
-	 * Its memory is managed by libogg, inside the stream state, and is valid until the next
-	 * call to ogg_stream_packetout.
-	 */
-	ogg_packet packet;
 };
 
 struct ogg_writer {

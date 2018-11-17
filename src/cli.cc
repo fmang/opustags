@@ -267,10 +267,6 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 		}
 		// Initialize the streams from the first page.
 		if (packet_count == -1) {
-			if (ogg_stream_init(&reader.stream, ogg_page_serialno(&reader.page)) == -1) {
-				error = "ogg_stream_init: couldn't create a decoder";
-				break;
-			}
 			if (writer.file) {
 				if (ogg_stream_init(&writer.stream, ogg_page_serialno(&reader.page)) == -1) {
 					error = "ogg_stream_init: couldn't create an encoder";
@@ -279,12 +275,8 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 			}
 			packet_count = 0;
 		}
-		if (ogg_stream_pagein(&reader.stream, &reader.page) == -1) {
-			error = "ogg_stream_pagein: invalid page";
-			break;
-		}
 		// Read all the packets.
-		while (ogg_stream_packetout(&reader.stream, &reader.packet) == 1) {
+		while ((rc = reader.read_packet()) == ot::status::ok) {
 			packet_count++;
 			if (packet_count == 1) { // Identification header
 				rc = ot::validate_identification_header(reader.packet);
@@ -310,8 +302,8 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 				}
 			}
 		}
-		if (ogg_stream_check(&reader.stream) != 0) {
-			error = "ogg_stream_check: internal error (decoder)";
+		if (rc != ot::status::ok && rc != ot::status::end_of_page) {
+			error = "error reading the ogg packets";
 			break;
 		}
 		// Write the page.
