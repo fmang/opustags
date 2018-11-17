@@ -211,14 +211,14 @@ std::list<std::string> ot::read_comments(FILE* input)
 static ot::status process_tags(const ogg_packet& packet, const ot::options& opt, ot::ogg_writer* writer)
 {
 	ot::opus_tags tags;
-	if(ot::parse_tags((char*) packet.packet, packet.bytes, &tags) != ot::status::ok)
+	if(ot::parse_tags(packet, tags) != ot::status::ok)
 		return ot::status::bad_comment_header;
 
 	if (opt.delete_all) {
 		tags.comments.clear();
 	} else {
 		for (const std::string& name : opt.to_delete)
-			ot::delete_tags(&tags, name.c_str());
+			ot::delete_comments(tags, name.c_str());
 	}
 
 	if (opt.set_all)

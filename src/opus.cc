@@ -46,16 +46,24 @@ ot::status ot::validate_identification_header(const ogg_packet& packet)
 	return ot::status::ok;
 }
 
-ot::status ot::parse_tags(const char *data, long len, opus_tags *tags)
+/**
+ * \todo See if the packet's data could be casted more nicely into a string.
+ */
+ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)
 {
-	if (len < 0)
+	if (packet.bytes < 0)
 		return status::int_overflow;
-	size_t size = static_cast<size_t>(len);
+	size_t size = static_cast<size_t>(packet.bytes);
+	const char* data = reinterpret_cast<char*>(packet.packet);
 	size_t pos = 0;
+	opus_tags my_tags;
+
+	// Magic number
 	if (8 > size)
 		return status::overflowing_magic_number;
 	if (memcmp(data, "OpusTags", 8) != 0)
 		return status::bad_magic_number;
+
 	// Vendor
 	pos = 8;
 	if (pos + 4 > size)
@@ -63,14 +71,16 @@ ot::status ot::parse_tags(const char *data, long len, opus_tags *tags)
 	size_t vendor_length = le32toh(*((uint32_t*) (data + pos)));
 	if (pos + 4 + vendor_length > size)
 		return status::overflowing_vendor_data;
-	tags->vendor = std::string(data + pos + 4, vendor_length);
-	pos += 4 + tags->vendor.size();
-	// Count
+	my_tags.vendor = std::string(data + pos + 4, vendor_length);
+	pos += 4 + my_tags.vendor.size();
+
+	// Comment count
 	if (pos + 4 > size)
 		return status::overflowing_comment_count;
 	uint32_t count = le32toh(*((uint32_t*) (data + pos)));
 	pos += 4;
-	// Comments
+
+	// Comments' data
 	for (uint32_t i = 0; i < count; ++i) {
 		if (pos + 4 > size)
 			return status::overflowing_comment_length;
@@ -78,11 +88,14 @@ ot::status ot::parse_tags(const char *data, long len, opus_tags *tags)
 		if (pos + 4 + comment_length > size)
 			return status::overflowing_comment_data;
 		const char *comment_value = data + pos + 4;
-		tags->comments.emplace_back(comment_value, comment_length);
+		my_tags.comments.emplace_back(comment_value, comment_length);
 		pos += 4 + comment_length;
 	}
+
 	// Extra data
-	tags->extra_data = std::string(data + pos, size - pos);
+	my_tags.extra_data = std::string(data + pos, size - pos);
+
+	tags = std::move(my_tags);
 	return status::ok;
 }
 
@@ -136,12 +149,12 @@ static int match_field(const char *comment, uint32_t len, const char *field)
 	return 1;
 }
 
-void ot::delete_tags(opus_tags *tags, const char *field)
+void ot::delete_comments(opus_tags& tags, const char* field_name)
 {
-	auto it = tags->comments.begin(), end = tags->comments.end();
+	auto it = tags.comments.begin(), end = tags.comments.end();
 	while (it != end) {
 		auto current = it++;
-		if (match_field(current->data(), current->size(), field))
-			tags->comments.erase(current);
+		if (match_field(current->data(), current->size(), field_name))
+			tags.comments.erase(current);
 	}
 }

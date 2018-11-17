@@ -301,9 +301,22 @@ struct opus_tags {
  */
 status validate_identification_header(const ogg_packet& packet);
 
-status parse_tags(const char *data, long len, opus_tags *tags);
+/**
+ * Read the given OpusTags packet and extract its content into an opus_tags object.
+ *
+ * On error, the tags object is left unchanged.
+ */
+status parse_tags(const ogg_packet& packet, opus_tags& tags);
+
+/**
+ * Serialize an #opus_tags object into an OpusTags Ogg packet.
+ */
 dynamic_ogg_packet render_tags(const opus_tags& tags);
-void delete_tags(opus_tags *tags, const char *field);
+
+/**
+ * Remove all the comments whose field name is equal to the special one, case-sensitive.
+ */
+void delete_comments(opus_tags& tags, const char* field_name);
 
 /** \} */
 
