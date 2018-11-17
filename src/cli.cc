@@ -389,8 +389,8 @@ ot::status ot::run(ot::options& opt)
 		/* delete reader and writer before closing the files */
 	}
 
-	input.release();
-	output.release();
+	input.reset();
+	output.reset();
 
 	if (rc != ot::status::ok) {
 		if (!opt.path_out.empty() && opt.path_out != "-")
