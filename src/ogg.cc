@@ -1,3 +1,8 @@
+/**
+ * \file src/ogg.c
+ * \ingroup ogg
+ */
+
 #include "opustags.h"
 
 #include <cstdio>

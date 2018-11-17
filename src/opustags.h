@@ -67,7 +67,11 @@ const char* error_message(status code);
 
 /**
  * \defgroup ogg Ogg
- * \brief Helpers to work with libogg.
+ *
+ * High-level interface for libogg.
+ *
+ * This module is not meant to be a complete libogg wrapper, but rather a convenient and highly
+ * specialized layer above libogg and stdio.
  *
  * \{
  */
@@ -187,12 +191,6 @@ public:
 	 * Clears the stream state and any internal memory. Does not close the output file.
 	 */
 	~ogg_writer();
-	/**
-	 * Returns true if the writer was open on a non-null file.
-	 *
-	 * \todo We should not create invalid writers instead.
-	 */
-	operator bool() const { return file != nullptr; }
 	/**
 	 * Write a whole Ogg page into the output stream.
 	 *
@@ -336,7 +334,7 @@ void print_comments(const std::list<std::string>& comments, FILE* output);
 std::list<std::string> read_comments(FILE* input);
 
 status run(options& opt);
-status process(ogg_reader& reader, ogg_writer& writer, const options &opt);
+status process(ogg_reader& reader, ogg_writer* writer, const options &opt);
 
 /** \} */
 

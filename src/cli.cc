@@ -208,7 +208,7 @@ std::list<std::string> ot::read_comments(FILE* input)
  * Parse the packet as an OpusTags comment header, apply the user's modifications, and write the new
  * packet to the writer.
  */
-static ot::status process_tags(const ogg_packet& packet, const ot::options& opt, ot::ogg_writer& writer)
+static ot::status process_tags(const ogg_packet& packet, const ot::options& opt, ot::ogg_writer* writer)
 {
 	ot::opus_tags tags;
 	if(ot::parse_tags((char*) packet.packet, packet.bytes, &tags) != ot::status::ok)
@@ -228,7 +228,7 @@ static ot::status process_tags(const ogg_packet& packet, const ot::options& opt,
 
 	if (writer) {
 		auto packet = ot::render_tags(tags);
-		return writer.write_packet(packet);
+		return writer->write_packet(packet);
 	} else {
 		ot::print_comments(tags.comments, stdout);
 		return ot::status::ok;
@@ -239,7 +239,7 @@ static ot::status process_tags(const ogg_packet& packet, const ot::options& opt,
  * Main loop of opustags. Read the packets from the reader, and forwards them to the writer.
  * Transform the OpusTags packet on the fly.
  */
-ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options &opt)
+ot::status ot::process(ogg_reader& reader, ogg_writer* writer, const ot::options &opt)
 {
 	const char *error = nullptr;
 	int packet_count = 0;
@@ -257,13 +257,13 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 		}
 		// Short-circuit when the relevant packets have been read.
 		if (packet_count >= 2 && writer) {
-			if (writer.write_page(reader.page) != ot::status::ok) {
+			if (writer->write_page(reader.page) != ot::status::ok) {
 				error = "error writing ogg page";
 				break;
 			}
 			continue;
 		}
-		if (writer && writer.prepare_stream(ogg_page_serialno(&reader.page)) != ot::status::ok) {
+		if (writer && writer->prepare_stream(ogg_page_serialno(&reader.page)) != ot::status::ok) {
 			error = "ogg_stream_init: could not prepare the ogg stream";
 			break;
 		}
@@ -287,7 +287,7 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 				else
 					continue; /* process_tags wrote the new packet */
 			}
-			if (writer && writer.write_packet(reader.packet) != ot::status::ok) {
+			if (writer && writer->write_packet(reader.packet) != ot::status::ok) {
 				error = "error feeding the packet to the ogg stream";
 				break;
 			}
@@ -297,7 +297,7 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 			break;
 		}
 		// Write the assembled page.
-		if (writer && writer.flush_page() != ot::status::ok) {
+		if (writer && writer->flush_page() != ot::status::ok) {
 			error = "error flushing the ogg page";
 			break;
 		}
@@ -370,8 +370,10 @@ ot::status ot::run(ot::options& opt)
 	ot::status rc;
 	{
 		ot::ogg_reader reader(input.get());
-		ot::ogg_writer writer(output.get());
-		rc = process(reader, writer, opt);
+		std::unique_ptr<ot::ogg_writer> writer;
+		if (output != nullptr)
+			writer = std::make_unique<ot::ogg_writer>(output.get());
+		rc = process(reader, writer.get(), opt);
 		/* delete reader and writer before closing the files */
 	}
 
