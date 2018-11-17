@@ -19,7 +19,7 @@ ot::status ot::ogg_reader::read_page()
 {
 	while (ogg_sync_pageout(&sync, &page) != 1) {
 		if (feof(file))
-			return status::end_of_file;
+			return status::end_of_stream;
 		char* buf = ogg_sync_buffer(&sync, 65536);
 		if (buf == nullptr)
 			return status::libogg_error;
@@ -31,8 +31,9 @@ ot::status ot::ogg_reader::read_page()
 		if (ogg_sync_check(&sync) != 0)
 			return status::libogg_error;
 	}
+	/* at this point, we've got a good page */
 	if (!stream_ready) {
-		if (ogg_stream_init(&stream, ogg_page_serialno(&page)) == -1)
+		if (ogg_stream_init(&stream, ogg_page_serialno(&page)) != 0)
 			return status::libogg_error;
 		stream_ready = true;
 	}
@@ -44,16 +45,18 @@ ot::status ot::ogg_reader::read_packet()
 {
 	if (!stream_ready)
 		return status::stream_not_ready;
-	/* If the stream is on a different page, feed the current page. */
 	if (!stream_in_sync) {
-		if (ogg_stream_pagein(&stream, &page) == -1)
+		if (ogg_stream_pagein(&stream, &page) != 0)
 			return status::libogg_error;
 		stream_in_sync = true;
 	}
 	int rc = ogg_stream_packetout(&stream, &packet);
-	return rc == 0 ? status::end_of_page :
-	       rc == 1 ? status::ok :
-	                 status::libogg_error;
+	if (rc == 1)
+		return status::ok;
+	else if (rc == 0 && ogg_stream_check(&stream) == 0)
+		return status::end_of_page;
+	else
+		return status::libogg_error;
 }
 
 ot::ogg_writer::ogg_writer(FILE* output)

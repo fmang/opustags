@@ -248,7 +248,7 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 	while (error == nullptr) {
 		// Read the next page.
 		ot::status rc = reader.read_page();
-		if (rc == ot::status::end_of_file) {
+		if (rc == ot::status::end_of_stream) {
 			break;
 		} else if (rc != ot::status::ok) {
 			if (rc == ot::status::standard_error)

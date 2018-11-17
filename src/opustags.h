@@ -34,7 +34,7 @@ enum class status {
 	int_overflow,
 	/** On standard error, errno will give more details. */
 	standard_error,
-	end_of_file,
+	end_of_stream,
 	end_of_page,
 	stream_not_ready,
 	libogg_error,
@@ -72,13 +72,18 @@ const char* error_message(status code);
  * \{
  */
 
-struct ogg_reader {
+/**
+ * Ogg reader, combining a FILE input, an ogg_sync_state reading the pages, and an ogg_stream_state
+ * extracting the packets from the page.
+ *
+ * Call #read_page repeatedly until #status::end_of_stream to consume the stream, and use #page to
+ * check its content. To extract its packets, call #read_packet until #status::end_of_packet.
+ */
+class ogg_reader {
+public:
 	/**
-	 * Initialize the sync state and zero-initialize the stream. You'll need to initialize the
-	 * stream yourself once you have the serialno.
-	 *
-	 * Initialize #file with the given handle. The caller is responsible for keeping the file
-	 * handle alive, and to close it.
+	 * Initialize the reader with the given input file handle. The caller is responsible for
+	 * keeping the file handle alive, and to close it.
 	 */
 	ogg_reader(FILE* input);
 	/**
@@ -90,22 +95,42 @@ struct ogg_reader {
 	~ogg_reader();
 	/**
 	 * Read the next page from the input file. The result, provided the status is #status::ok,
-	 * is available in the #page field, is owned by the Ogg reader, and is valid until the next
-	 * call to #read_page. Make sure you also check #status::end_of_file.
+	 * is made available in the #page field, is owned by the Ogg reader, and is valid until the
+	 * next call to #read_page.
+	 *
+	 * After the last page was read, return #status::end_of_stream.
 	 */
 	status read_page();
 	/**
-	 * Read the next available packet from the current #page. The packet is available in the
-	 * #packet field.
+	 * Read the next available packet from the current #page. The packet is made available in
+	 * the #packet field.
 	 *
-	 * If the end of page was reached, return #status::end_of_page.
+	 * No packet can be read until a page has been loaded with #read_page. If that happens,
+	 * return #status::stream_not_ready.
+	 *
+	 * After the last packet was read, return #status::end_of_page.
 	 */
 	status read_packet();
+	/**
+	 * Current page from the sync state.
+	 *
+	 * Its memory is managed by libogg, inside the sync state, and is valid until the next call
+	 * to ogg_sync_pageout, wrapped by #read_page.
+	 */
+	ogg_page page;
+	/**
+	 * Current packet from the stream state.
+	 *
+	 * Its memory is managed by libogg, inside the stream state, and is valid until the next
+	 * call to ogg_stream_packetout, wrapped by #read_packet.
+	 */
+	ogg_packet packet;
+private:
 	/**
 	 * The file is our source of binary data. It is not integrated to libogg, so we need to
 	 * handle it ourselves.
 	 *
-	 * The file is not owned by the reader, you need to close it yourself when you're done.
+	 * The file is not owned by the ogg_reader instance.
 	 */
 	FILE* file;
 	/**
@@ -117,26 +142,16 @@ struct ogg_reader {
 	 */
 	ogg_sync_state sync;
 	/**
-	 * Current page from the sync state.
-	 *
-	 * Its memory is managed by libogg, inside the sync state, and is valid until the next call
-	 * to ogg_sync_pageout.
-	 */
-	ogg_page page;
-	/**
-	 * Current packet from the stream state.
-	 *
-	 * Its memory is managed by libogg, inside the stream state, and is valid until the next
-	 * call to ogg_stream_packetout.
-	 */
-	ogg_packet packet;
-private:
-	/**
 	 * Indicates whether the stream has been initialized or not.
+	 *
+	 * To initialize it properly, we need the serialno of the stream, which is available only
+	 * after the first page was read.
 	 */
 	bool stream_ready = false;
 	/**
 	 * Indicates if the stream's last fed page is the current one.
+	 *
+	 * Its state is irrelevant if the stream is not ready.
 	 */
 	bool stream_in_sync;
 	/**

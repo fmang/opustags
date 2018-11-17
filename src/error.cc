@@ -7,7 +7,7 @@ static const char* messages[] = {
 	"Bad command-line arguments",
 	"Integer overflow",
 	nullptr, /* standard error: call stderror */
-	"End of file",
+	"End of stream",
 	"End of page",
 	"Stream is not ready",
 	"libogg error",
