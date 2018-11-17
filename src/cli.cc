@@ -226,15 +226,13 @@ static ot::status process_tags(const ogg_packet& packet, const ot::options& opt,
 	for (const std::string& comment : opt.to_add)
 		tags.comments.emplace_back(comment);
 
-	if (writer.file) {
+	if (writer) {
 		auto packet = ot::render_tags(tags);
-		if(ogg_stream_packetin(&writer.stream, &packet) == -1)
-			return ot::status::libogg_error;
+		return writer.write_packet(packet);
 	} else {
 		ot::print_comments(tags.comments, stdout);
+		return ot::status::ok;
 	}
-
-	return ot::status::ok;
 }
 
 /**
@@ -244,7 +242,7 @@ static ot::status process_tags(const ogg_packet& packet, const ot::options& opt,
 ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options &opt)
 {
 	const char *error = nullptr;
-	int packet_count = -1;
+	int packet_count = 0;
 	while (error == nullptr) {
 		// Read the next page.
 		ot::status rc = reader.read_page();
@@ -258,22 +256,16 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 			break;
 		}
 		// Short-circuit when the relevant packets have been read.
-		if (packet_count >= 2 && writer.file) {
-			if (ot::write_page(&reader.page, writer.file) == -1) {
-				error = "write_page: fwrite error";
+		if (packet_count >= 2 && writer) {
+			if (writer.write_page(reader.page) != ot::status::ok) {
+				error = "error writing ogg page";
 				break;
 			}
 			continue;
 		}
-		// Initialize the streams from the first page.
-		if (packet_count == -1) {
-			if (writer.file) {
-				if (ogg_stream_init(&writer.stream, ogg_page_serialno(&reader.page)) == -1) {
-					error = "ogg_stream_init: couldn't create an encoder";
-					break;
-				}
-			}
-			packet_count = 0;
+		if (writer && writer.prepare_stream(ogg_page_serialno(&reader.page)) != ot::status::ok) {
+			error = "ogg_stream_init: could not prepare the ogg stream";
+			break;
 		}
 		// Read all the packets.
 		while ((rc = reader.read_packet()) == ot::status::ok) {
@@ -290,30 +282,24 @@ ot::status ot::process(ogg_reader& reader, ogg_writer& writer, const ot::options
 					error = ot::error_message(rc);
 					break;
 				}
-				if (!writer.file)
+				if (!writer)
 					break; /* nothing else to do */
 				else
 					continue; /* process_tags wrote the new packet */
 			}
-			if (writer.file) {
-				if (ogg_stream_packetin(&writer.stream, &reader.packet) == -1) {
-					error = "ogg_stream_packetin: internal error";
-					break;
-				}
+			if (writer && writer.write_packet(reader.packet) != ot::status::ok) {
+				error = "error feeding the packet to the ogg stream";
+				break;
 			}
 		}
 		if (rc != ot::status::ok && rc != ot::status::end_of_page) {
 			error = "error reading the ogg packets";
 			break;
 		}
-		// Write the page.
-		if (writer.file) {
-			ogg_page page;
-			ogg_stream_flush(&writer.stream, &page);
-			if (ot::write_page(&page, writer.file) == -1)
-				error = "write_page: fwrite error";
-			else if (ogg_stream_check(&writer.stream) != 0)
-				error = "ogg_stream_check: internal error (encoder)";
+		// Write the assembled page.
+		if (writer && writer.flush_page() != ot::status::ok) {
+			error = "error flushing the ogg page";
+			break;
 		}
 	}
 	if (!error && packet_count < 2)

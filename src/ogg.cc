@@ -62,7 +62,8 @@ ot::status ot::ogg_reader::read_packet()
 ot::ogg_writer::ogg_writer(FILE* output)
 	: file(output)
 {
-	memset(&stream, 0, sizeof(stream));
+	if (ogg_stream_init(&stream, 0) != 0)
+		throw std::bad_alloc();
 }
 
 ot::ogg_writer::~ogg_writer()
@@ -70,11 +71,42 @@ ot::ogg_writer::~ogg_writer()
 	ogg_stream_clear(&stream);
 }
 
-int ot::write_page(ogg_page *og, FILE *stream)
+ot::status ot::ogg_writer::write_page(const ogg_page& page)
 {
-	if((ssize_t) fwrite(og->header, 1, og->header_len, stream) < og->header_len)
-		return -1;
-	if((ssize_t) fwrite(og->body, 1, og->body_len, stream) < og->body_len)
-		return -1;
-	return 0;
+	if (page.header_len < 0 || page.body_len < 0)
+		return status::int_overflow;
+	auto header_len = static_cast<size_t>(page.header_len);
+	auto body_len = static_cast<size_t>(page.body_len);
+	if (fwrite(page.header, 1, header_len, file) < header_len)
+		return status::standard_error;
+	if (fwrite(page.body, 1, body_len, file) < body_len)
+		return status::standard_error;
+	return status::ok;
+}
+
+ot::status ot::ogg_writer::prepare_stream(long serialno)
+{
+	if (stream.serialno != serialno) {
+		if (ogg_stream_reset_serialno(&stream, serialno) != 0)
+			return status::libogg_error;
+	}
+	return status::ok;
+}
+
+ot::status ot::ogg_writer::write_packet(const ogg_packet& packet)
+{
+	if (ogg_stream_packetin(&stream, const_cast<ogg_packet*>(&packet)) != 0)
+		return status::libogg_error;
+	else
+		return status::ok;
+}
+
+ot::status ot::ogg_writer::flush_page()
+{
+	ogg_page page;
+	if (ogg_stream_flush(&stream, &page) != 0)
+		return write_page(page);
+	if (ogg_stream_check(&stream) != 0)
+		return status::libogg_error;
+	return status::ok; /* nothing was done */
 }

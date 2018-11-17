@@ -166,12 +166,21 @@ private:
 	ogg_stream_state stream;
 };
 
-struct ogg_writer {
+/**
+ * An Ogg writer lets you write ogg_page objets to an output file, and assemble packets into pages.
+ *
+ * It has two modes of operations :
+ *   1. call #write_page, or
+ *   2. call #prepare_stream, then #write_packet one or more times, followed by #flush_page.
+ *
+ * You can switch between the two modes, but must not start writing packets and then pages without
+ * flushing.
+ */
+class ogg_writer {
+public:
 	/**
-	 * Zeroes the stream state. You need to initialize it with the serialno.
-	 *
-	 * Initialize #file with the given handle. The caller is responsible for keeping the file
-	 * handle alive, and to close it.
+	 * Initialize the writer with the given output file handle. The caller is responsible for
+	 * keeping the file handle alive, and to close it.
 	 */
 	ogg_writer(FILE* output);
 	/**
@@ -179,10 +188,48 @@ struct ogg_writer {
 	 */
 	~ogg_writer();
 	/**
+	 * Returns true if the writer was open on a non-null file.
+	 *
+	 * \todo We should not create invalid writers instead.
+	 */
+	operator bool() const { return file != nullptr; }
+	/**
+	 * Write a whole Ogg page into the output stream.
+	 *
+	 * This is a basic I/O operation and does not even require libogg, or the stream.
+	 */
+	status write_page(const ogg_page& page);
+	/**
+	 * Prepare the stream with the given Ogg serial number.
+	 *
+	 * If the stream is already configured with the right serial number, it doesn't do anything
+	 * and is cheap to call.
+	 *
+	 * If the stream contains unflushed packets, they will be lost.
+	 */
+	status prepare_stream(long serialno);
+	/**
+	 * Add a packet to the current page under assembly.
+	 *
+	 * If the packet is coming from a different page, make sure the serial number fits by
+	 * calling #prepare_stream.
+	 *
+	 * When the page is complete, you should call #flush_page to finalize the page.
+	 *
+	 * You must not call #write_page after it, until you call #flush_page.
+	 */
+	status write_packet(const ogg_packet& packet);
+	/**
+	 * Write the page under assembly. Future calls to #write_packet will be written in a new
+	 * page.
+	 */
+	status flush_page();
+private:
+	/**
 	 * The stream state receives packets and generates pages.
 	 *
-	 * We only need it to put the OpusHead and OpusTags packets into their own pages. The other
-	 * pages are naively written to the output stream.
+	 * In our specific use case, we only need it to put the OpusHead and OpusTags packets into
+	 * their own pages. The other pages are naively written to the output stream.
 	 */
 	ogg_stream_state stream;
 	/**
@@ -191,8 +238,6 @@ struct ogg_writer {
 	 */
 	FILE* file;
 };
-
-int write_page(ogg_page *og, FILE *stream);
 
 /**
  * Ogg packet with dynamically allocated data.
