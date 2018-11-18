@@ -242,73 +242,53 @@ static ot::status process_tags(const ogg_packet& packet, const ot::options& opt,
  */
 ot::status ot::process(ogg_reader& reader, ogg_writer* writer, const ot::options &opt)
 {
-	std::string error;
 	int packet_count = 0;
-	while (error.empty()) {
+	for (;;) {
 		// Read the next page.
 		ot::status rc = reader.read_page();
-		if (rc == ot::st::end_of_stream) {
+		if (rc == ot::st::end_of_stream)
 			break;
-		} else if (rc != ot::st::ok) {
-			if (rc == ot::st::standard_error)
-				error = strerror(errno);
-			else
-				error = "error reading the next ogg page";
-			break;
-		}
+		else if (rc != ot::st::ok)
+			return rc;
 		// Short-circuit when the relevant packets have been read.
 		if (packet_count >= 2 && writer) {
-			if (writer->write_page(reader.page) != ot::st::ok) {
-				error = "error writing ogg page";
-				break;
-			}
+			if ((rc = writer->write_page(reader.page)) != ot::st::ok)
+				return rc;
 			continue;
 		}
-		if (writer && writer->prepare_stream(ogg_page_serialno(&reader.page)) != ot::st::ok) {
-			error = "ogg_stream_init: could not prepare the ogg stream";
-			break;
-		}
+		auto serialno = ogg_page_serialno(&reader.page);
+		if (writer && (rc = writer->prepare_stream(serialno)) != ot::st::ok)
+			return rc;
 		// Read all the packets.
-		while ((rc = reader.read_packet()) == ot::st::ok) {
+		for (;;) {
+			rc = reader.read_packet();
+			if (rc == ot::st::end_of_page)
+				break;
+			else if (rc != ot::st::ok)
+				return rc;
 			packet_count++;
 			if (packet_count == 1) { // Identification header
 				rc = ot::validate_identification_header(reader.packet);
-				if (rc != ot::st::ok) {
-					error = "error reading the identification header: " + rc.message;
-					break;
-				}
+				if (rc != ot::st::ok)
+					return rc;
 			} else if (packet_count == 2) { // Comment header
 				rc = process_tags(reader.packet, opt, writer);
-				if (rc != ot::st::ok) {
-					error = "error reading the comment header: " + rc.message;
-					break;
-				}
+				if (rc != ot::st::ok)
+					return rc;
 				if (!writer)
-					break; /* nothing else to do */
+					return ot::st::ok; /* nothing else to do */
 				else
 					continue; /* process_tags wrote the new packet */
 			}
-			if (writer && writer->write_packet(reader.packet) != ot::st::ok) {
-				error = "error feeding the packet to the ogg stream";
-				break;
-			}
-		}
-		if (rc != ot::st::ok && rc != ot::st::end_of_page) {
-			error = "error reading the ogg packets";
-			break;
+			if (writer && (rc = writer->write_packet(reader.packet)) != ot::st::ok)
+				return rc;
 		}
 		// Write the assembled page.
-		if (writer && writer->flush_page() != ot::st::ok) {
-			error = "error flushing the ogg page";
-			break;
-		}
+		if (writer && (rc = writer->flush_page()) != ot::st::ok)
+			return rc;
 	}
-	if (error.empty() && packet_count < 2)
-		error = "opustags: invalid file";
-	if (!error.empty()) {
-		fprintf(stderr, "%s\n", error.c_str());
-		return ot::st::exit_now;
-	}
+	if (packet_count < 2)
+		return {ot::st::fatal_error, "Expected at least 2 Ogg packets"};
 	return ot::st::ok;
 }
 
@@ -384,7 +364,7 @@ ot::status ot::run(ot::options& opt)
 	if (rc != ot::st::ok) {
 		if (!opt.path_out.empty() && opt.path_out != "-")
 			remove(opt.path_out.c_str());
-		return ot::st::fatal_error;
+		return rc;
 	}
 
 	if (opt.inplace) {
