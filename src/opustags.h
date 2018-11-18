@@ -18,9 +18,9 @@ namespace ot {
 /**
  * Possible return status.
  *
- * The overflowing error family means that the end of packet was reached when attempting to read the
- * overflowing value. For example, overflowing_comment_count means that after reading the vendor
- * string, less than 4 bytes were left in the packet.
+ * The cut error family means that the end of packet was reached when attempting to read the
+ * overflowing value. For example, cut_comment_count means that after reading the vendor string,
+ * less than 4 bytes were left in the packet.
  */
 enum class st {
 	/* Generic */
@@ -33,15 +33,13 @@ enum class st {
 	stream_not_ready,
 	libogg_error,
 	/* Opus */
-	bad_identification_header,
-	bad_comment_header,
 	bad_magic_number,
-	overflowing_magic_number,
-	overflowing_vendor_length,
-	overflowing_vendor_data,
-	overflowing_comment_count,
-	overflowing_comment_length,
-	overflowing_comment_data,
+	cut_magic_number,
+	cut_vendor_length,
+	cut_vendor_data,
+	cut_comment_count,
+	cut_comment_length,
+	cut_comment_data,
 	/* CLI */
 	bad_arguments,
 	exit_now, /**< The program should terminate successfully. */
@@ -51,6 +49,8 @@ enum class st {
 /**
  * Wraps a status code with an optional message. It is implictly converted from and to a
  * #status_code.
+ *
+ * All the error statuses should be accompanied with a relevant error message.
  */
 struct status {
 	status(st code = st::ok) : code(code) {}

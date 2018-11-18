@@ -211,8 +211,9 @@ std::list<std::string> ot::read_comments(FILE* input)
 static ot::status process_tags(const ogg_packet& packet, const ot::options& opt, ot::ogg_writer* writer)
 {
 	ot::opus_tags tags;
-	if(ot::parse_tags(packet, tags) != ot::st::ok)
-		return ot::st::bad_comment_header;
+	ot::status rc = ot::parse_tags(packet, tags);
+	if (rc != ot::st::ok)
+		return rc;
 
 	if (opt.delete_all) {
 		tags.comments.clear();

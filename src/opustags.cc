@@ -14,5 +14,5 @@ int main(int argc, char** argv) {
 	else if (rc != ot::st::ok)
 		return EXIT_FAILURE;
 	rc = run(opt);
-	return rc == ot::st::ok ? EXIT_SUCCESS : EXIT_FAILURE;
+	return (rc == ot::st::ok || rc == ot::st::exit_now) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -40,9 +40,11 @@
 ot::status ot::validate_identification_header(const ogg_packet& packet)
 {
 	if (packet.bytes < 8)
-		return ot::st::bad_identification_header;
+		return {ot::st::cut_magic_number,
+		        "Identification header too short for the magic number"};
 	if (memcmp(packet.packet, "OpusHead", 8) != 0)
-		return ot::st::bad_identification_header;
+		return {ot::st::bad_magic_number,
+		        "Identification header did not start with OpusHead"};
 	return ot::st::ok;
 }
 
@@ -52,7 +54,7 @@ ot::status ot::validate_identification_header(const ogg_packet& packet)
 ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)
 {
 	if (packet.bytes < 0)
-		return st::int_overflow;
+		return {st::int_overflow, "Overflowing comment header length"};
 	size_t size = static_cast<size_t>(packet.bytes);
 	const char* data = reinterpret_cast<char*>(packet.packet);
 	size_t pos = 0;
@@ -60,33 +62,36 @@ ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)
 
 	// Magic number
 	if (8 > size)
-		return st::overflowing_magic_number;
+		return {st::cut_magic_number, "Comment header too short for the magic number"};
 	if (memcmp(data, "OpusTags", 8) != 0)
-		return st::bad_magic_number;
+		return {st::bad_magic_number, "Comment header did not start with OpusTags"};
 
 	// Vendor
 	pos = 8;
 	if (pos + 4 > size)
-		return st::overflowing_vendor_length;
+		return {st::cut_vendor_length,
+		        "Vendor string length did not fit the comment header"};
 	size_t vendor_length = le32toh(*((uint32_t*) (data + pos)));
 	if (pos + 4 + vendor_length > size)
-		return st::overflowing_vendor_data;
+		return {st::cut_vendor_data, "Vendor string did not fit the comment header"};
 	my_tags.vendor = std::string(data + pos + 4, vendor_length);
 	pos += 4 + my_tags.vendor.size();
 
 	// Comment count
 	if (pos + 4 > size)
-		return st::overflowing_comment_count;
+		return {st::cut_comment_count, "Comment count did not fit the comment header"};
 	uint32_t count = le32toh(*((uint32_t*) (data + pos)));
 	pos += 4;
 
 	// Comments' data
 	for (uint32_t i = 0; i < count; ++i) {
 		if (pos + 4 > size)
-			return st::overflowing_comment_length;
+			return {st::cut_comment_length,
+			        "Comment length did not fit the comment header"};
 		uint32_t comment_length = le32toh(*((uint32_t*) (data + pos)));
 		if (pos + 4 + comment_length > size)
-			return st::overflowing_comment_data;
+			return {st::cut_comment_data,
+			        "Comment string did not fit the comment header"};
 		const char *comment_value = data + pos + 4;
 		my_tags.comments.emplace_back(comment_value, comment_length);
 		pos += 4 + comment_length;

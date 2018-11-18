@@ -22,12 +22,12 @@ static void check_identification()
 		throw failure("did not accept a good OpusHead");
 
 	packet.bytes = 7;
-	if (ot::validate_identification_header(packet) != ot::st::bad_identification_header)
+	if (ot::validate_identification_header(packet) != ot::st::cut_magic_number)
 		throw failure("accepted an OpusHead that is too short");
 
 	packet.packet = (unsigned char*) "NotOpusHead";
 	packet.bytes = 11;
-	if (ot::validate_identification_header(packet) != ot::st::bad_identification_header)
+	if (ot::validate_identification_header(packet) != ot::st::bad_magic_number)
 		throw failure("did not report the right status for a bad OpusHead");
 }
 
@@ -85,10 +85,10 @@ static void parse_corrupted()
 	char* end = packet + size;
 
 	op.bytes = 7;
-	if (ot::parse_tags(op, tags) != ot::st::overflowing_magic_number)
+	if (ot::parse_tags(op, tags) != ot::st::cut_magic_number)
 		throw failure("did not detect the overflowing magic number");
 	op.bytes = 11;
-	if (ot::parse_tags(op, tags) != ot::st::overflowing_vendor_length)
+	if (ot::parse_tags(op, tags) != ot::st::cut_vendor_length)
 		throw failure("did not detect the overflowing vendor string length");
 	op.bytes = size;
 
@@ -98,18 +98,18 @@ static void parse_corrupted()
 	header_data[0] = 'O';
 
 	*vendor_length = end - vendor_string + 1;
-	if (ot::parse_tags(op, tags) != ot::st::overflowing_vendor_data)
+	if (ot::parse_tags(op, tags) != ot::st::cut_vendor_data)
 		throw failure("did not detect the overflowing vendor string");
 	*vendor_length = end - vendor_string - 3;
-	if (ot::parse_tags(op, tags) != ot::st::overflowing_comment_count)
+	if (ot::parse_tags(op, tags) != ot::st::cut_comment_count)
 		throw failure("did not detect the overflowing comment count");
 	*vendor_length = comment_count - vendor_string;
 
 	++*comment_count;
-	if (ot::parse_tags(op, tags) != ot::st::overflowing_comment_length)
+	if (ot::parse_tags(op, tags) != ot::st::cut_comment_length)
 		throw failure("did not detect the overflowing comment length");
 	*first_comment_length = end - first_comment_data + 1;
-	if (ot::parse_tags(op, tags) != ot::st::overflowing_comment_data)
+	if (ot::parse_tags(op, tags) != ot::st::cut_comment_data)
 		throw failure("did not detect the overflowing comment data");
 }
 
