@@ -14,8 +14,6 @@ use Symbol 'gensym';
 my $opustags = '../opustags';
 BAIL_OUT("$opustags does not exist or is not executable") if (! -x $opustags);
 
-my $t = dirname(__FILE__);
-
 sub opustags {
 	my %opt;
 	%opt = %{pop @_} if ref $_[-1];
@@ -89,18 +87,18 @@ sub md5 {
 	$ctx->hexdigest
 }
 
-is(md5("$t/gobble.opus"), '111a483596ac32352fbce4d14d16abd2', 'the sample is the one we expect');
-is_deeply(opustags("$t/gobble.opus"), [<<'EOF', '', 0], 'read the initial tags');
+is(md5('gobble.opus'), '111a483596ac32352fbce4d14d16abd2', 'the sample is the one we expect');
+is_deeply(opustags('gobble.opus'), [<<'EOF', '', 0], 'read the initial tags');
 encoder=Lavc58.18.100 libopus
 EOF
 
 unlink('out.opus');
-is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus'), ['', '', 0], 'copy the file without changes');
+is_deeply(opustags(qw(gobble.opus -o out.opus)), ['', '', 0], 'copy the file without changes');
 is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
 
 # empty out.opus
 { my $fh; open($fh, '>', 'out.opus') and close($fh) or die }
-is_deeply(opustags("$t/gobble.opus", '-o' , 'out.opus'), ['', <<'EOF', 256], 'refuse to override');
+is_deeply(opustags(qw(gobble.opus -o out.opus)), ['', <<'EOF', 256], 'refuse to override');
 'out.opus' already exists (use -y to overwrite)
 EOF
 is(md5('out.opus'), 'd41d8cd98f00b204e9800998ecf8427e', 'the output wasn\'t written');
@@ -109,7 +107,7 @@ is_deeply(opustags(qw(out.opus -o out.opus)), ['', <<'EOF', 256], 'output and in
 error: the input and output files are the same
 EOF
 
-is_deeply(opustags("$t/gobble.opus", '-o', 'out.opus', '--overwrite'), ['', '', 0], 'overwrite');
+is_deeply(opustags(qw(gobble.opus -o out.opus --overwrite)), ['', '', 0], 'overwrite');
 is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'successfully overwritten');
 
 is_deeply(opustags(qw(--in-place out.opus -a A=B --add=A=C --add), "TITLE=Foo Bar",

@@ -4,8 +4,10 @@ target_link_libraries(opus.t libopustags)
 add_executable(error.t EXCLUDE_FROM_ALL error.cc)
 target_link_libraries(error.t libopustags)
 
+configure_file(gobble.opus . COPYONLY)
+
 add_custom_target(
 	check
 	COMMAND prove "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}"
-	DEPENDS opustags opus.t error.t
+	DEPENDS opustags gobble.opus opus.t error.t
 )
