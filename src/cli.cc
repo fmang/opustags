@@ -315,20 +315,17 @@ static bool same_file(const std::string& path_in, const std::string& path_out)
  */
 ot::status ot::run(ot::options& opt)
 {
-	if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out)) {
-		fputs("error: the input and output files are the same\n", stderr);
-		return ot::st::fatal_error;
-	}
+	if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out))
+		return {ot::st::fatal_error, "Input and output files are the same"};
 
 	std::unique_ptr<FILE, decltype(&fclose)> input(nullptr, &fclose);
 	if (opt.path_in == "-") {
 		input.reset(stdin);
 	} else {
 		FILE* input_file = fopen(opt.path_in.c_str(), "r");
-		if (input_file == nullptr) {
-			perror("fopen");
-			return ot::st::fatal_error;
-		}
+		if (input_file == nullptr)
+			return {ot::st::standard_error,
+			        "could not open '" + opt.path_in + "' for reading: " + strerror(errno)};
 		input.reset(input_file);
 	}
 
@@ -336,15 +333,13 @@ ot::status ot::run(ot::options& opt)
 	if (opt.path_out == "-") {
 		output.reset(stdout);
 	} else if (!opt.path_out.empty()) {
-		if (!opt.overwrite && access(opt.path_out.c_str(), F_OK) == 0) {
-			fprintf(stderr, "'%s' already exists (use -y to overwrite)\n", opt.path_out.c_str());
-			return ot::st::fatal_error;
-		}
+		if (!opt.overwrite && access(opt.path_out.c_str(), F_OK) == 0)
+			return {ot::st::fatal_error,
+			        "'" + opt.path_out + "' already exists (use -y to overwrite)"};
 		FILE* output_file = fopen(opt.path_out.c_str(), "w");
-		if (output_file == nullptr) {
-			perror("fopen");
-			return ot::st::fatal_error;
-		}
+		if (output_file == nullptr)
+			return {ot::st::standard_error,
+				"could not open '" + opt.path_out + "' for writing: " + strerror(errno)};
 		output.reset(output_file);
 	}
 
@@ -368,10 +363,9 @@ ot::status ot::run(ot::options& opt)
 	}
 
 	if (opt.inplace) {
-		if (rename(opt.path_out.c_str(), opt.path_in.c_str()) == -1) {
-			perror("rename");
-			return ot::st::fatal_error;
-		}
+		if (rename(opt.path_out.c_str(), opt.path_in.c_str()) == -1)
+			return {ot::st::fatal_error,
+			        "could not move the result to '" + opt.path_in + "': " + strerror(errno)};
 	}
 
 	return ot::st::ok;
