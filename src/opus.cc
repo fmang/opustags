@@ -40,10 +40,10 @@
 ot::status ot::validate_identification_header(const ogg_packet& packet)
 {
 	if (packet.bytes < 8)
-		return ot::status::bad_identification_header;
+		return ot::st::bad_identification_header;
 	if (memcmp(packet.packet, "OpusHead", 8) != 0)
-		return ot::status::bad_identification_header;
-	return ot::status::ok;
+		return ot::st::bad_identification_header;
+	return ot::st::ok;
 }
 
 /**
@@ -52,7 +52,7 @@ ot::status ot::validate_identification_header(const ogg_packet& packet)
 ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)
 {
 	if (packet.bytes < 0)
-		return status::int_overflow;
+		return st::int_overflow;
 	size_t size = static_cast<size_t>(packet.bytes);
 	const char* data = reinterpret_cast<char*>(packet.packet);
 	size_t pos = 0;
@@ -60,33 +60,33 @@ ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)
 
 	// Magic number
 	if (8 > size)
-		return status::overflowing_magic_number;
+		return st::overflowing_magic_number;
 	if (memcmp(data, "OpusTags", 8) != 0)
-		return status::bad_magic_number;
+		return st::bad_magic_number;
 
 	// Vendor
 	pos = 8;
 	if (pos + 4 > size)
-		return status::overflowing_vendor_length;
+		return st::overflowing_vendor_length;
 	size_t vendor_length = le32toh(*((uint32_t*) (data + pos)));
 	if (pos + 4 + vendor_length > size)
-		return status::overflowing_vendor_data;
+		return st::overflowing_vendor_data;
 	my_tags.vendor = std::string(data + pos + 4, vendor_length);
 	pos += 4 + my_tags.vendor.size();
 
 	// Comment count
 	if (pos + 4 > size)
-		return status::overflowing_comment_count;
+		return st::overflowing_comment_count;
 	uint32_t count = le32toh(*((uint32_t*) (data + pos)));
 	pos += 4;
 
 	// Comments' data
 	for (uint32_t i = 0; i < count; ++i) {
 		if (pos + 4 > size)
-			return status::overflowing_comment_length;
+			return st::overflowing_comment_length;
 		uint32_t comment_length = le32toh(*((uint32_t*) (data + pos)));
 		if (pos + 4 + comment_length > size)
-			return status::overflowing_comment_data;
+			return st::overflowing_comment_data;
 		const char *comment_value = data + pos + 4;
 		my_tags.comments.emplace_back(comment_value, comment_length);
 		pos += 4 + comment_length;
@@ -96,7 +96,7 @@ ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)
 	my_tags.extra_data = std::string(data + pos, size - pos);
 
 	tags = std::move(my_tags);
-	return status::ok;
+	return st::ok;
 }
 
 ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)

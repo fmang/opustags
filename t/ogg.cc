@@ -11,36 +11,36 @@ static void check_ref_ogg()
 	ot::ogg_reader reader(input.get());
 
 	ot::status rc = reader.read_page();
-	if (rc != ot::status::ok)
+	if (rc != ot::st::ok)
 		throw failure("could not read the first page");
 	rc = reader.read_packet();
-	if (rc != ot::status::ok)
+	if (rc != ot::st::ok)
 		throw failure("could not read the first packet");
 	if (reader.packet.bytes != 19)
 		throw failure("unexpected length for the first packet");
 	rc = reader.read_packet();
-	if (rc != ot::status::end_of_page)
+	if (rc != ot::st::end_of_page)
 		throw failure("got an unexpected second packet on the first page");
 
 	rc = reader.read_page();
-	if (rc != ot::status::ok)
+	if (rc != ot::st::ok)
 		throw failure("could not read the second page");
 	rc = reader.read_packet();
-	if (rc != ot::status::ok)
+	if (rc != ot::st::ok)
 		throw failure("could not read the second packet");
 	if (reader.packet.bytes != 62)
 		throw failure("unexpected length for the first packet");
 	rc = reader.read_packet();
-	if (rc != ot::status::end_of_page)
+	if (rc != ot::st::end_of_page)
 		throw failure("got an unexpected second packet on the second page");
 
 	while (!ogg_page_eos(&reader.page)) {
 		rc = reader.read_page();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("failure reading a page");
 	}
 	rc = reader.read_page();
-	if (rc != ot::status::end_of_stream)
+	if (rc != ot::st::end_of_stream)
 		throw failure("did not correctly detect the end of stream");
 }
 
@@ -76,25 +76,25 @@ static void check_memory_ogg()
 	{
 		ot::ogg_writer writer(output.get());
 		rc = writer.prepare_stream(1234);
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not prepare the stream for the first page");
 		writer.write_packet(first_packet);
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not write the first packet");
 		writer.flush_page();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not flush the first page");
 		writer.prepare_stream(1234);
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not prepare the stream for the second page");
 		writer.write_packet(second_packet);
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not write the second packet");
 		writer.write_packet(third_packet);
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not write the third packet");
 		writer.flush_page();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not flush the second page");
 		my_ogg_size = ftell(output.get());
 		if (my_ogg_size != 73)
@@ -109,34 +109,34 @@ static void check_memory_ogg()
 	{
 		ot::ogg_reader reader(input.get());
 		rc = reader.read_page();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not read the first page");
 		rc = reader.read_packet();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not read the first packet");
 		if (!same_packet(reader.packet, first_packet))
 			throw failure("unexpected content in the first packet");
 		rc = reader.read_packet();
-		if (rc != ot::status::end_of_page)
+		if (rc != ot::st::end_of_page)
 			throw failure("unexpected second packet in the first page");
 		rc = reader.read_page();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not read the second page");
 		rc = reader.read_packet();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not read the second packet");
 		if (!same_packet(reader.packet, second_packet))
 			throw failure("unexpected content in the second packet");
 		rc = reader.read_packet();
-		if (rc != ot::status::ok)
+		if (rc != ot::st::ok)
 			throw failure("could not read the third packet");
 		if (!same_packet(reader.packet, third_packet))
 			throw failure("unexpected content in the third packet");
 		rc = reader.read_packet();
-		if (rc != ot::status::end_of_page)
+		if (rc != ot::st::end_of_page)
 			throw failure("unexpected third packet in the second page");
 		rc = reader.read_page();
-		if (rc != ot::status::end_of_stream)
+		if (rc != ot::st::end_of_stream)
 			throw failure("unexpected third page");
 	}
 }
