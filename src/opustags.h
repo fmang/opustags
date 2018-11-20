@@ -1,6 +1,24 @@
 /**
  * \file src/opustags.h
- * \brief Interface of all the submodules of opustags.
+ *
+ * Welcome to opustags!
+ *
+ * Let's have a quick tour around. The project is split into the following modules:
+ *
+ * - The ogg module reads and writes Ogg files, letting you manipulate Ogg pages and packets.
+ * - The opus module parses the contents of Ogg packets according to the Opus specifications.
+ * - The cli module implements the main logic of the program.
+ * - The opustags module contains the main function, which is a simple wrapper around cli.
+ *
+ * Each module is implemented in its eponymous .cc file. Their interfaces are all defined and
+ * documented together in this header file. Look into the .cc files for implementation-specific
+ * details.
+ *
+ * To understand how this program works, you need to know what an Ogg files is made of, in
+ * particular the streams, pages, and packets. You hardly need any knowledge of the actual Opus
+ * audio codec, but need the RFC 7845 "Ogg Encapsulation for the Opus Audio Codec" that defines the
+ * format of the header packets that are essential to opustags.
+ *
  */
 
 #include <ogg/ogg.h>
@@ -16,7 +34,12 @@
 namespace ot {
 
 /**
- * Possible return status.
+ * Possible return status code, ranging from errors to special statuses. They are usually
+ * accompanied with a message with the #status structure.
+ *
+ * Functions that return non-ok status codes to signal special conditions like #end_of_stream should
+ * have it explictly mentionned in their documentation. By default, a non-ok status should be
+ * handled like an error.
  *
  * The cut error family means that the end of packet was reached when attempting to read the
  * overflowing value. For example, cut_comment_count means that after reading the vendor string,
@@ -47,10 +70,11 @@ enum class st {
 };
 
 /**
- * Wraps a status code with an optional message. It is implictly converted from and to a
+ * Wraps a status code with an optional message. It is implictly converted to and from a
  * #status_code.
  *
- * All the error statuses should be accompanied with a relevant error message.
+ * All the statuses except #st::ok should be accompanied with a relevant error message, in case it
+ * propagates back to the main function and is shown to the user.
  */
 struct status {
 	status(st code = st::ok) : code(code) {}
@@ -60,14 +84,8 @@ struct status {
 	std::string message;
 };
 
-/**
+/***********************************************************************************************//**
  * \defgroup ogg Ogg
- *
- * High-level interface for libogg.
- *
- * This module is not meant to be a complete libogg wrapper, but rather a convenient and highly
- * specialized layer above libogg and stdio.
- *
  * \{
  */
 
@@ -251,28 +269,31 @@ private:
 
 /** \} */
 
-/**
+/***********************************************************************************************//**
  * \defgroup opus Opus
- * \brief Opus packet decoding and recoding.
- *
  * \{
  */
 
 /**
- * Represent all the data in an OpusTags packet.
+ * Faithfully represent *all* the data in an OpusTags packet, exactly as they will be written in the
+ * final stream, disregarding the current system locale or anything else.
+ *
+ * The vendor and comment strings are expected to contain valid UTF-8, but we should keep their
+ * values intact even if the string is not UTF-8 clean, or encoded in any other way.
  */
 struct opus_tags {
 	/**
-	 * OpusTags packets begin with a vendor string, meant to identify the
-	 * implementation of the encoder. It is an arbitrary UTF-8 string.
+	 * OpusTags packets begin with a vendor string, meant to identify the implementation of the
+	 * encoder. It should be an arbitrary UTF-8 string.
 	 */
 	std::string vendor;
 	/**
-	 * Comments. These are a list of string following the NAME=Value format.
-	 * A comment may also be called a field, or a tag.
+	 * Comments. These are a list of string following the NAME=Value format.  A comment may also
+	 * be called a field, or a tag.
 	 *
-	 * The field name in vorbis comment is case-insensitive and ASCII,
-	 * while the value can be any valid UTF-8 string.
+	 * The field name in vorbis comment is case-insensitive and ASCII, while the value can be
+	 * any valid UTF-8 string. The specification is not too clear for Opus, but let's assume
+	 * it's the same.
 	 */
 	std::list<std::string> comments;
 	/**
@@ -315,34 +336,130 @@ void delete_comments(opus_tags& tags, const char* field_name);
 
 /** \} */
 
-/**
+/***********************************************************************************************//**
  * \defgroup cli Command-Line Interface
  * \{
  */
 
+/**
+ * Structured representation of the arguments to opustags.
+ */
 struct options {
+	/**
+	 * Path to the input file. It cannot be empty. The special "-" string means stdin.
+	 *
+	 * This is the mandatory non-flagged parameter.
+	 */
 	std::string path_in;
+	/**
+	 * Path to the optional file. The special "-" string means stdout. When empty, opustags runs
+	 * in read-only mode.
+	 *
+	 * Option: --output
+	 */
 	std::string path_out;
 	/**
-	 * If null, in-place editing is disabled.
-	 * Otherwise, it contains the suffix to add to the file name.
+	 * If null, in-place editing is disabled. Otherwise, it points to the suffix to add to the
+	 * file name.
+	 *
+	 * Option: --in-place
 	 */
-	const char *inplace = nullptr;
-	std::vector<std::string> to_add;
+	const char* inplace = nullptr;
+	/**
+	 * List of field names to delete. `{"ARTIST"}` will delete *all* the comments `ARTIST=*`. It
+	 * is currently case-sensitive. When #delete_all is true, it becomes meaningless.
+	 *
+	 * #to_add takes precedence over #to_delete, so if the same comment appears in both lists,
+	 * the one in #to_delete applies only to the previously existing tags.
+	 *
+	 * \todo Consider making it case-insensitive.
+	 * \todo Allow values like `ARTIST=x` to delete only the ARTIST comment whose value is x.
+	 *
+	 * Option: --delete, --set
+	 */
 	std::vector<std::string> to_delete;
+	/**
+	 * List of comments to add, in the current system encoding. For exemple `TITLE=a b c`. They
+	 * must be valid.
+	 *
+	 * Options: --add, --set, --set-all
+	 */
+	std::vector<std::string> to_add;
+	/**
+	 * Delete all the existing comments.
+	 *
+	 * Option: --delete-all
+	 */
 	bool delete_all = false;
+	/**
+	 * Replace the previous comments by the ones supplied by the user.
+	 *
+	 * Read a list of comments from stdin and populate #to_add. Implies #delete_all. Further
+	 * comments may be added with the --add option.
+	 *
+	 * Option: --set-all
+	 */
 	bool set_all = false;
+	/**
+	 * By default, opustags won't overwrite the output file if it already exists.
+	 *
+	 * Option: --overwrite
+	 */
 	bool overwrite = false;
+	/**
+	 * When true, opustags prints a detailed help and exits. All the other options are ignored.
+	 *
+	 * Option: --help
+	 */
 	bool print_help = false;
 };
 
+/**
+ * Process the command-line arguments.
+ *
+ * This function does not perform I/O related validations, but checks the consistency of its
+ * arguments.
+ *
+ * It returns one of :
+ * - #ot::st::ok, meaning the process may continue normally.
+ * - #ot::st::exit_now, meaning there is nothing to do and process should exit successfully.
+ *   This happens when all the user wants is see the help or usage.
+ * - #ot::st::bad_arguments, meaning the arguments were invalid and the process should exit with
+ *   an error.
+ *
+ * Help messages are written on standard output, and error messages on standard error.
+ */
 status process_options(int argc, char** argv, options& opt);
 
+/**
+ * Print all the comments, separated by line breaks. Since a comment may
+ * contain line breaks, this output is not completely reliable, but it fits
+ * most cases.
+ *
+ * The output generated is meant to be parseable by #ot::read_tags.
+ */
 void print_comments(const std::list<std::string>& comments, FILE* output);
+
+/**
+ * Parse the comments outputted by #ot::print_comments.
+ */
 std::list<std::string> read_comments(FILE* input);
 
-status run(options& opt);
+/**
+ * Main loop of opustags. Read the packets from the reader, and forwards them to the writer.
+ * Transform the OpusTags packet on the fly.
+ *
+ * The writer is optional. When writer is nullptr, opustags runs in read-only mode.
+ */
 status process(ogg_reader& reader, ogg_writer* writer, const options &opt);
+
+/**
+ * Open the input and output streams, then call #ot::process.
+ *
+ * This is the main entry point to the opustags program, and pretty much the same as calling
+ * opustags from the command-line.
+ */
+status run(options& opt);
 
 /** \} */
 

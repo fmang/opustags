@@ -1,3 +1,10 @@
+/**
+ * \file src/opustags.cc
+ * \brief Main function for opustags.
+ *
+ * See opustags.h for the program's documentation.
+ */
+
 #include <opustags.h>
 
 /**

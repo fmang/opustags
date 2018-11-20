@@ -1,6 +1,11 @@
 /**
  * \file src/ogg.c
  * \ingroup ogg
+ *
+ * High-level interface for libogg.
+ *
+ * This module is not meant to be a complete libogg wrapper, but rather a convenient and highly
+ * specialized layer above libogg and stdio.
  */
 
 #include "opustags.h"

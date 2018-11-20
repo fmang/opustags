@@ -1,3 +1,11 @@
+/**
+ * \file src/cli.cc
+ * \ingroup cli
+ *
+ * Provide all the features of the opustags executable from a C++ API. The main point of separating
+ * this module from the main one is to allow easy testing.
+ */
+
 #include <config.h>
 #include <opustags.h>
 
@@ -41,21 +49,6 @@ static struct option getopt_options[] = {
 	{NULL, 0, 0, 0}
 };
 
-/**
- * Process the command-line arguments.
- *
- * This function does not perform I/O related validations, but checks the consistency of its
- * arguments.
- *
- * It returns one of :
- * - #ot::st::ok, meaning the process may continue normally.
- * - #ot::st::exit_now, meaning there is nothing to do and process should exit successfully.
- *   This happens when all the user wants is see the help or usage.
- * - #ot::st::bad_arguments, meaning the arguments were invalid and the process should exit with
- *   an error.
- *
- * Help messages are written on standard output, and error messages on standard error.
- */
 ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 {
 	if (argc == 1) {
@@ -149,14 +142,6 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 }
 
 /**
- * Display the tags on stdout.
- *
- * Print all the comments, separated by line breaks. Since a comment may
- * contain line breaks, this output is not completely reliable, but it fits
- * most cases.
- *
- * The output generated is meant to be parseable by #ot::read_tags.
- *
  * \todo Escape new lines.
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output)
@@ -168,9 +153,7 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 }
 
 /**
- * Parse the comments outputted by #ot::print_comments.
- *
- * \todo Use an std::istream or getline. Lift the 16 KiB limitation and whatever's hardcoded here.
+ * \todo Use getline. Lift the 16 KiB limitation and whatever's hardcoded here.
  */
 std::list<std::string> ot::read_comments(FILE* input)
 {
@@ -236,10 +219,6 @@ static ot::status process_tags(const ogg_packet& packet, const ot::options& opt,
 	}
 }
 
-/**
- * Main loop of opustags. Read the packets from the reader, and forwards them to the writer.
- * Transform the OpusTags packet on the fly.
- */
 ot::status ot::process(ogg_reader& reader, ogg_writer* writer, const ot::options &opt)
 {
 	int packet_count = 0;
@@ -307,12 +286,6 @@ static bool same_file(const std::string& path_in, const std::string& path_out)
 	return false;
 }
 
-/**
- * Open the input and output streams, then call #ot::process.
- *
- * This is the main entry point to the opustags program, and pretty much the same as calling
- * opustags from the command-line.
- */
 ot::status ot::run(ot::options& opt)
 {
 	if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out))
