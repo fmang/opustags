@@ -3,10 +3,8 @@ opustags
 
 View and edit Opus comments.
 
-The current code quality of this project is in a sorry state, but that might
-change in the near future. It is expected to work well though, so please do
-open an issue if something doesn't work. New contributions are welcome but make
-sure you read CONTRIBUTING.md first.
+The current code quality of this project is getting better, and is suitable for reliably editing any
+Opus file provided it does not contain other multiplexed streams. Only UTF-8 is currently supported.
 
 Until opustags becomes top-quality software, if it ever does, you might want to
 check out these more mature tag editors:

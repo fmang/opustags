@@ -1,6 +1,6 @@
 # Contributing to opustags
 
-opustags is not quite active nor mature, but contributions are welcome.
+opustags is slowing getting more mature, and contributions are welcome.
 
 Before you open a pull request, you might want to talk about the change you'd
 like to make to make sure it's relevant. In that case, feel free to open an
@@ -41,12 +41,19 @@ questioned, and it was thus abandoned for a few years. Judging by the
 inquiries and contributions, albeit few, on GitHub, it looks like it remains
 relevant, so let's dust it off a bit.
 
-The current low-expectation plan to improve this project comprises the
-following directions, in whatever order:
+Today, opustags is written in C++14 and features a unit test suite in C++, and
+an integration test suite in Perl. The code was refactored, organized into
+modules, and reviewed for safety.
 
-- Write a complete test suite in Perl, calling opustags as a subprocess.
-- Build opustags in C++14. The code will remain mostly C.
-- Build the project with CMake, or maybe autotools.
-- Refactor the code to improve the readability.
-- Integrate code from the `next` branch.
-- Fuzz it. Memcheck it.
+The next release will focus on correctness, with the following technical
+objectives:
+
+1. Validate the comments: field name in ASCII and value in UTF-8.
+2. Allow selecting the stream to edit, instead of assuming the Ogg contains only
+   one Opus stream.
+3. Provide an --escape option for escaping the newlines inside comment strings.
+4. Take into account the system's encoding: the tags must always be stored as
+   UTF-8, and converted from and to the console encoding when reading input or
+   printing.
+5. Maybe provide a --binary option to dump the raw OpusTags packet, that can be
+   combined to --set-all to read it back.
