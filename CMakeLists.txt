@@ -30,6 +30,7 @@ target_link_libraries(opustags libopustags)
 
 include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(FILES opustags.1 DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
+configure_file(opustags.1 . @ONLY)
+install(FILES "${CMAKE_BINARY_DIR}/opustags.1" DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
 
 add_subdirectory(t)
