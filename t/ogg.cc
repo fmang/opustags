@@ -3,10 +3,9 @@
 
 static void check_ref_ogg()
 {
-	FILE* input_file = fopen("gobble.opus", "r");
-	if (input_file == nullptr)
+	ot::file input = fopen("gobble.opus", "r");
+	if (input == nullptr)
 		throw failure("could not open gobble.opus");
-	std::unique_ptr<FILE, decltype(&fclose)> input(input_file, &fclose);
 
 	ot::ogg_reader reader(input.get());
 
@@ -69,11 +68,10 @@ static void check_memory_ogg()
 	size_t my_ogg_size;
 	ot::status rc;
 
-	FILE* output_mem = fmemopen(my_ogg.data(), my_ogg.size(), "w");
-	if (output_mem == nullptr)
-		throw failure("could not open the output stream");
-	std::unique_ptr<FILE, decltype(&fclose)> output(output_mem, &fclose);
 	{
+		ot::file output = fmemopen(my_ogg.data(), my_ogg.size(), "w");
+		if (output == nullptr)
+			throw failure("could not open the output stream");
 		ot::ogg_writer writer(output.get());
 		rc = writer.prepare_stream(1234);
 		if (rc != ot::st::ok)
@@ -100,13 +98,11 @@ static void check_memory_ogg()
 		if (my_ogg_size != 73)
 			throw failure("unexpected output size");
 	}
-	output.reset();
 
-	FILE* input_mem = fmemopen(my_ogg.data(), my_ogg_size, "r");
-	if (input_mem == nullptr)
-		throw failure("could not open the input stream");
-	std::unique_ptr<FILE, decltype(&fclose)> input(input_mem, &fclose);
 	{
+		ot::file input = fmemopen(my_ogg.data(), my_ogg_size, "r");
+		if (input == nullptr)
+			throw failure("could not open the input stream");
 		ot::ogg_reader reader(input.get());
 		rc = reader.read_page();
 		if (rc != ot::st::ok)

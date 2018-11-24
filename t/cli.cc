@@ -10,7 +10,7 @@ Artist=Y
 
 void check_read_comments()
 {
-	auto input = ot::make_file(fmemopen, const_cast<char*>(user_comments), strlen(user_comments), "r");
+	ot::file input = fmemopen(const_cast<char*>(user_comments), strlen(user_comments), "r");
 	auto comments = ot::read_comments(input.get());
 	auto&& expected = {"TITLE=a b c", "ARTIST=X", "Artist=Y"};
 	if (!std::equal(comments.begin(), comments.end(), expected.begin(), expected.end()))

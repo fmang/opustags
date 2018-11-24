@@ -293,29 +293,27 @@ ot::status ot::run(ot::options& opt)
 	if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out))
 		return {ot::st::fatal_error, "Input and output files are the same"};
 
-	std::unique_ptr<FILE, decltype(&fclose)> input(nullptr, &fclose);
+	ot::file input;
 	if (opt.path_in == "-") {
-		input.reset(stdin);
+		input = stdin;
 	} else {
-		FILE* input_file = fopen(opt.path_in.c_str(), "r");
-		if (input_file == nullptr)
+		input = fopen(opt.path_in.c_str(), "r");
+		if (input == nullptr)
 			return {ot::st::standard_error,
 			        "could not open '" + opt.path_in + "' for reading: " + strerror(errno)};
-		input.reset(input_file);
 	}
 
-	std::unique_ptr<FILE, decltype(&fclose)> output(nullptr, &fclose);
+	ot::file output;
 	if (opt.path_out == "-") {
 		output.reset(stdout);
 	} else if (!opt.path_out.empty()) {
 		if (!opt.overwrite && access(opt.path_out.c_str(), F_OK) == 0)
 			return {ot::st::fatal_error,
 			        "'" + opt.path_out + "' already exists (use -y to overwrite)"};
-		FILE* output_file = fopen(opt.path_out.c_str(), "w");
-		if (output_file == nullptr)
+		output = fopen(opt.path_out.c_str(), "w");
+		if (output == nullptr)
 			return {ot::st::standard_error,
 				"could not open '" + opt.path_out + "' for writing: " + strerror(errno)};
-		output.reset(output_file);
 	}
 
 	ot::status rc;
