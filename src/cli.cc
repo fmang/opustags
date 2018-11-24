@@ -159,7 +159,7 @@ std::list<std::string> ot::read_comments(FILE* input)
 {
 	std::list<std::string> comments;
 	auto raw_tags = std::make_unique<char[]>(16383);
-	size_t raw_len = fread(raw_tags.get(), 1, 16382, stdin);
+	size_t raw_len = fread(raw_tags.get(), 1, 16382, input);
 	if (raw_len == 16382)
 		fputs("warning: truncating comment to 16 KiB\n", stderr);
 	raw_tags[raw_len] = '\0';
@@ -169,8 +169,10 @@ std::list<std::string> ot::read_comments(FILE* input)
 	for (size_t i = 0; i <= raw_len; ++i) {
 		if (raw_tags[i] == '\n' || raw_tags[i] == '\0') {
 			raw_tags[i] = '\0';
-			if (field_len == 0)
+			if (field_len == 0) {
+				cursor = raw_tags.get() + i + 1;
 				continue;
+			}
 			if (caught_eq)
 				comments.emplace_back(cursor);
 			else

@@ -152,6 +152,7 @@ EOF
 is_deeply(opustags(qw(out.opus --set-all -a A=B -s X=Z -d OK), {in => <<'END_IN'}), [<<'END_OUT', '', 0], 'set all');
 OK=yes again
 ARTIST=七面鳥
+
 A=A
 X=Y
 END_IN
