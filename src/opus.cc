@@ -22,11 +22,9 @@
  *
  */
 
-#include "opustags.h"
+#include <opustags.h>
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
+#include <string.h>
 
 #ifdef __APPLE__
 #include <libkern/OSByteOrder.h>

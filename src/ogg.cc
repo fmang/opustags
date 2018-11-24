@@ -8,9 +8,9 @@
  * specialized layer above libogg and stdio.
  */
 
-#include "opustags.h"
+#include <opustags.h>
 
-#include <cstdio>
+#include <string.h>
 
 using namespace std::literals::string_literals;
 

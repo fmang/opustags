@@ -5,6 +5,8 @@
  * Helpers for following the Test Anything Protocol.
  */
 
+#pragma once
+
 #include <exception>
 #include <iostream>
 

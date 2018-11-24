@@ -21,11 +21,11 @@
  *
  */
 
-#include <ogg/ogg.h>
+#pragma once
 
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
+#include <ogg/ogg.h>
+#include <stdio.h>
+
 #include <list>
 #include <memory>
 #include <string>

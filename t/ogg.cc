@@ -1,6 +1,8 @@
 #include <opustags.h>
 #include "tap.h"
 
+#include <string.h>
+
 static void check_ref_ogg()
 {
 	ot::file input = fopen("gobble.opus", "r");

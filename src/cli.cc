@@ -11,9 +11,8 @@
 
 #include <getopt.h>
 #include <limits.h>
+#include <string.h>
 #include <unistd.h>
-
-#include <memory>
 
 static const char* version = PROJECT_NAME " version " PROJECT_VERSION "\n";
 

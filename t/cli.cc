@@ -1,6 +1,8 @@
 #include <opustags.h>
 #include "tap.h"
 
+#include <string.h>
+
 const char *user_comments = R"raw(
 TITLE=a b c
 

@@ -1,15 +1,7 @@
-/**
- * \file t/opus.cc
- *
- * Entry point of the unit test suite.
- * Follows the TAP protocol.
- *
- */
-
 #include <opustags.h>
 #include "tap.h"
 
-#include <cstring>
+#include <string.h>
 
 using namespace std::literals::string_literals;
 
