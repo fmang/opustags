@@ -89,6 +89,24 @@ All the original tags are deleted and new ones are read from standard input.
 Each line must specify a \fIFIELD=VALUE\fP pair and be separated with line feeds.
 Invalid lines are skipped and cause a warning to be issued. Blank lines are ignored.
 This mode could be useful for batch processing tags through an utility like \fBsed\fP.
+.SH EXAMPLES
+.PP
+List all the tags in file foo.opus:
+.PP
+	opustags foo.opus
+.PP
+Copy in.opus to out.opus, with the TITLE tag added:
+.PP
+	opustags in.opus --output out.opus --add "TITLE=Hello world!"
+.PP
+Replace all the tags in dest.opus with the ones from src.opus:
+.PP
+	opustags src.opus | opustags --in-place dest.opus --set-all
+.PP
+Remove the previously existing ARTIST tags and add the two X and Y ARTIST tags, then display the new
+tags without writing them to the Opus file:
+.PP
+	opustags in.opus --add ARTIST=X --add ARTIST=Y --delete ARTIST
 .SH SEE ALSO
 .BR vorbiscomment (1),
 .BR sed (1)
