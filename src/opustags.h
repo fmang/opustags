@@ -84,6 +84,18 @@ struct status {
 	std::string message;
 };
 
+/**
+ * Call a fopen-like function that returns a FILE* such that the returned pointer is smart and calls
+ * fclose on destruction.
+ *
+ * Example : `auto my_file = ot::make_file(fopen, "foo.txt", "r");`
+ */
+template <typename Opener, typename... Args>
+std::unique_ptr<FILE, decltype(&fclose)> make_file(Opener&& f, Args&&... args)
+{
+	return {f(std::forward<Args>(args)...), &fclose};
+}
+
 /***********************************************************************************************//**
  * \defgroup ogg Ogg
  * \{
