@@ -5,8 +5,7 @@ const char *user_comments = R"raw(
 TITLE=a b c
 
 ARTIST=X
-Artist=Y
-)raw";
+Artist=Y)raw";
 
 void check_read_comments()
 {

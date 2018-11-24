@@ -152,40 +152,24 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 	}
 }
 
-/**
- * \todo Use getline. Lift the 16 KiB limitation and whatever's hardcoded here.
- */
 std::list<std::string> ot::read_comments(FILE* input)
 {
 	std::list<std::string> comments;
-	auto raw_tags = std::make_unique<char[]>(16383);
-	size_t raw_len = fread(raw_tags.get(), 1, 16382, input);
-	if (raw_len == 16382)
-		fputs("warning: truncating comment to 16 KiB\n", stderr);
-	raw_tags[raw_len] = '\0';
-	size_t field_len = 0;
-	bool caught_eq = false;
-	char* cursor = raw_tags.get();
-	for (size_t i = 0; i <= raw_len; ++i) {
-		if (raw_tags[i] == '\n' || raw_tags[i] == '\0') {
-			raw_tags[i] = '\0';
-			if (field_len == 0) {
-				cursor = raw_tags.get() + i + 1;
-				continue;
-			}
-			if (caught_eq)
-				comments.emplace_back(cursor);
-			else
-				fputs("warning: skipping malformed tag\n", stderr);
-			cursor = raw_tags.get() + i + 1;
-			field_len = 0;
-			caught_eq = false;
+	char* line = nullptr;
+	size_t buflen = 0;
+	ssize_t nread;
+	while ((nread = getline(&line, &buflen, input)) != -1) {
+		if (nread > 0 && line[nread - 1] == '\n')
+			--nread;
+		if (nread == 0)
+			continue;
+		if (memchr(line, '=', nread) == nullptr) {
+			fputs("warning: skipping malformed tag\n", stderr);
 			continue;
 		}
-		if (raw_tags[i] == '=')
-			caught_eq = true;
-		++field_len;
+		comments.emplace_back(line, nread);
 	}
+	free(line);
 	return comments;
 }
 
