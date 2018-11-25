@@ -1,8 +1,8 @@
 opustags changelog
 ==================
 
-1.2.0 - TBA
------------
+1.2.0 - 2018-11-25
+------------------
 
 - Preserve extra data in OpusTags past the comments.
 - Improve error reporting.
@@ -10,7 +10,7 @@ opustags changelog
 
 This is the biggest release for opustags. The whole code base was reviewed for robustness and
 clarity. The program is now built as C++14, and the code refactored without sacrificing the
-original simplicity. It is shipped with a new test suite for preventing regressions.
+original simplicity. It is shipped with a new test suite.
 
 1.1.1 - 2018-10-24
 ------------------

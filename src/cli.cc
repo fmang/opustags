@@ -286,7 +286,7 @@ ot::status ot::run(ot::options& opt)
 		input = fopen(opt.path_in.c_str(), "r");
 		if (input == nullptr)
 			return {ot::st::standard_error,
-			        "could not open '" + opt.path_in + "' for reading: " + strerror(errno)};
+			        "Could not open '" + opt.path_in + "' for reading: " + strerror(errno)};
 	}
 
 	ot::file output;
@@ -299,7 +299,7 @@ ot::status ot::run(ot::options& opt)
 		output = fopen(opt.path_out.c_str(), "w");
 		if (output == nullptr)
 			return {ot::st::standard_error,
-				"could not open '" + opt.path_out + "' for writing: " + strerror(errno)};
+				"Could not open '" + opt.path_out + "' for writing: " + strerror(errno)};
 	}
 
 	ot::status rc;
@@ -324,7 +324,7 @@ ot::status ot::run(ot::options& opt)
 	if (opt.inplace) {
 		if (rename(opt.path_out.c_str(), opt.path_in.c_str()) == -1)
 			return {ot::st::fatal_error,
-			        "could not move the result to '" + opt.path_in + "': " + strerror(errno)};
+			        "Could not move the result to '" + opt.path_in + "': " + strerror(errno)};
 	}
 
 	return ot::st::ok;
