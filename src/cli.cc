@@ -4,6 +4,9 @@
  *
  * Provide all the features of the opustags executable from a C++ API. The main point of separating
  * this module from the main one is to allow easy testing.
+ *
+ * \todo Use a safer temporary file name for in-place editing, like tmpnam.
+ * \todo Abort editing with --set-all if one comment is invalid?
  */
 
 #include <config.h>
@@ -25,14 +28,14 @@ Usage: opustags --help
 static const char* help = 1 + R"raw(
 Options:
   -h, --help              print this help
-  -o, --output            write the modified tags to a file
-  -i, --in-place [SUFFIX] use a temporary file then replace the original file
+  -o, --output FILE       set the output file
+  -i, --in-place          overwrite the input file instead of writing a different output file
   -y, --overwrite         overwrite the output file if it already exists
-  -d, --delete FIELD      delete all the fields of a specified type
-  -a, --add FIELD=VALUE   add a field
-  -s, --set FIELD=VALUE   delete then add a field
-  -D, --delete-all        delete all the fields!
-  -S, --set-all           read the fields from stdin
+  -a, --add FIELD=VALUE   add a comment
+  -d, --delete FIELD      delete all previously existing comments of a specific type
+  -D, --delete-all        delete all the previously existing comments
+  -s, --set FIELD=VALUE   replace a comment (shorthand for --delete FIELD --add FIELD=VALUE)
+  -S, --set-all           replace all the comments with the ones read from standard input
 )raw";
 
 static struct option getopt_options[] = {
@@ -130,11 +133,11 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 		opt.path_out = opt.path_in + opt.inplace;
 	}
 	if (opt.path_in == "-" && opt.set_all) {
-		fputs("can't open stdin for input when -S is specified\n", stderr);
+		fputs("can't open standard input for input when --set-all is specified\n", stderr);
 		return st::bad_arguments;
 	}
 	if (opt.path_in == "-" && opt.inplace) {
-		fputs("cannot modify stdin in-place\n", stderr);
+		fputs("cannot modify standard input in-place\n", stderr);
 		return st::bad_arguments;
 	}
 	return st::ok;
