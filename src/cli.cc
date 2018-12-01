@@ -120,12 +120,9 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 		fputs("input's file path cannot be empty\n", stderr);
 		return st::bad_arguments;
 	}
-	if (opt.inplace != nullptr) {
-		if (!opt.path_out.empty()) {
-			fputs("cannot combine --in-place and --output\n", stderr);
-			return st::bad_arguments;
-		}
-		opt.path_out = opt.path_in + opt.inplace;
+	if (opt.inplace != nullptr && !opt.path_out.empty()) {
+		fputs("cannot combine --in-place and --output\n", stderr);
+		return st::bad_arguments;
 	}
 	if (opt.path_in == "-" && opt.set_all) {
 		fputs("can't open standard input for input when --set-all is specified\n", stderr);
@@ -276,7 +273,9 @@ ot::status ot::run(ot::options& opt)
 		return st::ok;
 	}
 
-	if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out))
+	std::string path_out = opt.inplace ? opt.path_in + opt.inplace : opt.path_out;
+
+	if (!path_out.empty() && same_file(opt.path_in, path_out))
 		return {ot::st::fatal_error, "Input and output files are the same"};
 
 	ot::file input;
@@ -290,16 +289,16 @@ ot::status ot::run(ot::options& opt)
 	}
 
 	ot::file output;
-	if (opt.path_out == "-") {
+	if (path_out == "-") {
 		output.reset(stdout);
-	} else if (!opt.path_out.empty()) {
-		if (!opt.overwrite && access(opt.path_out.c_str(), F_OK) == 0)
+	} else if (!path_out.empty()) {
+		if (!opt.overwrite && access(path_out.c_str(), F_OK) == 0)
 			return {ot::st::fatal_error,
-			        "'" + opt.path_out + "' already exists (use -y to overwrite)"};
-		output = fopen(opt.path_out.c_str(), "w");
+			        "'" + path_out + "' already exists (use -y to overwrite)"};
+		output = fopen(path_out.c_str(), "w");
 		if (output == nullptr)
 			return {ot::st::standard_error,
-				"Could not open '" + opt.path_out + "' for writing: " + strerror(errno)};
+				"Could not open '" + path_out + "' for writing: " + strerror(errno)};
 	}
 
 	ot::status rc;
@@ -316,13 +315,13 @@ ot::status ot::run(ot::options& opt)
 	output.reset();
 
 	if (rc != ot::st::ok) {
-		if (!opt.path_out.empty() && opt.path_out != "-")
-			remove(opt.path_out.c_str());
+		if (!path_out.empty() && path_out != "-")
+			remove(path_out.c_str());
 		return rc;
 	}
 
 	if (opt.inplace) {
-		if (rename(opt.path_out.c_str(), opt.path_in.c_str()) == -1)
+		if (rename(path_out.c_str(), opt.path_in.c_str()) == -1)
 			return {ot::st::fatal_error,
 			        "Could not move the result to '" + opt.path_in + "': " + strerror(errno)};
 	}
