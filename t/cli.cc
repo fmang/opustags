@@ -46,6 +46,9 @@ void check_bad_arguments()
 	error_case({"opustags", "-S", "-"}, "Cannot use standard input as input file when --set-all is specified.",
 	                                    "set all and read opus from stdin");
 	error_case({"opustags", "-i", "-"}, "Cannot modify standard input in-place.", "write stdin in-place");
+	error_case({"opustags", "-o", "x", "--output", "y", "z"},
+	           "Cannot specify --output more than once.", "double output");
+	error_case({"opustags", "-i", "-i", "z"}, "Cannot specify --in-place more than once.", "double in-place");
 }
 
 int main(int argc, char **argv)

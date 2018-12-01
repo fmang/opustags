@@ -67,11 +67,15 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 			opt.print_help = true;
 			break;
 		case 'o':
+			if (!opt.path_out.empty())
+				return {st::bad_arguments, "Cannot specify --output more than once."};
 			opt.path_out = optarg;
 			if (opt.path_out.empty())
 				return {st::bad_arguments, "Output file path cannot be empty."};
 			break;
 		case 'i':
+			if (opt.inplace != nullptr)
+				return {st::bad_arguments, "Cannot specify --in-place more than once."};
 			opt.inplace = optarg == nullptr ? ".otmp" : optarg;
 			if (strcmp(opt.inplace, "") == 0)
 				return {st::bad_arguments, "In-place suffix cannot be empty."};
