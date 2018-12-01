@@ -18,6 +18,34 @@ void check_read_comments()
 		throw failure("parsed user comments did not match expectations");
 }
 
+void check_good_arguments()
+{
+	auto parse = [](std::vector<const char*> args) {
+		ot::options opt;
+		ot::status rc = ot::parse_options(args.size(), const_cast<char**>(args.data()), opt);
+		if (rc.code != ot::st::ok)
+			throw failure("unexpected option parsing error");
+		return opt;
+	};
+
+	ot::options opt;
+	opt = parse({"opustags", "--help", "x", "-o", "y"});
+	if (!opt.print_help)
+		throw failure("did not catch --help");
+
+	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z"});
+	if (opt.inplace != nullptr || opt.path_in != "x" || opt.path_out != "y" || !opt.delete_all ||
+	    opt.to_delete.size() != 1 || opt.to_delete[0] != "X=Y Z" ||
+	    opt.to_add.size() != 1 || opt.to_add[0] != "X=Y Z")
+		throw failure("unexpected option parsing result for case #1");
+
+	opt = parse({"opustags", "-S", "-y", "x", "-S", "-a", "x=y z", "-i"});
+	if (opt.inplace == nullptr || opt.path_in != "x" || !opt.path_out.empty() ||
+	    !opt.set_all || !opt.overwrite || opt.to_delete.size() != 0 ||
+	    opt.to_add.size() != 1 || opt.to_add[0] != "x=y z")
+		throw failure("unexpected option parsing result for case #2");
+}
+
 void check_bad_arguments()
 {
 	auto error_case = [](std::vector<const char*> args, const char* message, const std::string& name) {
@@ -53,8 +81,9 @@ void check_bad_arguments()
 
 int main(int argc, char **argv)
 {
-	std::cout << "1..2\n";
+	std::cout << "1..3\n";
 	run(check_read_comments, "check tags parsing");
+	run(check_good_arguments, "check options parsing");
 	run(check_bad_arguments, "check options parsing errors");
 	return 0;
 }
