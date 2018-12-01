@@ -59,7 +59,6 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 	opt = {};
 	if (argc == 1)
 		return {st::bad_arguments, "No arguments specified. Use -h for help."};
-
 	int c;
 	optind = 0;
 	while ((c = getopt_long(argc, argv, ":ho:i::yd:a:s:DS", getopt_options, NULL)) != -1) {
@@ -69,34 +68,26 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 			break;
 		case 'o':
 			opt.path_out = optarg;
-			if (opt.path_out.empty()) {
-				fputs("output's file path cannot be empty\n", stderr);
-				return st::bad_arguments;
-			}
+			if (opt.path_out.empty())
+				return {st::bad_arguments, "Output file path cannot be empty."};
 			break;
 		case 'i':
 			opt.inplace = optarg == nullptr ? ".otmp" : optarg;
-			if (strcmp(opt.inplace, "") == 0) {
-				fputs("the in-place suffix cannot be empty\n", stderr);
-				return st::bad_arguments;
-			}
+			if (strcmp(opt.inplace, "") == 0)
+				return {st::bad_arguments, "In-place suffix cannot be empty."};
 			break;
 		case 'y':
 			opt.overwrite = true;
 			break;
 		case 'd':
-			if (strchr(optarg, '=') != nullptr) {
-				fprintf(stderr, "invalid field name: '%s'\n", optarg);
-				return st::bad_arguments;
-			}
+			if (strchr(optarg, '=') != nullptr)
+				return {st::bad_arguments, "Invalid field name '"s + optarg + "'."};
 			opt.to_delete.emplace_back(optarg);
 			break;
 		case 'a':
 		case 's':
-			if (strchr(optarg, '=') == NULL) {
-				fprintf(stderr, "invalid comment: '%s'\n", optarg);
-				return st::bad_arguments;
-			}
+			if (strchr(optarg, '=') == NULL)
+				return {st::bad_arguments, "Invalid comment '"s + optarg + "'."};
 			opt.to_add.emplace_back(optarg);
 			if (c == 's')
 				opt.to_delete.emplace_back(optarg);
@@ -115,30 +106,20 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 			        (optopt ? "-"s + static_cast<char>(optopt) : argv[optind - 1]) + "'."};
 		}
 	}
-
 	if (opt.print_help)
 		return st::ok;
-	if (optind != argc - 1) {
-		fputs("exactly one input file must be specified\n", stderr);
-		return st::bad_arguments;
-	}
+	if (optind != argc - 1)
+		return {st::bad_arguments, "Exactly one input file must be specified."};
 	opt.path_in = argv[optind];
-	if (opt.path_in.empty()) {
-		fputs("input's file path cannot be empty\n", stderr);
-		return st::bad_arguments;
-	}
-	if (opt.inplace != nullptr && !opt.path_out.empty()) {
-		fputs("cannot combine --in-place and --output\n", stderr);
-		return st::bad_arguments;
-	}
-	if (opt.path_in == "-" && opt.set_all) {
-		fputs("can't open standard input for input when --set-all is specified\n", stderr);
-		return st::bad_arguments;
-	}
-	if (opt.path_in == "-" && opt.inplace) {
-		fputs("cannot modify standard input in-place\n", stderr);
-		return st::bad_arguments;
-	}
+	if (opt.path_in.empty())
+		return {st::bad_arguments, "Input file path cannot be empty."};
+	if (opt.inplace != nullptr && !opt.path_out.empty())
+		return {st::bad_arguments, "Cannot combine --in-place and --output."};
+	if (opt.path_in == "-" && opt.set_all)
+		return {st::bad_arguments,
+		        "Cannot use standard input as input file when --set-all is specified."};
+	if (opt.path_in == "-" && opt.inplace)
+		return {st::bad_arguments, "Cannot modify standard input in-place."};
 	return st::ok;
 }
 

@@ -428,8 +428,6 @@ struct options {
  * consistency of its arguments.
  *
  * On error, the state of the options structure is unspecified.
- *
- * \todo Return error messages in the status instead of writing them to stderr.
  */
 status parse_options(int argc, char** argv, options& opt);
 
