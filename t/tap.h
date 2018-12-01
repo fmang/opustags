@@ -10,9 +10,8 @@
 #include <exception>
 #include <iostream>
 
-class failure : public std::runtime_error {
-public:
-	failure(const char *message) : std::runtime_error(message) {}
+struct failure : std::runtime_error {
+	failure(const std::string& what) : std::runtime_error(what) {}
 };
 
 template <typename F>

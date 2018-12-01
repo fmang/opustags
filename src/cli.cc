@@ -17,6 +17,8 @@
 #include <string.h>
 #include <unistd.h>
 
+using namespace std::literals::string_literals;
+
 static const char help_message[] =
 PROJECT_NAME " version " PROJECT_VERSION
 R"raw(
@@ -59,7 +61,8 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 		return {st::bad_arguments, "No arguments specified. Use -h for help."};
 
 	int c;
-	while ((c = getopt_long(argc, argv, "ho:i::yd:a:s:DS", getopt_options, NULL)) != -1) {
+	optind = 0;
+	while ((c = getopt_long(argc, argv, ":ho:i::yd:a:s:DS", getopt_options, NULL)) != -1) {
 		switch (c) {
 		case 'h':
 			opt.print_help = true;
@@ -104,9 +107,12 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 		case 'D':
 			opt.delete_all = true;
 			break;
+		case ':':
+			return {st::bad_arguments,
+			        "Missing value for option '"s + argv[optind - 1] + "'."};
 		default:
-			/* getopt printed a message */
-			return st::bad_arguments;
+			return {st::bad_arguments, "Unrecognized option '" +
+			        (optopt ? "-"s + static_cast<char>(optopt) : argv[optind - 1]) + "'."};
 		}
 	}
 

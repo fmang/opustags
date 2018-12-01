@@ -70,7 +70,7 @@ is_deeply(opustags('--help'), [$expected_help, '', 0], '--help displays the help
 is_deeply(opustags('-h'), [$expected_help, '', 0], '-h displays the help message too');
 
 is_deeply(opustags('--derp'), ['', <<"EOF", 256], 'unrecognized option shows an error');
-$opustags: unrecognized option '--derp'
+error: Unrecognized option '--derp'.
 EOF
 
 ####################################################################################################
