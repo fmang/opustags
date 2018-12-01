@@ -65,7 +65,6 @@ enum class st {
 	cut_comment_data,
 	/* CLI */
 	bad_arguments,
-	exit_now, /**< The program should terminate successfully. */
 	fatal_error,
 };
 
@@ -431,7 +430,6 @@ struct options {
  *
  * It returns one of :
  * - #ot::st::ok, meaning the process may continue normally.
- * - #ot::st::exit_now, meaning there is nothing to do and process should exit successfully.
  *   This happens when all the user wants is see the help or usage.
  * - #ot::st::bad_arguments, meaning the arguments were invalid and the process should exit with
  *   an error.

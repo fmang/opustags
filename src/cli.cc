@@ -17,15 +17,14 @@
 #include <string.h>
 #include <unistd.h>
 
-static const char* version = PROJECT_NAME " version " PROJECT_VERSION "\n";
+static const char help_message[] =
+PROJECT_NAME " version " PROJECT_VERSION
+R"raw(
 
-static const char* usage = 1 + R"raw(
 Usage: opustags --help
        opustags [OPTIONS] FILE
        opustags OPTIONS FILE -o FILE
-)raw";
 
-static const char* help = 1 + R"raw(
 Options:
   -h, --help              print this help
   -o, --output FILE       set the output file
@@ -36,6 +35,8 @@ Options:
   -D, --delete-all        delete all the previously existing comments
   -s, --set FIELD=VALUE   replace a comment (shorthand for --delete FIELD --add FIELD=VALUE)
   -S, --set-all           replace all the comments with the ones read from standard input
+
+See the man page for extensive documentation.
 )raw";
 
 static struct option getopt_options[] = {
@@ -53,11 +54,9 @@ static struct option getopt_options[] = {
 
 ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 {
-	if (argc == 1) {
-		fputs(version, stdout);
-		fputs(usage, stdout);
-		return st::exit_now;
-	}
+	if (argc == 1)
+		return {st::bad_arguments, "No arguments specified. Use -h for help."};
+
 	int c;
 	while ((c = getopt_long(argc, argv, "ho:i::yd:a:s:DS", getopt_options, NULL)) != -1) {
 		switch (c) {
@@ -109,13 +108,9 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 			return st::bad_arguments;
 		}
 	}
-	if (opt.print_help) {
-		puts(version);
-		puts(usage);
-		puts(help);
-		puts("See the man page for extensive documentation.");
-		return st::exit_now;
-	}
+
+	if (opt.print_help)
+		return st::ok;
 	if (optind != argc - 1) {
 		fputs("exactly one input file must be specified\n", stderr);
 		return st::bad_arguments;
@@ -276,6 +271,11 @@ static bool same_file(const std::string& path_in, const std::string& path_out)
 
 ot::status ot::run(ot::options& opt)
 {
+	if (opt.print_help) {
+		fputs(help_message, stdout);
+		return st::ok;
+	}
+
 	if (!opt.path_out.empty() && same_file(opt.path_in, opt.path_out))
 		return {ot::st::fatal_error, "Input and output files are the same"};
 

@@ -36,19 +36,16 @@ sub opustags {
 # Tests related to the overall opustags executable, like the help message.
 # No Opus file is manipulated here.
 
-my $usage = opustags();
-$usage->[0] =~ /^([^\n]*+)/;
+is_deeply(opustags(), ['', <<EOF, 256], 'no options is a failure');
+error: No arguments specified. Use -h for help.
+EOF
+
+my $help = opustags('--help');
+$help->[0] =~ /^([^\n]*+)/;
 my $version = $1;
 like($version, qr/^opustags version (\d+\.\d+\.\d+)/, 'get the version string');
 
-is_deeply($usage, [<<"EOF", "", 0], 'no options show the usage');
-$version
-Usage: opustags --help
-       opustags [OPTIONS] FILE
-       opustags OPTIONS FILE -o FILE
-EOF
-
-my $help = <<"EOF";
+my $expected_help = <<"EOF";
 $version
 
 Usage: opustags --help
@@ -69,8 +66,8 @@ Options:
 See the man page for extensive documentation.
 EOF
 
-is_deeply(opustags('--help'), [$help, '', 0], '--help displays the help message');
-is_deeply(opustags('-h'), [$help, '', 0], '-h displays the help message too');
+is_deeply(opustags('--help'), [$expected_help, '', 0], '--help displays the help message');
+is_deeply(opustags('-h'), [$expected_help, '', 0], '-h displays the help message too');
 
 is_deeply(opustags('--derp'), ['', <<"EOF", 256], 'unrecognized option shows an error');
 $opustags: unrecognized option '--derp'
