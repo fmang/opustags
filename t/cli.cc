@@ -34,13 +34,13 @@ void check_good_arguments()
 		throw failure("did not catch --help");
 
 	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z"});
-	if (opt.inplace != nullptr || opt.path_in != "x" || opt.path_out != "y" || !opt.delete_all ||
+	if (opt.in_place != nullptr || opt.path_in != "x" || opt.path_out != "y" || !opt.delete_all ||
 	    opt.to_delete.size() != 1 || opt.to_delete[0] != "X=Y Z" ||
 	    opt.to_add.size() != 1 || opt.to_add[0] != "X=Y Z")
 		throw failure("unexpected option parsing result for case #1");
 
 	opt = parse({"opustags", "-S", "-y", "x", "-S", "-a", "x=y z", "-i"});
-	if (opt.inplace == nullptr || opt.path_in != "x" || !opt.path_out.empty() ||
+	if (opt.in_place == nullptr || opt.path_in != "x" || !opt.path_out.empty() ||
 	    !opt.set_all || !opt.overwrite || opt.to_delete.size() != 0 ||
 	    opt.to_add.size() != 1 || opt.to_add[0] != "x=y z")
 		throw failure("unexpected option parsing result for case #2");
@@ -73,7 +73,7 @@ void check_bad_arguments()
 	error_case({"opustags", "-i", "-o", "/dev/null", "-"}, "Cannot combine --in-place and --output.", "in-place + output");
 	error_case({"opustags", "-S", "-"}, "Cannot use standard input as input file when --set-all is specified.",
 	                                    "set all and read opus from stdin");
-	error_case({"opustags", "-i", "-"}, "Cannot modify standard input in-place.", "write stdin in-place");
+	error_case({"opustags", "-i", "-"}, "Cannot modify standard input in place.", "write stdin in-place");
 	error_case({"opustags", "-o", "x", "--output", "y", "z"},
 	           "Cannot specify --output more than once.", "double output");
 	error_case({"opustags", "-i", "-i", "z"}, "Cannot specify --in-place more than once.", "double in-place");

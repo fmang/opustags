@@ -379,7 +379,7 @@ struct options {
 	 *
 	 * Option: --in-place
 	 */
-	const char* inplace = nullptr;
+	const char* in_place = nullptr;
 	/**
 	 * By default, opustags won't overwrite the output file if it already exists.
 	 *

@@ -74,10 +74,10 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 				return {st::bad_arguments, "Output file path cannot be empty."};
 			break;
 		case 'i':
-			if (opt.inplace != nullptr)
+			if (opt.in_place != nullptr)
 				return {st::bad_arguments, "Cannot specify --in-place more than once."};
-			opt.inplace = optarg == nullptr ? ".otmp" : optarg;
-			if (strcmp(opt.inplace, "") == 0)
+			opt.in_place = optarg == nullptr ? ".otmp" : optarg;
+			if (strcmp(opt.in_place, "") == 0)
 				return {st::bad_arguments, "In-place suffix cannot be empty."};
 			break;
 		case 'y':
@@ -117,13 +117,13 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 	opt.path_in = argv[optind];
 	if (opt.path_in.empty())
 		return {st::bad_arguments, "Input file path cannot be empty."};
-	if (opt.inplace != nullptr && !opt.path_out.empty())
+	if (opt.in_place != nullptr && !opt.path_out.empty())
 		return {st::bad_arguments, "Cannot combine --in-place and --output."};
 	if (opt.path_in == "-" && opt.set_all)
 		return {st::bad_arguments,
 		        "Cannot use standard input as input file when --set-all is specified."};
-	if (opt.path_in == "-" && opt.inplace)
-		return {st::bad_arguments, "Cannot modify standard input in-place."};
+	if (opt.path_in == "-" && opt.in_place)
+		return {st::bad_arguments, "Cannot modify standard input in place."};
 	return st::ok;
 }
 
@@ -265,7 +265,7 @@ ot::status ot::run(const ot::options& opt)
 		return st::ok;
 	}
 
-	std::string path_out = opt.inplace ? opt.path_in + opt.inplace : opt.path_out;
+	std::string path_out = opt.in_place ? opt.path_in + opt.in_place : opt.path_out;
 
 	if (!path_out.empty() && same_file(opt.path_in, path_out))
 		return {ot::st::fatal_error, "Input and output files are the same"};
@@ -312,7 +312,7 @@ ot::status ot::run(const ot::options& opt)
 		return rc;
 	}
 
-	if (opt.inplace) {
+	if (opt.in_place) {
 		if (rename(path_out.c_str(), opt.path_in.c_str()) == -1)
 			return {ot::st::fatal_error,
 			        "Could not move the result to '" + opt.path_in + "': " + strerror(errno)};
