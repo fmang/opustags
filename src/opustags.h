@@ -350,9 +350,16 @@ void delete_comments(opus_tags& tags, const char* field_name);
  */
 
 /**
- * Structured representation of the arguments to opustags.
+ * Structured representation of the command-line arguments to opustags. It must faithfully represent
+ * what the user asked for, with as little interpretation or deduction as possible.
  */
 struct options {
+	/**
+	 * When true, opustags prints a detailed help and exits. All the other options are ignored.
+	 *
+	 * Option: --help
+	 */
+	bool print_help = false;
 	/**
 	 * Path to the input file. It cannot be empty. The special "-" string means stdin.
 	 *
@@ -374,6 +381,12 @@ struct options {
 	 */
 	const char* inplace = nullptr;
 	/**
+	 * By default, opustags won't overwrite the output file if it already exists.
+	 *
+	 * Option: --overwrite
+	 */
+	bool overwrite = false;
+	/**
 	 * List of field names to delete. `{"ARTIST"}` will delete *all* the comments `ARTIST=*`. It
 	 * is currently case-sensitive. When #delete_all is true, it becomes meaningless.
 	 *
@@ -387,6 +400,12 @@ struct options {
 	 */
 	std::vector<std::string> to_delete;
 	/**
+	 * Delete all the existing comments.
+	 *
+	 * Option: --delete-all
+	 */
+	bool delete_all = false;
+	/**
 	 * List of comments to add, in the current system encoding. For exemple `TITLE=a b c`. They
 	 * must be valid.
 	 *
@@ -394,49 +413,25 @@ struct options {
 	 */
 	std::vector<std::string> to_add;
 	/**
-	 * Delete all the existing comments.
-	 *
-	 * Option: --delete-all
-	 */
-	bool delete_all = false;
-	/**
 	 * Replace the previous comments by the ones supplied by the user.
 	 *
-	 * Read a list of comments from stdin and populate #to_add. Implies #delete_all. Further
-	 * comments may be added with the --add option.
+	 * Read a list of comments from stdin and populate #to_add. Further comments may be added
+	 * with the --add option.
 	 *
 	 * Option: --set-all
 	 */
 	bool set_all = false;
-	/**
-	 * By default, opustags won't overwrite the output file if it already exists.
-	 *
-	 * Option: --overwrite
-	 */
-	bool overwrite = false;
-	/**
-	 * When true, opustags prints a detailed help and exits. All the other options are ignored.
-	 *
-	 * Option: --help
-	 */
-	bool print_help = false;
 };
 
 /**
- * Process the command-line arguments.
+ * Parse the command-line arguments. Does not perform I/O related validations, but checks the
+ * consistency of its arguments.
  *
- * This function does not perform I/O related validations, but checks the consistency of its
- * arguments.
+ * On error, the state of the options structure is unspecified.
  *
- * It returns one of :
- * - #ot::st::ok, meaning the process may continue normally.
- *   This happens when all the user wants is see the help or usage.
- * - #ot::st::bad_arguments, meaning the arguments were invalid and the process should exit with
- *   an error.
- *
- * Help messages are written on standard output, and error messages on standard error.
+ * \todo Return error messages in the status instead of writing them to stderr.
  */
-status process_options(int argc, char** argv, options& opt);
+status parse_options(int argc, char** argv, options& opt);
 
 /**
  * Print all the comments, separated by line breaks. Since a comment may
@@ -466,7 +461,7 @@ status process(ogg_reader& reader, ogg_writer* writer, const options &opt);
  * This is the main entry point to the opustags program, and pretty much the same as calling
  * opustags from the command-line.
  */
-status run(options& opt);
+status run(const options& opt);
 
 /** \} */
 

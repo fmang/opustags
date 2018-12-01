@@ -14,9 +14,9 @@
  */
 int main(int argc, char** argv) {
 	ot::options opt;
-	ot::status rc = process_options(argc, argv, opt);
+	ot::status rc = ot::parse_options(argc, argv, opt);
 	if (rc == ot::st::ok)
-		rc = run(opt);
+		rc = ot::run(opt);
 
 	if (rc != ot::st::ok) {
 		if (!rc.message.empty())

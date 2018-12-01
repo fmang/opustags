@@ -52,8 +52,9 @@ static struct option getopt_options[] = {
 	{NULL, 0, 0, 0}
 };
 
-ot::status ot::process_options(int argc, char** argv, ot::options& opt)
+ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 {
+	opt = {};
 	if (argc == 1)
 		return {st::bad_arguments, "No arguments specified. Use -h for help."};
 
@@ -99,7 +100,7 @@ ot::status ot::process_options(int argc, char** argv, ot::options& opt)
 			break;
 		case 'S':
 			opt.set_all = true;
-			/* fall through */
+			break;
 		case 'D':
 			opt.delete_all = true;
 			break;
@@ -266,7 +267,7 @@ static bool same_file(const std::string& path_in, const std::string& path_out)
 	return false;
 }
 
-ot::status ot::run(ot::options& opt)
+ot::status ot::run(const ot::options& opt)
 {
 	if (opt.print_help) {
 		fputs(help_message, stdout);
