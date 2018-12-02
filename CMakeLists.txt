@@ -22,6 +22,7 @@ add_library(
 	src/cli.cc
 	src/ogg.cc
 	src/opus.cc
+	src/system.cc
 )
 target_link_libraries(libopustags PUBLIC ${OGG_LIBRARIES})
 

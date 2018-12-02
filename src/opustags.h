@@ -83,6 +83,11 @@ struct status {
 	std::string message;
 };
 
+/***********************************************************************************************//**
+ * \defgroup system System
+ * \{
+ */
+
 /**
  * Smart auto-closing FILE* handle.
  *
@@ -91,6 +96,37 @@ struct status {
 struct file : std::unique_ptr<FILE, decltype(&fclose)> {
 	file(FILE* f = nullptr) : std::unique_ptr<FILE, decltype(&fclose)>(f, &fclose) {}
 };
+
+/**
+ * A partial file is a temporary file created to store the result of something. When it is complete,
+ * it is moved to a final destination. Open it with #open and then you can either #commit it to save
+ * it to its destination, or you can #abort to delete the temporary file. When the #partial_file
+ * object is destroyed, it deletes the currently opened temporary file, if any.
+ */
+class partial_file {
+public:
+	~partial_file() { abort(); }
+	/**
+	 * Open a temporary file meant to be moved to the specified destination file path. The
+	 * temporary file is created in the same directory as its destination in order to make the
+	 * final move operation instant.
+	 */
+	ot::status open(const char* destination);
+	/** Close then move the partial file to its final location. */
+	ot::status commit();
+	/** Delete the temporary file. */
+	void abort();
+	/** Get the underlying FILE* handle. */
+	FILE* get() { return file.get(); }
+	/** Get the name of the temporary file. */
+	const char* name() const { return file == nullptr ? nullptr : temporary_name.c_str(); }
+private:
+	std::string temporary_name;
+	std::string final_name;
+	ot::file file;
+};
+
+/** \} */
 
 /***********************************************************************************************//**
  * \defgroup ogg Ogg

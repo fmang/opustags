@@ -1,3 +1,6 @@
+add_executable(system.t EXCLUDE_FROM_ALL system.cc)
+target_link_libraries(system.t libopustags)
+
 add_executable(opus.t EXCLUDE_FROM_ALL opus.cc)
 target_link_libraries(opus.t libopustags)
 
@@ -12,5 +15,5 @@ configure_file(gobble.opus . COPYONLY)
 add_custom_target(
 	check
 	COMMAND prove "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}"
-	DEPENDS opustags gobble.opus opus.t ogg.t cli.t
+	DEPENDS opustags gobble.opus system.t opus.t ogg.t cli.t
 )
