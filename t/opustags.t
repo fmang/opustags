@@ -96,12 +96,12 @@ is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
 # empty out.opus
 { my $fh; open($fh, '>', 'out.opus') and close($fh) or die }
 is_deeply(opustags(qw(gobble.opus -o out.opus)), ['', <<'EOF', 256], 'refuse to override');
-error: 'out.opus' already exists (use -y to overwrite)
+error: 'out.opus' already exists. Use -y to overwrite.
 EOF
 is(md5('out.opus'), 'd41d8cd98f00b204e9800998ecf8427e', 'the output wasn\'t written');
 
 is_deeply(opustags(qw(out.opus -o out.opus)), ['', <<'EOF', 256], 'output and input can\'t be the same');
-error: Input and output files are the same
+error: Input and output cannot be the same file. Use --in-place instead.
 EOF
 
 is_deeply(opustags(qw(gobble.opus -o out.opus --overwrite)), ['', '', 0], 'overwrite');

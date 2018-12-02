@@ -15,7 +15,7 @@
 #include <getopt.h>
 #include <limits.h>
 #include <string.h>
-#include <unistd.h>
+#include <sys/stat.h>
 
 using namespace std::literals::string_literals;
 
@@ -249,21 +249,6 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 	return ot::st::ok;
 }
 
-/**
- * Check if two filepaths point to the same file, after path canonicalization.
- * The path "-" is treated specially, meaning stdin for path_in and stdout for path_out.
- */
-static bool same_file(const std::string& path_in, const std::string& path_out)
-{
-	if (path_in == "-" || path_out == "-")
-		return false;
-	char canon_in[PATH_MAX+1], canon_out[PATH_MAX+1];
-	if (realpath(path_in.c_str(), canon_in) && realpath(path_out.c_str(), canon_out)) {
-		return (strcmp(canon_in, canon_out) == 0);
-	}
-	return false;
-}
-
 ot::status ot::run(const ot::options& opt)
 {
 	if (opt.print_help) {
@@ -272,9 +257,27 @@ ot::status ot::run(const ot::options& opt)
 	}
 
 	std::string path_out = opt.in_place ? opt.path_in + opt.in_place : opt.path_out;
-
-	if (!path_out.empty() && same_file(opt.path_in, path_out))
-		return {ot::st::fatal_error, "Input and output files are the same"};
+	if (!path_out.empty() && path_out != "-") {
+		struct stat input_info;
+		if (opt.path_in != "-" && stat(opt.path_in.c_str(), &input_info) == -1)
+			return {ot::st::fatal_error,
+				"Could not identify '" + opt.path_in + "': " + strerror(errno)};
+		struct stat output_info;
+		if (stat(opt.path_out.c_str(), &output_info) == 0) {
+			if (opt.path_in != "-" &&
+			    input_info.st_dev == output_info.st_dev &&
+			    input_info.st_ino == output_info.st_ino)
+				return {ot::st::fatal_error,
+				        "Input and output cannot be the same file. "
+				        "Use --in-place instead."};
+			if (!opt.overwrite)
+				return {ot::st::fatal_error,
+					"'" + path_out + "' already exists. Use -y to overwrite."};
+		} else if (errno != ENOENT) {
+			return {ot::st::fatal_error,
+			        "Could not identify '" + opt.path_in + "': " + strerror(errno)};
+		}
+	}
 
 	ot::file input;
 	if (opt.path_in == "-") {
@@ -290,9 +293,6 @@ ot::status ot::run(const ot::options& opt)
 	if (path_out == "-") {
 		output.reset(stdout);
 	} else if (!path_out.empty()) {
-		if (!opt.overwrite && access(path_out.c_str(), F_OK) == 0)
-			return {ot::st::fatal_error,
-			        "'" + path_out + "' already exists (use -y to overwrite)"};
 		output = fopen(path_out.c_str(), "w");
 		if (output == nullptr)
 			return {ot::st::standard_error,
