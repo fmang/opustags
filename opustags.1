@@ -15,7 +15,7 @@ opustags \- Opus comment editor
 .SH DESCRIPTION
 .PP
 \fBopustags\fP can read and edit the comment header of an Opus file.
-It basically has two modes: read-only, and read-write for tag edition.
+It basically has two modes: read-only, and read-write for tag editing.
 .PP
 In read-only mode, only the beginning of \fIINPUT\fP is read, and the tags are
 printed on standard output.
@@ -23,10 +23,12 @@ printed on standard output.
 You can use the options below to edit the tags before printing them.
 This could be useful to preview some changes before writing them.
 .PP
-In edition mode, you need to specify an output file (or \fB-\fP for standard output). It must be
-different from the input file. To overwrite the input file, use \fB--in-place\fP.
+In editing mode, you need to specify an output file with \fB--output\fP, or use \fB--in-place\fP to
+overwrite the input file. If the output is a regular file, the result is first written to a
+temporary file and then moved to its final location on success. On error, the temporary output file
+is deleted.
 .PP
-Tag edition can be performed with the \fB--add\fP, \fB--delete\fP and \fB--set\fP
+Tag editing can be performed with the \fB--add\fP, \fB--delete\fP and \fB--set\fP
 options. Options can be specified in any order and don’t conflict with each other.
 First the specified tags are deleted, then the new tags are added.
 .PP
@@ -52,16 +54,15 @@ The input file will be read, its tags edited, then written to the specified outp
 \fIFILE\fP is \fB-\fP then the resulting Opus file will be written to standard output.
 The output file can’t be the same as the input file.
 .TP
-.B \-i, \-\-in-place\fR[=\fP\fISUFFIX\fP\fR]\fP
-Use this when you want to modify the input file in place. opustags will create a temporary output
-file with the specified suffix (.otmp by default), and move it to the location of the input file on
-success. If a file with the same name as the temporary file already exists, it will be overwritten
-without warning.
+.B \-i, \-\-in-place
+Overwrite the input file instead of creating a separate output file. It has the same effect as
+setting \fB--output\fP to the same path as the input file and enabling \fB--overwrite\fP.
 This option conflicts with \fB--output\fP.
 .TP
 .B \-y, \-\-overwrite
-By default, \fBopustags\fP refuses to overwrite an already existent file. Use
-this option to allow that.
+By default, \fBopustags\fP refuses to overwrite an already-existent file.
+Use \fB-y\fP to allow overwriting.
+Note that this option is not needed when the output is a special file like \fI/dev/null\fP.
 .TP
 .B \-d, \-\-delete \fIFIELD\fP
 Delete all the tags whose field name is \fIFIELD\fP. They may be several one of them, though usually

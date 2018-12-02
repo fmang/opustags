@@ -386,8 +386,7 @@ void delete_comments(opus_tags& tags, const char* field_name);
  */
 
 /**
- * Structured representation of the command-line arguments to opustags. It must faithfully represent
- * what the user asked for, with as little interpretation or deduction as possible.
+ * Structured representation of the command-line arguments to opustags.
  */
 struct options {
 	/**
@@ -404,22 +403,16 @@ struct options {
 	std::string path_in;
 	/**
 	 * Path to the optional file. The special "-" string means stdout. When empty, opustags runs
-	 * in read-only mode.
+	 * in read-only mode. For in-place editing, path_out is defined equal to path_in.
 	 *
-	 * Option: --output
+	 * Options: --output, --in-place
 	 */
 	std::string path_out;
 	/**
-	 * If null, in-place editing is disabled. Otherwise, it points to the suffix to add to the
-	 * file name.
+	 * By default, opustags won't overwrite the output file if it already exists. This can be
+	 * forced with --overwrite. It is also enabled by --in-place.
 	 *
-	 * Option: --in-place
-	 */
-	const char* in_place = nullptr;
-	/**
-	 * By default, opustags won't overwrite the output file if it already exists.
-	 *
-	 * Option: --overwrite
+	 * Options: --overwrite, --in-place
 	 */
 	bool overwrite = false;
 	/**
