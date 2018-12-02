@@ -446,18 +446,8 @@ void print_comments(const std::list<std::string>& comments, FILE* output);
 std::list<std::string> read_comments(FILE* input);
 
 /**
- * Main loop of opustags. Read the packets from the reader, and forwards them to the writer.
- * Transform the OpusTags packet on the fly.
- *
- * The writer is optional. When writer is nullptr, opustags runs in read-only mode.
- */
-status process(ogg_reader& reader, ogg_writer* writer, const options &opt);
-
-/**
- * Open the input and output streams, then call #ot::process.
- *
- * This is the main entry point to the opustags program, and pretty much the same as calling
- * opustags from the command-line.
+ * Main entry point to the opustags program, and pretty much the same as calling opustags from the
+ * command-line.
  */
 status run(const options& opt);
 

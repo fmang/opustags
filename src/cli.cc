@@ -191,7 +191,13 @@ static ot::status process_tags(const ogg_packet& packet, const ot::options& opt,
 	}
 }
 
-ot::status ot::process(ogg_reader& reader, ogg_writer* writer, const ot::options &opt)
+/**
+ * Main loop of opustags. Read the packets from the reader, and forwards them to the writer.
+ * Transform the OpusTags packet on the fly.
+ *
+ * The writer is optional. When writer is nullptr, opustags runs in read-only mode.
+ */
+static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::options &opt)
 {
 	int packet_count = 0;
 	for (;;) {

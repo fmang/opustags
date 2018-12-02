@@ -8,7 +8,7 @@
 #include <opustags.h>
 
 /**
- * Main entry point to the opustags binary.
+ * Main function of the opustags binary.
  *
  * Does practically nothing but call the cli module.
  */
