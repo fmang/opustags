@@ -41,6 +41,9 @@ namespace ot {
  * have it explictly mentionned in their documentation. By default, a non-ok status should be
  * handled like an error.
  *
+ * Error codes do not need to be ultra specific, and are mainly used to report special conditions to
+ * the caller function. Ultimately, only the error message in the #status is shown to the user.
+ *
  * The cut error family means that the end of packet was reached when attempting to read the
  * overflowing value. For example, cut_comment_count means that after reading the vendor string,
  * less than 4 bytes were left in the packet.
@@ -48,8 +51,9 @@ namespace ot {
 enum class st {
 	/* Generic */
 	ok,
+	error,
+	standard_error, /**< Error raised by the C standard library. */
 	int_overflow,
-	standard_error,
 	/* Ogg */
 	end_of_stream,
 	end_of_page,
@@ -65,7 +69,6 @@ enum class st {
 	cut_comment_data,
 	/* CLI */
 	bad_arguments,
-	fatal_error,
 };
 
 /**

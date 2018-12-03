@@ -246,7 +246,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			return rc;
 	}
 	if (packet_count < 2)
-		return {ot::st::fatal_error, "Expected at least 2 Ogg packets"};
+		return {ot::st::error, "Expected at least 2 Ogg packets"};
 	return ot::st::ok;
 }
 
@@ -310,14 +310,14 @@ ot::status ot::run(const ot::options& opt)
 			rc = temporary_output.open(opt.path_out.c_str());
 			output = temporary_output.get();
 		} else {
-			rc = {ot::st::fatal_error,
+			rc = {ot::st::error,
 			      "'" + opt.path_out + "' already exists. Use -y to overwrite."};
 		}
 	} else if (errno == ENOENT) {
 		rc = temporary_output.open(opt.path_out.c_str());
 		output = temporary_output.get();
 	} else {
-		rc = {ot::st::fatal_error,
+		rc = {ot::st::error,
 		      "Could not identify '" + opt.path_in + "': " + strerror(errno)};
 	}
 	if (rc != ot::st::ok)
