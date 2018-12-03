@@ -160,36 +160,20 @@ std::list<std::string> ot::read_comments(FILE* input)
 	return comments;
 }
 
-/**
- * Parse the packet as an OpusTags comment header, apply the user's modifications, and write the new
- * packet to the writer.
- */
-static ot::status process_tags(const ogg_packet& packet, const ot::options& opt, ot::ogg_writer* writer)
+/** Apply the modifications requested by the user to the opustags packet. */
+static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
-	ot::opus_tags tags;
-	ot::status rc = ot::parse_tags(packet, tags);
-	if (rc != ot::st::ok)
-		return rc;
-
-	if (opt.delete_all) {
-		tags.comments.clear();
-	} else {
-		for (const std::string& name : opt.to_delete)
-			ot::delete_comments(tags, name.c_str());
-	}
-
 	if (opt.set_all)
 		tags.comments = ot::read_comments(stdin);
+	else if (opt.delete_all)
+		tags.comments.clear();
+	else for (const std::string& name : opt.to_delete)
+		ot::delete_comments(tags, name.c_str());
+
 	for (const std::string& comment : opt.to_add)
 		tags.comments.emplace_back(comment);
 
-	if (writer) {
-		auto packet = ot::render_tags(tags);
-		return writer->write_packet(packet);
-	} else {
-		ot::print_comments(tags.comments, stdout);
-		return ot::st::ok;
-	}
+	return ot::st::ok;
 }
 
 /**
@@ -230,13 +214,19 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 				if (rc != ot::st::ok)
 					return rc;
 			} else if (packet_count == 2) { // Comment header
-				rc = process_tags(reader.packet, opt, writer);
-				if (rc != ot::st::ok)
+				ot::opus_tags tags;
+				if ((rc = ot::parse_tags(reader.packet, tags)) != ot::st::ok)
 					return rc;
-				if (!writer)
-					return ot::st::ok; /* nothing else to do */
-				else
-					continue; /* process_tags wrote the new packet */
+				if ((rc = edit_tags(tags, opt)) != ot::st::ok)
+					return rc;
+				if (writer) {
+					auto packet = ot::render_tags(tags);
+					if ((rc = writer->write_packet(packet)) != ot::st::ok)
+						return rc;
+					continue;
+				} else {
+					ot::print_comments(tags.comments, stdout);
+				}
 			}
 			if (writer && (rc = writer->write_packet(reader.packet)) != ot::st::ok)
 				return rc;
