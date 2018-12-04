@@ -71,6 +71,23 @@ ot::status ot::ogg_reader::read_packet()
 		return {st::libogg_error, "ogg_stream_packetout failed"};
 }
 
+ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_packet&)>& f)
+{
+	ot::status rc = read_packet();
+	if (rc == ot::st::end_of_page)
+		return {ot::st::error, "Header pages must not be empty."};
+	else if (rc != ot::st::ok)
+		return rc;
+	if ((rc = f(packet)) != ot::st::ok)
+		return rc;
+	rc = read_packet();
+	if (rc == ot::st::ok)
+		return {ot::st::error, "Unexpected second packet in header page."};
+	else if (rc != ot::st::end_of_page)
+		return rc;
+	return ot::st::ok;
+}
+
 ot::ogg_writer::ogg_writer(FILE* output)
 	: file(output)
 {
@@ -113,6 +130,17 @@ ot::status ot::ogg_writer::write_packet(const ogg_packet& packet)
 		return st::ok;
 }
 
+ot::status ot::ogg_writer::write_header_packet(const ogg_packet& packet)
+{
+	ot::status rc;
+	if ((rc = write_packet(packet)) != ot::st::ok)
+		return rc;
+	return flush_page();
+}
+
+/**
+ * \todo What if the packet is too big to fit a single page?
+ */
 ot::status ot::ogg_writer::flush_page()
 {
 	ogg_page page;

@@ -26,6 +26,7 @@
 #include <ogg/ogg.h>
 #include <stdio.h>
 
+#include <functional>
 #include <list>
 #include <memory>
 #include <string>
@@ -173,8 +174,14 @@ public:
 	 * return #status::stream_not_ready.
 	 *
 	 * After the last packet was read, return #status::end_of_page.
+	 *
+	 * \todo Merge into #read_header_packet.
 	 */
 	status read_packet();
+	/**
+	 * Read the single packet contained in a header page, and call the function f on it.
+	 */
+	status read_header_packet(const std::function<status(ogg_packet&)>& f);
 	/**
 	 * Current page from the sync state.
 	 *
@@ -187,6 +194,8 @@ public:
 	 *
 	 * Its memory is managed by libogg, inside the stream state, and is valid until the next
 	 * call to ogg_stream_packetout, wrapped by #read_packet.
+	 *
+	 * \todo Merge into #read_header_packet.
 	 */
 	ogg_packet packet;
 private:
@@ -210,12 +219,16 @@ private:
 	 *
 	 * To initialize it properly, we need the serialno of the stream, which is available only
 	 * after the first page was read.
+	 *
+	 * \todo Merge into #read_header_packet.
 	 */
 	bool stream_ready = false;
 	/**
 	 * Indicates if the stream's last fed page is the current one.
 	 *
 	 * Its state is irrelevant if the stream is not ready.
+	 *
+	 * \todo Merge into #read_header_packet.
 	 */
 	bool stream_in_sync;
 	/**
@@ -226,6 +239,8 @@ private:
 	 * better ensure there are no extra packets anyway.
 	 *
 	 * After we've read OpusHead and OpusTags, we don't need the stream layer anymore.
+	 *
+	 * \todo Merge into #read_header_packet.
 	 */
 	ogg_stream_state stream;
 };
@@ -264,6 +279,8 @@ public:
 	 * and is cheap to call.
 	 *
 	 * If the stream contains unflushed packets, they will be lost.
+	 *
+	 * \todo Merge into #write_header_packet.
 	 */
 	status prepare_stream(long serialno);
 	/**
@@ -275,11 +292,20 @@ public:
 	 * When the page is complete, you should call #flush_page to finalize the page.
 	 *
 	 * You must not call #write_page after it, until you call #flush_page.
+	 *
+	 * \todo Merge into #write_header_packet.
 	 */
 	status write_packet(const ogg_packet& packet);
 	/**
+	 * Write a header packet and flush the page. Header packets are always placed alone on their
+	 * pages.
+	 */
+	status write_header_packet(const ogg_packet& packet);
+	/**
 	 * Write the page under assembly. Future calls to #write_packet will be written in a new
 	 * page.
+	 *
+	 * \todo Merge into #write_header_packet.
 	 */
 	status flush_page();
 private:
@@ -288,6 +314,8 @@ private:
 	 *
 	 * In our specific use case, we only need it to put the OpusHead and OpusTags packets into
 	 * their own pages. The other pages are naively written to the output stream.
+	 *
+	 * \todo Merge into #write_header_packet.
 	 */
 	ogg_stream_state stream;
 	/**

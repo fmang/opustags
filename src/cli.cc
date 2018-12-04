@@ -184,8 +184,8 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
  */
 static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::options &opt)
 {
-	int packet_count = 0;
-	for (;;) {
+	int page_no;
+	for (page_no = 0;; ++page_no) {
 		// Read the next page.
 		ot::status rc = reader.read_page();
 		if (rc == ot::st::end_of_stream)
@@ -193,7 +193,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 		else if (rc != ot::st::ok)
 			return rc;
 		// Short-circuit when the relevant packets have been read.
-		if (packet_count >= 2 && writer) {
+		if (page_no >= 2 && writer) {
 			if ((rc = writer->write_page(reader.page)) != ot::st::ok)
 				return rc;
 			continue;
@@ -201,42 +201,32 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 		auto serialno = ogg_page_serialno(&reader.page);
 		if (writer && (rc = writer->prepare_stream(serialno)) != ot::st::ok)
 			return rc;
-		// Read all the packets.
-		for (;;) {
-			rc = reader.read_packet();
-			if (rc == ot::st::end_of_page)
+		if (page_no == 0) { // Identification header
+			rc = reader.read_header_packet(ot::validate_identification_header);
+			if (rc != ot::st::ok)
+				return rc;
+			if (writer && (rc = writer->write_header_packet(reader.packet)) != ot::st::ok)
+				return rc;
+		} else if (page_no == 1) { // Comment header
+			ot::opus_tags tags;
+			rc = reader.read_header_packet(
+				[&tags](ogg_packet& p) { return ot::parse_tags(p, tags); });
+			if (rc != ot::st::ok)
+				return rc;
+			if ((rc = edit_tags(tags, opt)) != ot::st::ok)
+				return rc;
+			if (writer) {
+				auto packet = ot::render_tags(tags);
+				if ((rc = writer->write_header_packet(packet)) != ot::st::ok)
+					return rc;
+			} else {
+				ot::print_comments(tags.comments, stdout);
 				break;
-			else if (rc != ot::st::ok)
-				return rc;
-			packet_count++;
-			if (packet_count == 1) { // Identification header
-				rc = ot::validate_identification_header(reader.packet);
-				if (rc != ot::st::ok)
-					return rc;
-			} else if (packet_count == 2) { // Comment header
-				ot::opus_tags tags;
-				if ((rc = ot::parse_tags(reader.packet, tags)) != ot::st::ok)
-					return rc;
-				if ((rc = edit_tags(tags, opt)) != ot::st::ok)
-					return rc;
-				if (writer) {
-					auto packet = ot::render_tags(tags);
-					if ((rc = writer->write_packet(packet)) != ot::st::ok)
-						return rc;
-					continue;
-				} else {
-					ot::print_comments(tags.comments, stdout);
-				}
 			}
-			if (writer && (rc = writer->write_packet(reader.packet)) != ot::st::ok)
-				return rc;
-		}
-		// Write the assembled page.
-		if (writer && (rc = writer->flush_page()) != ot::st::ok)
-			return rc;
+		} /** \todo Move the generic case here, after we've gotten rid of prepare_stream. */
 	}
-	if (packet_count < 2)
-		return {ot::st::error, "Expected at least 2 Ogg packets"};
+	if (page_no < 1)
+		return {ot::st::error, "Expected at least 2 Ogg pages."};
 	return ot::st::ok;
 }
 
