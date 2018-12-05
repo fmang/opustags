@@ -63,9 +63,8 @@ static bool same_packet(const ogg_packet& lhs, const ogg_packet& rhs)
  */
 static void check_memory_ogg()
 {
-	const ogg_packet first_packet  = make_packet("First");
-	const ogg_packet second_packet = make_packet("Second");
-	const ogg_packet third_packet  = make_packet("Third");
+	ogg_packet first_packet  = make_packet("First");
+	ogg_packet second_packet = make_packet("Second");
 	std::vector<unsigned char> my_ogg(128);
 	size_t my_ogg_size;
 	ot::status rc;
@@ -78,26 +77,17 @@ static void check_memory_ogg()
 		rc = writer.prepare_stream(1234);
 		if (rc != ot::st::ok)
 			throw failure("could not prepare the stream for the first page");
-		writer.write_packet(first_packet);
+		writer.write_header_packet(first_packet);
 		if (rc != ot::st::ok)
 			throw failure("could not write the first packet");
-		writer.flush_page();
-		if (rc != ot::st::ok)
-			throw failure("could not flush the first page");
 		writer.prepare_stream(1234);
 		if (rc != ot::st::ok)
 			throw failure("could not prepare the stream for the second page");
-		writer.write_packet(second_packet);
+		writer.write_header_packet(second_packet);
 		if (rc != ot::st::ok)
 			throw failure("could not write the second packet");
-		writer.write_packet(third_packet);
-		if (rc != ot::st::ok)
-			throw failure("could not write the third packet");
-		writer.flush_page();
-		if (rc != ot::st::ok)
-			throw failure("could not flush the second page");
 		my_ogg_size = ftell(output.get());
-		if (my_ogg_size != 73)
+		if (my_ogg_size != 67)
 			throw failure("unexpected output size");
 	}
 
@@ -125,14 +115,6 @@ static void check_memory_ogg()
 			throw failure("could not read the second packet");
 		if (!same_packet(reader.packet, second_packet))
 			throw failure("unexpected content in the second packet");
-		rc = reader.read_packet();
-		if (rc != ot::st::ok)
-			throw failure("could not read the third packet");
-		if (!same_packet(reader.packet, third_packet))
-			throw failure("unexpected content in the third packet");
-		rc = reader.read_packet();
-		if (rc != ot::st::end_of_page)
-			throw failure("unexpected third packet in the second page");
 		rc = reader.read_page();
 		if (rc != ot::st::end_of_stream)
 			throw failure("unexpected third page");

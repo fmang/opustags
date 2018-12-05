@@ -247,13 +247,6 @@ private:
 
 /**
  * An Ogg writer lets you write ogg_page objets to an output file, and assemble packets into pages.
- *
- * It has two modes of operations :
- *   1. call #write_page, or
- *   2. call #prepare_stream, then #write_packet one or more times, followed by #flush_page.
- *
- * You can switch between the two modes, but must not start writing packets and then pages without
- * flushing.
  */
 class ogg_writer {
 public:
@@ -284,30 +277,10 @@ public:
 	 */
 	status prepare_stream(long serialno);
 	/**
-	 * Add a packet to the current page under assembly.
-	 *
-	 * If the packet is coming from a different page, make sure the serial number fits by
-	 * calling #prepare_stream.
-	 *
-	 * When the page is complete, you should call #flush_page to finalize the page.
-	 *
-	 * You must not call #write_page after it, until you call #flush_page.
-	 *
-	 * \todo Merge into #write_header_packet.
-	 */
-	status write_packet(const ogg_packet& packet);
-	/**
 	 * Write a header packet and flush the page. Header packets are always placed alone on their
 	 * pages.
 	 */
-	status write_header_packet(const ogg_packet& packet);
-	/**
-	 * Write the page under assembly. Future calls to #write_packet will be written in a new
-	 * page.
-	 *
-	 * \todo Merge into #write_header_packet.
-	 */
-	status flush_page();
+	status write_header_packet(ogg_packet& packet);
 private:
 	/**
 	 * The stream state receives packets and generates pages.

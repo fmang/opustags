@@ -71,6 +71,9 @@ ot::status ot::ogg_reader::read_packet()
 		return {st::libogg_error, "ogg_stream_packetout failed"};
 }
 
+/**
+ * \todo Make sure the page doesn't begin new packets that are continued on the following page.
+ */
 ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_packet&)>& f)
 {
 	ot::status rc = read_packet();
@@ -122,31 +125,23 @@ ot::status ot::ogg_writer::prepare_stream(long serialno)
 	return st::ok;
 }
 
-ot::status ot::ogg_writer::write_packet(const ogg_packet& packet)
+ot::status ot::ogg_writer::write_header_packet(ogg_packet& packet)
 {
-	if (ogg_stream_packetin(&stream, const_cast<ogg_packet*>(&packet)) != 0)
-		return {st::libogg_error, "ogg_stream_packetin failed"};
-	else
-		return st::ok;
-}
-
-ot::status ot::ogg_writer::write_header_packet(const ogg_packet& packet)
-{
-	ot::status rc;
-	if ((rc = write_packet(packet)) != ot::st::ok)
-		return rc;
-	return flush_page();
-}
-
-/**
- * \todo What if the packet is too big to fit a single page?
- */
-ot::status ot::ogg_writer::flush_page()
-{
+	if (ogg_stream_packetin(&stream, &packet) != 0)
+		return {ot::st::libogg_error, "ogg_stream_packetin failed"};
 	ogg_page page;
+	if (ogg_stream_flush(&stream, &page) != 0) {
+		ot::status rc = write_page(page);
+		if (rc != ot::st::ok)
+			return rc;
+	} else {
+		return {ot::st::libogg_error, "ogg_stream_flush failed"};
+	}
 	if (ogg_stream_flush(&stream, &page) != 0)
-		return write_page(page);
+		return {ot::st::error,
+		        "Header packets spanning multiple pages are not yet supported. "
+		        "Please file an issue to make your wish known."};
 	if (ogg_stream_check(&stream) != 0)
 		return {st::libogg_error, "ogg_stream_check failed"};
-	return st::ok; /* nothing was done */
+	return ot::st::ok;
 }
