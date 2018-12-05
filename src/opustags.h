@@ -57,8 +57,6 @@ enum class st {
 	int_overflow,
 	/* Ogg */
 	end_of_stream,
-	end_of_page,
-	stream_not_ready,
 	libogg_error,
 	/* Opus */
 	bad_magic_number,
@@ -155,20 +153,19 @@ struct ogg_stream : ogg_stream_state {
  * Call #read_page repeatedly until #status::end_of_stream to consume the stream, and use #page to
  * check its content. To extract its packets, call #read_packet until #status::end_of_packet.
  */
-class ogg_reader {
-public:
+struct ogg_reader {
 	/**
 	 * Initialize the reader with the given input file handle. The caller is responsible for
 	 * keeping the file handle alive, and to close it.
 	 */
-	ogg_reader(FILE* input);
+	ogg_reader(FILE* input) : file(input) { ogg_sync_init(&sync); }
 	/**
 	 * Clear all the internal memory allocated by libogg for the sync and stream state. The
 	 * page and the packet are owned by these states, so nothing to do with them.
 	 *
 	 * The input file is not closed.
 	 */
-	~ogg_reader();
+	~ogg_reader() { ogg_sync_clear(&sync); }
 	/**
 	 * Read the next page from the input file. The result, provided the status is #status::ok,
 	 * is made available in the #page field, is owned by the Ogg reader, and is valid until the
@@ -178,19 +175,12 @@ public:
 	 */
 	status read_page();
 	/**
-	 * Read the next available packet from the current #page. The packet is made available in
-	 * the #packet field.
+	 * Read the single packet contained in a header page, and call the function f on it. This
+	 * function has no side effect, and calling it twice on the same page will read the same
+	 * packet again.
 	 *
-	 * No packet can be read until a page has been loaded with #read_page. If that happens,
-	 * return #status::stream_not_ready.
-	 *
-	 * After the last packet was read, return #status::end_of_page.
-	 *
-	 * \todo Merge into #read_header_packet.
-	 */
-	status read_packet();
-	/**
-	 * Read the single packet contained in a header page, and call the function f on it.
+	 * It is currently limited to packets that fit on a single page, and should be later
+	 * extended to support packets spanning multiple pages.
 	 */
 	status read_header_packet(const std::function<status(ogg_packet&)>& f);
 	/**
@@ -200,16 +190,6 @@ public:
 	 * to ogg_sync_pageout, wrapped by #read_page.
 	 */
 	ogg_page page;
-	/**
-	 * Current packet from the stream state.
-	 *
-	 * Its memory is managed by libogg, inside the stream state, and is valid until the next
-	 * call to ogg_stream_packetout, wrapped by #read_packet.
-	 *
-	 * \todo Merge into #read_header_packet.
-	 */
-	ogg_packet packet;
-private:
 	/**
 	 * The file is our source of binary data. It is not integrated to libogg, so we need to
 	 * handle it ourselves.
@@ -225,35 +205,6 @@ private:
 	 * are simply forwarded to the Ogg writer.
 	 */
 	ogg_sync_state sync;
-	/**
-	 * Indicates whether the stream has been initialized or not.
-	 *
-	 * To initialize it properly, we need the serialno of the stream, which is available only
-	 * after the first page was read.
-	 *
-	 * \todo Merge into #read_header_packet.
-	 */
-	bool stream_ready = false;
-	/**
-	 * Indicates if the stream's last fed page is the current one.
-	 *
-	 * Its state is irrelevant if the stream is not ready.
-	 *
-	 * \todo Merge into #read_header_packet.
-	 */
-	bool stream_in_sync;
-	/**
-	 * The stream layer receives pages and yields a sequence of packets.
-	 *
-	 * A single page may contain several packets, and a single packet may span on multiple
-	 * pages. The 2 packets we're interested in occupy whole pages though, in theory, but we'd
-	 * better ensure there are no extra packets anyway.
-	 *
-	 * After we've read OpusHead and OpusTags, we don't need the stream layer anymore.
-	 *
-	 * \todo Merge into #read_header_packet.
-	 */
-	ogg_stream_state stream;
 };
 
 /**
@@ -350,6 +301,8 @@ struct opus_tags {
  * Validate the content of the first packet of an Ogg stream to ensure it's a valid OpusHead.
  *
  * Returns #ot::status::ok on success, #ot::status::bad_identification_header on error.
+ *
+ * \todo Replace with a function "identify_stream(ogg_page&)" in module ogg.
  */
 status validate_identification_header(const ogg_packet& packet);
 

@@ -199,7 +199,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			if (rc != ot::st::ok)
 				return rc;
 			if (writer) {
-				rc = writer->write_header_packet(serialno, pageno, reader.packet);
+				rc = writer->write_page(reader.page);
 				if (rc != ot::st::ok)
 					return rc;
 			}

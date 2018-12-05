@@ -14,19 +14,6 @@
 
 using namespace std::literals::string_literals;
 
-ot::ogg_reader::ogg_reader(FILE* input)
-	: file(input)
-{
-	ogg_sync_init(&sync);
-}
-
-ot::ogg_reader::~ogg_reader()
-{
-	if (stream_ready)
-		ogg_stream_clear(&stream);
-	ogg_sync_clear(&sync);
-}
-
 ot::status ot::ogg_reader::read_page()
 {
 	while (ogg_sync_pageout(&sync, &page) != 1) {
@@ -43,51 +30,30 @@ ot::status ot::ogg_reader::read_page()
 		if (ogg_sync_check(&sync) != 0)
 			return {st::libogg_error, "ogg_sync_check failed"};
 	}
-	/* at this point, we've got a good page */
-	if (!stream_ready) {
-		if (ogg_stream_init(&stream, ogg_page_serialno(&page)) != 0)
-			return {st::libogg_error, "ogg_stream_init failed"};
-		stream_ready = true;
-	}
-	stream_in_sync = false;
 	return st::ok;
 }
 
-ot::status ot::ogg_reader::read_packet()
-{
-	if (!stream_ready)
-		return {st::stream_not_ready, "Stream was not initialized"};
-	if (!stream_in_sync) {
-		if (ogg_stream_pagein(&stream, &page) != 0)
-			return {st::libogg_error, "ogg_stream_pagein failed"};
-		stream_in_sync = true;
-	}
-	int rc = ogg_stream_packetout(&stream, &packet);
-	if (rc == 1)
-		return st::ok;
-	else if (rc == 0 && ogg_stream_check(&stream) == 0)
-		return {st::end_of_page, "End of page was reached"};
-	else
-		return {st::libogg_error, "ogg_stream_packetout failed"};
-}
-
-/**
- * \todo Make sure the page doesn't begin new packets that are continued on the following page.
- */
 ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_packet&)>& f)
 {
-	ot::status rc = read_packet();
-	if (rc == ot::st::end_of_page)
+	ogg_stream stream(ogg_page_serialno(&page));
+	stream.pageno = ogg_page_pageno(&page);
+	if (ogg_stream_pagein(&stream, &page) != 0)
+		return {st::libogg_error, "ogg_stream_pagein failed."};
+	ogg_packet packet;
+	int rc = ogg_stream_packetout(&stream, &packet);
+	if (rc == 0 && ogg_stream_check(&stream) == 0)
 		return {ot::st::error, "Header pages must not be empty."};
-	else if (rc != ot::st::ok)
-		return rc;
-	if ((rc = f(packet)) != ot::st::ok)
-		return rc;
-	rc = read_packet();
-	if (rc == ot::st::ok)
+	else if (rc != 1)
+		return {ot::st::libogg_error, "ogg_stream_packetout failed."};
+	ot::status f_rc = f(packet);
+	if (f_rc != ot::st::ok)
+		return f_rc;
+	/** \todo Ensure there are no partial packets left. */
+	rc = ogg_stream_packetpeek(&stream, nullptr);
+	if (rc == 1)
 		return {ot::st::error, "Unexpected second packet in header page."};
-	else if (rc != ot::st::end_of_page)
-		return rc;
+	else if (rc != 0 || ogg_stream_check(&stream) != 0)
+		return {ot::st::libogg_error, "ogg_stream_check failed."};
 	return ot::st::ok;
 }
 
