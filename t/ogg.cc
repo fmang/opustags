@@ -74,16 +74,10 @@ static void check_memory_ogg()
 		if (output == nullptr)
 			throw failure("could not open the output stream");
 		ot::ogg_writer writer(output.get());
-		rc = writer.prepare_stream(1234);
-		if (rc != ot::st::ok)
-			throw failure("could not prepare the stream for the first page");
-		writer.write_header_packet(first_packet);
+		writer.write_header_packet(1234, 0, first_packet);
 		if (rc != ot::st::ok)
 			throw failure("could not write the first packet");
-		writer.prepare_stream(1234);
-		if (rc != ot::st::ok)
-			throw failure("could not prepare the stream for the second page");
-		writer.write_header_packet(second_packet);
+		writer.write_header_packet(1234, 1, second_packet);
 		if (rc != ot::st::ok)
 			throw failure("could not write the second packet");
 		my_ogg_size = ftell(output.get());

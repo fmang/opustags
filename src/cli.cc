@@ -184,30 +184,26 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
  */
 static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::options &opt)
 {
-	int page_no;
-	for (page_no = 0;; ++page_no) {
-		// Read the next page.
+	/** \todo Become stream-aware instead of counting the pages of all streams together. */
+	int absolute_page_no; /*< page number in the physical stream, not logical */
+	for (absolute_page_no = 0;; ++absolute_page_no) {
 		ot::status rc = reader.read_page();
 		if (rc == ot::st::end_of_stream)
 			break;
 		else if (rc != ot::st::ok)
 			return rc;
-		// Short-circuit when the relevant packets have been read.
-		if (page_no >= 2 && writer) {
-			if ((rc = writer->write_page(reader.page)) != ot::st::ok)
-				return rc;
-			continue;
-		}
 		auto serialno = ogg_page_serialno(&reader.page);
-		if (writer && (rc = writer->prepare_stream(serialno)) != ot::st::ok)
-			return rc;
-		if (page_no == 0) { // Identification header
+		auto pageno = ogg_page_pageno(&reader.page);
+		if (absolute_page_no == 0) { // Identification header
 			rc = reader.read_header_packet(ot::validate_identification_header);
 			if (rc != ot::st::ok)
 				return rc;
-			if (writer && (rc = writer->write_header_packet(reader.packet)) != ot::st::ok)
-				return rc;
-		} else if (page_no == 1) { // Comment header
+			if (writer) {
+				rc = writer->write_header_packet(serialno, pageno, reader.packet);
+				if (rc != ot::st::ok)
+					return rc;
+			}
+		} else if (absolute_page_no == 1) { // Comment header
 			ot::opus_tags tags;
 			rc = reader.read_header_packet(
 				[&tags](ogg_packet& p) { return ot::parse_tags(p, tags); });
@@ -217,15 +213,19 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 				return rc;
 			if (writer) {
 				auto packet = ot::render_tags(tags);
-				if ((rc = writer->write_header_packet(packet)) != ot::st::ok)
+				rc = writer->write_header_packet(serialno, pageno, packet);
+				if (rc != ot::st::ok)
 					return rc;
 			} else {
 				ot::print_comments(tags.comments, stdout);
 				break;
 			}
-		} /** \todo Move the generic case here, after we've gotten rid of prepare_stream. */
+		} else {
+			if (writer && (rc = writer->write_page(reader.page)) != ot::st::ok)
+				return rc;
+		}
 	}
-	if (page_no < 1)
+	if (absolute_page_no < 1)
 		return {ot::st::error, "Expected at least 2 Ogg pages."};
 	return ot::st::ok;
 }

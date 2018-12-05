@@ -137,6 +137,17 @@ private:
  * \{
  */
 
+/** RAII-aware wrapper around libogg's ogg_stream_state. */
+struct ogg_stream : ogg_stream_state {
+	ogg_stream(int serialno) {
+		if (ogg_stream_init(this, serialno) != 0)
+			throw std::bad_alloc();
+	}
+	~ogg_stream() {
+		ogg_stream_clear(this);
+	}
+};
+
 /**
  * Ogg reader, combining a FILE input, an ogg_sync_state reading the pages, and an ogg_stream_state
  * extracting the packets from the page.
@@ -247,18 +258,16 @@ private:
 
 /**
  * An Ogg writer lets you write ogg_page objets to an output file, and assemble packets into pages.
+ *
+ * Its packet writing facility is limited to writing single-page header packets, because that's all
+ * we need for opustags.
  */
-class ogg_writer {
-public:
+struct ogg_writer {
 	/**
 	 * Initialize the writer with the given output file handle. The caller is responsible for
 	 * keeping the file handle alive, and to close it.
 	 */
-	ogg_writer(FILE* output);
-	/**
-	 * Clears the stream state and any internal memory. Does not close the output file.
-	 */
-	~ogg_writer();
+	explicit ogg_writer(FILE* output) : file(output) {}
 	/**
 	 * Write a whole Ogg page into the output stream.
 	 *
@@ -266,31 +275,10 @@ public:
 	 */
 	status write_page(const ogg_page& page);
 	/**
-	 * Prepare the stream with the given Ogg serial number.
-	 *
-	 * If the stream is already configured with the right serial number, it doesn't do anything
-	 * and is cheap to call.
-	 *
-	 * If the stream contains unflushed packets, they will be lost.
-	 *
-	 * \todo Merge into #write_header_packet.
-	 */
-	status prepare_stream(long serialno);
-	/**
 	 * Write a header packet and flush the page. Header packets are always placed alone on their
 	 * pages.
 	 */
-	status write_header_packet(ogg_packet& packet);
-private:
-	/**
-	 * The stream state receives packets and generates pages.
-	 *
-	 * In our specific use case, we only need it to put the OpusHead and OpusTags packets into
-	 * their own pages. The other pages are naively written to the output stream.
-	 *
-	 * \todo Merge into #write_header_packet.
-	 */
-	ogg_stream_state stream;
+	status write_header_packet(int serialno, int pageno, ogg_packet& packet);
 	/**
 	 * Output file. It should be opened in binary mode. We use it to write whole pages,
 	 * represented as a block of data and a length.

@@ -91,18 +91,6 @@ ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_pac
 	return ot::st::ok;
 }
 
-ot::ogg_writer::ogg_writer(FILE* output)
-	: file(output)
-{
-	if (ogg_stream_init(&stream, 0) != 0)
-		throw std::bad_alloc();
-}
-
-ot::ogg_writer::~ogg_writer()
-{
-	ogg_stream_clear(&stream);
-}
-
 ot::status ot::ogg_writer::write_page(const ogg_page& page)
 {
 	if (page.header_len < 0 || page.body_len < 0)
@@ -116,17 +104,11 @@ ot::status ot::ogg_writer::write_page(const ogg_page& page)
 	return st::ok;
 }
 
-ot::status ot::ogg_writer::prepare_stream(long serialno)
+ot::status ot::ogg_writer::write_header_packet(int serialno, int pageno, ogg_packet& packet)
 {
-	if (stream.serialno != serialno) {
-		if (ogg_stream_reset_serialno(&stream, serialno) != 0)
-			return {st::libogg_error, "ogg_stream_reset_serialno failed"};
-	}
-	return st::ok;
-}
-
-ot::status ot::ogg_writer::write_header_packet(ogg_packet& packet)
-{
+	ogg_stream stream(serialno);
+	stream.b_o_s = (pageno != 0);
+	stream.pageno = pageno;
 	if (ogg_stream_packetin(&stream, &packet) != 0)
 		return {ot::st::libogg_error, "ogg_stream_packetin failed"};
 	ogg_page page;
