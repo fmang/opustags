@@ -41,19 +41,20 @@ ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_pac
 		return {st::libogg_error, "ogg_stream_pagein failed."};
 	ogg_packet packet;
 	int rc = ogg_stream_packetout(&stream, &packet);
-	if (rc == 0 && ogg_stream_check(&stream) == 0)
-		return {ot::st::error, "Header pages must not be empty."};
-	else if (rc != 1)
+	if (ogg_stream_check(&stream) != 0 || rc == -1)
 		return {ot::st::libogg_error, "ogg_stream_packetout failed."};
+	else if (rc == 0)
+		return {ot::st::error, "Header pages must not be empty."};
 	ot::status f_rc = f(packet);
 	if (f_rc != ot::st::ok)
 		return f_rc;
-	/** \todo Ensure there are no partial packets left. */
-	rc = ogg_stream_packetpeek(&stream, nullptr);
-	if (rc == 1)
-		return {ot::st::error, "Unexpected second packet in header page."};
-	else if (rc != 0 || ogg_stream_check(&stream) != 0)
-		return {ot::st::libogg_error, "ogg_stream_check failed."};
+	/* Ensure that there are no other segments left in the packet using the lacing state of the
+	 * stream. These are the relevant variables, as far as I understood them:
+	 *  - lacing_vals: extensible array containing the lacing values of the segments,
+	 *  - lacing_fill: number of elements in lacing_vals (not the capacity),
+	 *  - lacing_returned: index of the next segment to be processed. */
+	if (stream.lacing_returned != stream.lacing_fill)
+		return {ot::st::error, "Header page contains more than a single packet."};
 	return ot::st::ok;
 }
 
