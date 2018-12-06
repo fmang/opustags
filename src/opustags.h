@@ -175,9 +175,9 @@ struct ogg_reader {
 	 */
 	status read_page();
 	/**
-	 * Read the single packet contained in a header page, and call the function f on it. This
-	 * function has no side effect, and calling it twice on the same page will read the same
-	 * packet again.
+	 * Read the single packet contained in the last page read, assuming it's a header page, and
+	 * call the function f on it. This function has no side effect, and calling it twice on the
+	 * same page will read the same packet again.
 	 *
 	 * It is currently limited to packets that fit on a single page, and should be later
 	 * extended to support packets spanning multiple pages.

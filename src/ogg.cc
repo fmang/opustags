@@ -35,6 +35,8 @@ ot::status ot::ogg_reader::read_page()
 
 ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_packet&)>& f)
 {
+	if (ogg_page_continued(&page))
+		return {ot::st::error, "Unexpected continued header page."};
 	ogg_stream stream(ogg_page_serialno(&page));
 	stream.pageno = ogg_page_pageno(&page);
 	if (ogg_stream_pagein(&stream, &page) != 0)
