@@ -136,22 +136,21 @@ private:
  */
 
 /** RAII-aware wrapper around libogg's ogg_stream_state. */
-struct ogg_stream : ogg_stream_state {
-	ogg_stream(int serialno) {
+struct ogg_logical_stream : ogg_stream_state {
+	ogg_logical_stream(int serialno) {
 		if (ogg_stream_init(this, serialno) != 0)
 			throw std::bad_alloc();
 	}
-	~ogg_stream() {
+	~ogg_logical_stream() {
 		ogg_stream_clear(this);
 	}
 };
 
 /**
- * Ogg reader, combining a FILE input, an ogg_sync_state reading the pages, and an ogg_stream_state
- * extracting the packets from the page.
+ * Ogg reader, combining a FILE input, an ogg_sync_state reading the pages.
  *
  * Call #read_page repeatedly until #status::end_of_stream to consume the stream, and use #page to
- * check its content. To extract its packets, call #read_packet until #status::end_of_packet.
+ * check its content.
  */
 struct ogg_reader {
 	/**

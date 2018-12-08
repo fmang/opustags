@@ -37,7 +37,7 @@ ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_pac
 {
 	if (ogg_page_continued(&page))
 		return {ot::st::error, "Unexpected continued header page."};
-	ogg_stream stream(ogg_page_serialno(&page));
+	ogg_logical_stream stream(ogg_page_serialno(&page));
 	stream.pageno = ogg_page_pageno(&page);
 	if (ogg_stream_pagein(&stream, &page) != 0)
 		return {st::libogg_error, "ogg_stream_pagein failed."};
@@ -75,7 +75,7 @@ ot::status ot::ogg_writer::write_page(const ogg_page& page)
 
 ot::status ot::ogg_writer::write_header_packet(int serialno, int pageno, ogg_packet& packet)
 {
-	ogg_stream stream(serialno);
+	ogg_logical_stream stream(serialno);
 	stream.b_o_s = (pageno != 0);
 	stream.pageno = pageno;
 	if (ogg_stream_packetin(&stream, &packet) != 0)
