@@ -184,6 +184,8 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
  */
 static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::options &opt)
 {
+	bool focused = false; /*< the stream on which we operate is defined */
+	int focused_serialno; /*< when focused, the serialno of the focused stream */
 	/** \todo Become stream-aware instead of counting the pages of all streams together. */
 	int absolute_page_no = -1; /*< page number in the physical stream, not logical */
 	for (;;) {
@@ -197,6 +199,12 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 		++absolute_page_no;
 		auto serialno = ogg_page_serialno(&reader.page);
 		auto pageno = ogg_page_pageno(&reader.page);
+		if (!focused) {
+			focused = true;
+			focused_serialno = serialno;
+		} else if (serialno != focused_serialno) {
+			return {ot::st::error, "Muxed streams are not supported yet."};
+		}
 		if (absolute_page_no == 0) { // Identification header
 			if (!ot::is_opus_stream(reader.page))
 				return {ot::st::error, "Not an Opus stream."};

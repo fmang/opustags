@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 28;
+use Test::More tests => 29;
 
 use Digest::MD5;
 use File::Basename;
@@ -190,3 +190,15 @@ my $data = slurp 'out.opus';
 is_deeply(opustags('-', '-o', '-', {in => $data, mode => ':raw'}), [$data, '', 0], 'read opus from stdin and write to stdout');
 
 unlink('out.opus');
+
+####################################################################################################
+# Test muxed streams
+
+system('ffmpeg -loglevel error -y -i gobble.opus -c copy -map 0:0 -map 0:0 -shortest muxed.ogg') == 0
+	or BAIL_OUT('could not create a muxed stream');
+
+is_deeply(opustags('muxed.ogg'), ['', <<'END_ERR', 256], 'muxed streams detection');
+error: Muxed streams are not supported yet.
+END_ERR
+
+unlink('muxed.ogg');
