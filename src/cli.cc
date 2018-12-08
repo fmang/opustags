@@ -185,15 +185,16 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::options &opt)
 {
 	/** \todo Become stream-aware instead of counting the pages of all streams together. */
-	int absolute_page_no; /*< page number in the physical stream, not logical */
-	for (absolute_page_no = 0;; ++absolute_page_no) {
+	int absolute_page_no = -1; /*< page number in the physical stream, not logical */
+	for (;;) {
 		ot::status rc = reader.next_page();
 		if (rc == ot::st::end_of_stream)
 			break;
-		else if (rc == ot::st::bad_stream && absolute_page_no == 0)
+		else if (rc == ot::st::bad_stream && absolute_page_no == -1)
 			return {ot::st::bad_stream, "Input is not a valid Ogg file."};
 		else if (rc != ot::st::ok)
 			return rc;
+		++absolute_page_no;
 		auto serialno = ogg_page_serialno(&reader.page);
 		auto pageno = ogg_page_pageno(&reader.page);
 		if (absolute_page_no == 0) { // Identification header
