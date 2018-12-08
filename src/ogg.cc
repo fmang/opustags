@@ -55,7 +55,9 @@ ot::status ot::ogg_reader::process_header_packet(const std::function<status(ogg_
 	if (ogg_stream_check(&stream) != 0 || rc == -1)
 		return {ot::st::libogg_error, "ogg_stream_packetout failed."};
 	else if (rc == 0)
-		return {ot::st::error, "Header pages must not be empty."};
+		return {ot::st::error,
+		        "Reading header packets spanning multiple pages are not yet supported. "
+		        "Please file an issue to make your wish known."};
 	ot::status f_rc = f(packet);
 	if (f_rc != ot::st::ok)
 		return f_rc;
@@ -99,7 +101,7 @@ ot::status ot::ogg_writer::write_header_packet(int serialno, int pageno, ogg_pac
 	}
 	if (ogg_stream_flush(&stream, &page) != 0)
 		return {ot::st::error,
-		        "Header packets spanning multiple pages are not yet supported. "
+		        "Writing header packets spanning multiple pages are not yet supported. "
 		        "Please file an issue to make your wish known."};
 	if (ogg_stream_check(&stream) != 0)
 		return {st::libogg_error, "ogg_stream_check failed"};
