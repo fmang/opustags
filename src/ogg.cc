@@ -23,7 +23,7 @@ bool ot::is_opus_stream(const ogg_page& identification_header)
 	return (memcmp(identification_header.body, "OpusHead", 8) == 0);
 }
 
-ot::status ot::ogg_reader::read_page()
+ot::status ot::ogg_reader::next_page()
 {
 	while (ogg_sync_pageout(&sync, &page) != 1) {
 		if (feof(file))
@@ -42,7 +42,7 @@ ot::status ot::ogg_reader::read_page()
 	return st::ok;
 }
 
-ot::status ot::ogg_reader::read_header_packet(const std::function<status(ogg_packet&)>& f)
+ot::status ot::ogg_reader::process_header_packet(const std::function<status(ogg_packet&)>& f)
 {
 	if (ogg_page_continued(&page))
 		return {ot::st::error, "Unexpected continued header page."};

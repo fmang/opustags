@@ -11,12 +11,12 @@ static void check_ref_ogg()
 
 	ot::ogg_reader reader(input.get());
 
-	ot::status rc = reader.read_page();
+	ot::status rc = reader.next_page();
 	if (rc != ot::st::ok)
 		throw failure("could not read the first page");
 	if (!ot::is_opus_stream(reader.page))
 		throw failure("failed to identify the stream as opus");
-	rc = reader.read_header_packet([](ogg_packet& p) {
+	rc = reader.process_header_packet([](ogg_packet& p) {
 		if (p.bytes != 19)
 			throw failure("unexpected length for the first packet");
 		return ot::st::ok;
@@ -24,10 +24,10 @@ static void check_ref_ogg()
 	if (rc != ot::st::ok)
 		throw failure("could not read the first packet");
 
-	rc = reader.read_page();
+	rc = reader.next_page();
 	if (rc != ot::st::ok)
 		throw failure("could not read the second page");
-	rc = reader.read_header_packet([](ogg_packet& p) {
+	rc = reader.process_header_packet([](ogg_packet& p) {
 		if (p.bytes != 62)
 			throw failure("unexpected length for the second packet");
 		return ot::st::ok;
@@ -36,11 +36,11 @@ static void check_ref_ogg()
 		throw failure("could not read the second packet");
 
 	while (!ogg_page_eos(&reader.page)) {
-		rc = reader.read_page();
+		rc = reader.next_page();
 		if (rc != ot::st::ok)
 			throw failure("failure reading a page");
 	}
-	rc = reader.read_page();
+	rc = reader.next_page();
 	if (rc != ot::st::end_of_stream)
 		throw failure("did not correctly detect the end of stream");
 }
@@ -90,27 +90,27 @@ static void check_memory_ogg()
 		if (input == nullptr)
 			throw failure("could not open the input stream");
 		ot::ogg_reader reader(input.get());
-		rc = reader.read_page();
+		rc = reader.next_page();
 		if (rc != ot::st::ok)
 			throw failure("could not read the first page");
-		rc = reader.read_header_packet([&first_packet](ogg_packet &p) {
+		rc = reader.process_header_packet([&first_packet](ogg_packet &p) {
 			if (!same_packet(p, first_packet))
 				throw failure("unexpected content in the first packet");
 			return ot::st::ok;
 		});
 		if (rc != ot::st::ok)
 			throw failure("could not read the first packet");
-		rc = reader.read_page();
+		rc = reader.next_page();
 		if (rc != ot::st::ok)
 			throw failure("could not read the second page");
-		rc = reader.read_header_packet([&second_packet](ogg_packet &p) {
+		rc = reader.process_header_packet([&second_packet](ogg_packet &p) {
 			if (!same_packet(p, second_packet))
 				throw failure("unexpected content in the second packet");
 			return ot::st::ok;
 		});
 		if (rc != ot::st::ok)
 			throw failure("could not read the second packet");
-		rc = reader.read_page();
+		rc = reader.next_page();
 		if (rc != ot::st::end_of_stream)
 			throw failure("unexpected third page");
 	}

@@ -187,7 +187,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 	/** \todo Become stream-aware instead of counting the pages of all streams together. */
 	int absolute_page_no; /*< page number in the physical stream, not logical */
 	for (absolute_page_no = 0;; ++absolute_page_no) {
-		ot::status rc = reader.read_page();
+		ot::status rc = reader.next_page();
 		if (rc == ot::st::end_of_stream)
 			break;
 		else if (rc != ot::st::ok)
@@ -204,7 +204,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			}
 		} else if (absolute_page_no == 1) { // Comment header
 			ot::opus_tags tags;
-			rc = reader.read_header_packet(
+			rc = reader.process_header_packet(
 				[&tags](ogg_packet& p) { return ot::parse_tags(p, tags); });
 			if (rc != ot::st::ok)
 				return rc;

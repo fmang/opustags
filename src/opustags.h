@@ -76,6 +76,10 @@ enum class st {
  *
  * All the statuses except #st::ok should be accompanied with a relevant error message, in case it
  * propagates back to the main function and is shown to the user.
+ *
+ * \todo Instead of being returned, it could be thrown. Most of the error handling code just let the
+ *       status bubble. When we're confident about RAII, we're good to go. When we migrate, let's
+ *       start from main and adapt the functions top-down.
  */
 struct status {
 	status(st code = st::ok) : code(code) {}
@@ -158,6 +162,10 @@ bool is_opus_stream(const ogg_page& identification_header);
  *
  * Call #read_page repeatedly until #status::end_of_stream to consume the stream, and use #page to
  * check its content.
+ *
+ * \todo This class could be made more intuitive if it acted like an iterator, to be used like
+ *       `for (ogg_page& page : ogg_reader(input))`, but the prerequisite for this is the ability to
+ *       throw an exception on error.
  */
 struct ogg_reader {
 	/**
@@ -179,7 +187,7 @@ struct ogg_reader {
 	 *
 	 * After the last page was read, return #status::end_of_stream.
 	 */
-	status read_page();
+	status next_page();
 	/**
 	 * Read the single packet contained in the last page read, assuming it's a header page, and
 	 * call the function f on it. This function has no side effect, and calling it twice on the
@@ -188,7 +196,7 @@ struct ogg_reader {
 	 * It is currently limited to packets that fit on a single page, and should be later
 	 * extended to support packets spanning multiple pages.
 	 */
-	status read_header_packet(const std::function<status(ogg_packet&)>& f);
+	status process_header_packet(const std::function<status(ogg_packet&)>& f);
 	/**
 	 * Current page from the sync state.
 	 *
