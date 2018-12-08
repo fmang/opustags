@@ -147,6 +147,13 @@ struct ogg_logical_stream : ogg_stream_state {
 };
 
 /**
+ * Identify the codec of a logical stream based on the first bytes of the first packet of the first
+ * page. For Opus, the first 8 bytes must be OpusHead. Any other signature is assumed to be another
+ * codec.
+ */
+bool is_opus_stream(const ogg_page& identification_header);
+
+/**
  * Ogg reader, combining a FILE input, an ogg_sync_state reading the pages.
  *
  * Call #read_page repeatedly until #status::end_of_stream to consume the stream, and use #page to

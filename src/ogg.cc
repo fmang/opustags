@@ -14,6 +14,15 @@
 
 using namespace std::literals::string_literals;
 
+bool ot::is_opus_stream(const ogg_page& identification_header)
+{
+	if (ogg_page_bos(&identification_header) == 0)
+		return false;
+	if (identification_header.body_len < 8)
+		return false;
+	return (memcmp(identification_header.body, "OpusHead", 8) == 0);
+}
+
 ot::status ot::ogg_reader::read_page()
 {
 	while (ogg_sync_pageout(&sync, &page) != 1) {
