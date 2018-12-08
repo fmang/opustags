@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 27;
+use Test::More tests => 28;
 
 use Digest::MD5;
 use File::Basename;
@@ -71,6 +71,10 @@ is_deeply(opustags('-h'), [$expected_help, '', 0], '-h displays the help message
 
 is_deeply(opustags('--derp'), ['', <<"EOF", 256], 'unrecognized option shows an error');
 error: Unrecognized option '--derp'.
+EOF
+
+is_deeply(opustags('../opustags'), ['', <<"EOF", 256], 'not an Ogg stream');
+error: Input is not a valid Ogg file.
 EOF
 
 ####################################################################################################

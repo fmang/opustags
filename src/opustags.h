@@ -56,6 +56,7 @@ enum class st {
 	standard_error, /**< Error raised by the C standard library. */
 	int_overflow,
 	/* Ogg */
+	bad_stream,
 	end_of_stream,
 	libogg_error,
 	/* Opus */

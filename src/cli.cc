@@ -190,6 +190,8 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 		ot::status rc = reader.next_page();
 		if (rc == ot::st::end_of_stream)
 			break;
+		else if (rc == ot::st::bad_stream && absolute_page_no == 0)
+			return {ot::st::bad_stream, "Input is not a valid Ogg file."};
 		else if (rc != ot::st::ok)
 			return rc;
 		auto serialno = ogg_page_serialno(&reader.page);

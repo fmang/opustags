@@ -25,19 +25,25 @@ bool ot::is_opus_stream(const ogg_page& identification_header)
 
 ot::status ot::ogg_reader::next_page()
 {
-	while (ogg_sync_pageout(&sync, &page) != 1) {
-		if (feof(file))
-			return {st::end_of_stream, "End of stream was reached"};
+	int rc;
+	while ((rc = ogg_sync_pageout(&sync, &page)) != 1) {
+		if (rc == -1)
+			return {st::bad_stream, "Unsynced data in stream."};
+		if (ogg_sync_check(&sync) != 0)
+			return {st::libogg_error, "ogg_sync_check signalled an error."};
+		if (feof(file)) {
+			if (sync.fill != sync.returned)
+				return {st::bad_stream, "Unsynced data at end of stream."};
+			return {st::end_of_stream, "End of stream was reached."};
+		}
 		char* buf = ogg_sync_buffer(&sync, 65536);
 		if (buf == nullptr)
-			return {st::libogg_error, "ogg_sync_buffer failed"};
+			return {st::libogg_error, "ogg_sync_buffer failed."};
 		size_t len = fread(buf, 1, 65536, file);
 		if (ferror(file))
 			return {st::standard_error, "fread error: "s + strerror(errno)};
 		if (ogg_sync_wrote(&sync, len) != 0)
-			return {st::libogg_error, "ogg_sync_wrote failed"};
-		if (ogg_sync_check(&sync) != 0)
-			return {st::libogg_error, "ogg_sync_check failed"};
+			return {st::libogg_error, "ogg_sync_wrote failed."};
 	}
 	return st::ok;
 }

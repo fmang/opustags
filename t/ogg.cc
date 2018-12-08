@@ -116,6 +116,16 @@ static void check_memory_ogg()
 	}
 }
 
+void check_bad_stream()
+{
+	auto err_msg = "did not detect the stream is not an ogg stream";
+	ot::file input = fmemopen((void*) err_msg, 20, "r");
+	ot::ogg_reader reader(input.get());
+	ot::status rc = reader.next_page();
+	if (rc != ot::st::bad_stream)
+		throw failure(err_msg);
+}
+
 void check_identification()
 {
 	auto good_header = (unsigned char*)
@@ -151,9 +161,10 @@ void check_identification()
 
 int main(int argc, char **argv)
 {
-	std::cout << "1..3\n";
+	std::cout << "1..4\n";
 	run(check_ref_ogg, "check a reference ogg stream");
 	run(check_memory_ogg, "build and check a fresh stream");
+	run(check_bad_stream, "read a non-ogg stream");
 	run(check_identification, "stream identification");
 	return 0;
 }
