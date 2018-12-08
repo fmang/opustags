@@ -304,15 +304,6 @@ struct opus_tags {
 };
 
 /**
- * Validate the content of the first packet of an Ogg stream to ensure it's a valid OpusHead.
- *
- * Returns #ot::status::ok on success, #ot::status::bad_identification_header on error.
- *
- * \todo Replace with a function "identify_stream(ogg_page&)" in module ogg.
- */
-status validate_identification_header(const ogg_packet& packet);
-
-/**
  * Read the given OpusTags packet and extract its content into an opus_tags object.
  *
  * On error, the tags object is left unchanged.

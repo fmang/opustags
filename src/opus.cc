@@ -33,20 +33,6 @@
 #endif
 
 /**
- * \todo Validate more properties of the packet, like the sequence number.
- */
-ot::status ot::validate_identification_header(const ogg_packet& packet)
-{
-	if (packet.bytes < 8)
-		return {ot::st::cut_magic_number,
-		        "Identification header too short for the magic number"};
-	if (memcmp(packet.packet, "OpusHead", 8) != 0)
-		return {ot::st::bad_magic_number,
-		        "Identification header did not start with OpusHead"};
-	return ot::st::ok;
-}
-
-/**
  * \todo See if the packet's data could be casted more nicely into a string.
  */
 ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)

@@ -195,9 +195,8 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 		auto serialno = ogg_page_serialno(&reader.page);
 		auto pageno = ogg_page_pageno(&reader.page);
 		if (absolute_page_no == 0) { // Identification header
-			rc = reader.read_header_packet(ot::validate_identification_header);
-			if (rc != ot::st::ok)
-				return rc;
+			if (!ot::is_opus_stream(reader.page))
+				return {ot::st::error, "Not an Opus stream."};
 			if (writer) {
 				rc = writer->write_page(reader.page);
 				if (rc != ot::st::ok)
