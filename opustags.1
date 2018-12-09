@@ -1,6 +1,6 @@
-.TH opustags 1 "November 2018" "@PROJECT_NAME@ @PROJECT_VERSION@"
+.TH opustags 1 "December 2018" "@PROJECT_NAME@ @PROJECT_VERSION@"
 .SH NAME
-opustags \- Opus comment editor
+opustags \- Ogg Opus tag editor
 .SH SYNOPSIS
 .B opustags --help
 .br
@@ -14,7 +14,7 @@ opustags \- Opus comment editor
 .I OUTPUT INPUT
 .SH DESCRIPTION
 .PP
-\fBopustags\fP can read and edit the comment header of an Opus file.
+\fBopustags\fP can read and edit the comment header of an Ogg Opus file.
 It basically has two modes: read-only, and read-write for tag editing.
 .PP
 In read-only mode, only the beginning of \fIINPUT\fP is read, and the tags are
@@ -40,9 +40,12 @@ If you want to replace all the tags, you can use the \fB--set-all\fP option whic
 The format is the same as the one used for output: newline-separated \fIFIELD=Value\fP assignment.
 All the previously existing tags as deleted.
 .PP
-\fBWarning:\fP the Opus format specifications requires tags to be encoded in
-\fBUTF-8\fP. This tool ignores the system locale, assuming the encoding is
-set to UTF-8, and assume that tags are already encoded in UTF-8.
+The Opus format specifications requires that tags are encoded in UTF-8, so that's the only encoding
+opustags supports. If your system encoding is different, the tags are automatically converted to and
+from your system locale. When the conversion is lossy, the incompatible characters are
+transliterated and a warning is displayed. Even if you edit an Opus file whose tags contains
+characters unsupported by your system encoding, the original UTF-8 values will be preserved for the
+tags you don't explictly modify.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help

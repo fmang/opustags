@@ -5,6 +5,7 @@
  *
  * Let's have a quick tour around. The project is split into the following modules:
  *
+ * - The system module provides a few generic tools for interating with the system.
  * - The ogg module reads and writes Ogg files, letting you manipulate Ogg pages and packets.
  * - The opus module parses the contents of Ogg packets according to the Opus specifications.
  * - The cli module implements the main logic of the program.
@@ -167,7 +168,11 @@ private:
  * \{
  */
 
-/** RAII-aware wrapper around libogg's ogg_stream_state. */
+/**
+ * RAII-aware wrapper around libogg's ogg_stream_state. Though it handles automatic destruction, it
+ * does not prevent copying or implement move semantics correctly, so it's your responsibility to
+ * ensure these operations don't happen.
+ */
 struct ogg_logical_stream : ogg_stream_state {
 	ogg_logical_stream(int serialno) {
 		if (ogg_stream_init(this, serialno) != 0)
@@ -313,16 +318,16 @@ private:
 struct opus_tags {
 	/**
 	 * OpusTags packets begin with a vendor string, meant to identify the implementation of the
-	 * encoder. It should be an arbitrary UTF-8 string.
+	 * encoder. It is expected to be an arbitrary UTF-8 string.
 	 */
 	std::string vendor;
 	/**
-	 * Comments. These are a list of string following the NAME=Value format.  A comment may also
-	 * be called a field, or a tag.
+	 * Comments are strings in the NAME=Value format. A comment may also be called a field, or a
+	 * tag.
 	 *
-	 * The field name in vorbis comment is case-insensitive and ASCII, while the value can be
-	 * any valid UTF-8 string. The specification is not too clear for Opus, but let's assume
-	 * it's the same.
+	 * The field name in vorbis comments is usually case-insensitive and ASCII, while the value
+	 * can be any valid UTF-8 string. The specification is not too clear for Opus, but let's
+	 * assume it's the same.
 	 */
 	std::list<std::string> comments;
 	/**
@@ -353,6 +358,10 @@ dynamic_ogg_packet render_tags(const opus_tags& tags);
 
 /**
  * Remove all the comments whose field name is equal to the special one, case-sensitive.
+ *
+ * \todo Become case-insensitive.
+ * \todo Move to module cli.
+ * \todo Accept fields like X=Y to remove only comments X=Y, instead of all X.
  */
 void delete_comments(opus_tags& tags, const char* field_name);
 
@@ -443,9 +452,10 @@ struct options {
 status parse_options(int argc, char** argv, options& opt);
 
 /**
- * Print all the comments, separated by line breaks. Since a comment may
- * contain line breaks, this output is not completely reliable, but it fits
- * most cases.
+ * Print all the comments, separated by line breaks. Since a comment may contain line breaks, this
+ * output is not completely reliable, but it fits most cases.
+ *
+ * The comments must be encoded in UTF-8, and are converted to the system locale when printed.
  *
  * The output generated is meant to be parseable by #ot::read_tags.
  */
@@ -453,6 +463,8 @@ void print_comments(const std::list<std::string>& comments, FILE* output);
 
 /**
  * Parse the comments outputted by #ot::print_comments.
+ *
+ * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
  */
 std::list<std::string> read_comments(FILE* input);
 
