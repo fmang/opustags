@@ -400,6 +400,8 @@ struct options {
 	 * #to_add takes precedence over #to_delete, so if the same comment appears in both lists,
 	 * the one in #to_delete applies only to the previously existing tags.
 	 *
+	 * The strings are stored in UTF-8.
+	 *
 	 * \todo Consider making it case-insensitive.
 	 * \todo Allow values like `ARTIST=x` to delete only the ARTIST comment whose value is x.
 	 *
@@ -415,6 +417,8 @@ struct options {
 	/**
 	 * List of comments to add, in the current system encoding. For exemple `TITLE=a b c`. They
 	 * must be valid.
+	 *
+	 * The strings are stored in UTF-8.
 	 *
 	 * Options: --add, --set, --set-all
 	 */

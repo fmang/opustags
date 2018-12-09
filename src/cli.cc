@@ -56,6 +56,9 @@ static struct option getopt_options[] = {
 
 ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 {
+	static ot::encoding_converter to_utf8("", "UTF-8");
+	std::string utf8;
+	ot::status rc;
 	opt = {};
 	if (argc == 1)
 		return {st::bad_arguments, "No arguments specified. Use -h for help."};
@@ -81,17 +84,23 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 			opt.overwrite = true;
 			break;
 		case 'd':
-			if (strchr(optarg, '=') != nullptr)
+			rc = to_utf8(optarg, strlen(optarg), utf8);
+			if (rc != ot::st::ok)
+				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
+			if (strchr(utf8.c_str(), '=') != nullptr)
 				return {st::bad_arguments, "Invalid field name '"s + optarg + "'."};
-			opt.to_delete.emplace_back(optarg);
+			opt.to_delete.emplace_back(std::move(utf8));
 			break;
 		case 'a':
 		case 's':
-			if (strchr(optarg, '=') == NULL)
+			rc = to_utf8(optarg, strlen(optarg), utf8);
+			if (rc != ot::st::ok)
+				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
+			if (strchr(utf8.c_str(), '=') == NULL)
 				return {st::bad_arguments, "Invalid comment '"s + optarg + "'."};
-			opt.to_add.emplace_back(optarg);
 			if (c == 's')
-				opt.to_delete.emplace_back(optarg);
+				opt.to_delete.emplace_back(utf8);
+			opt.to_add.emplace_back(std::move(utf8));
 			break;
 		case 'S':
 			opt.set_all = true;
