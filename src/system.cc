@@ -50,3 +50,47 @@ void ot::partial_file::abort()
 	file.reset();
 	remove(temporary_name.c_str());
 }
+
+ot::encoding_converter::encoding_converter(const char* from, const char* to)
+{
+	cd = iconv_open(to, from);
+	if (cd == (iconv_t) -1)
+		throw std::bad_alloc();
+}
+
+ot::encoding_converter::~encoding_converter()
+{
+	iconv_close(cd);
+}
+
+ot::status ot::encoding_converter::operator()(const std::string& in, std::string& out)
+{
+	iconv(cd, nullptr, nullptr, nullptr, nullptr);
+	out.clear();
+	out.reserve(in.size());
+	char* in_cursor = const_cast<char*>(in.data());
+	size_t in_left = in.size();
+	constexpr size_t chunk_size = 1024;
+	char chunk[chunk_size];
+	bool lost_information = false;
+	for (;;) {
+		char *out_cursor = chunk;
+		size_t out_left = chunk_size;
+		size_t rc = iconv(cd, &in_cursor, &in_left, &out_cursor, &out_left);
+		if (rc == (size_t) -1 && errno != E2BIG)
+			return {ot::st::badly_encoded,
+			        "Could not convert string '" + in + "': " + strerror(errno)};
+		if (rc != 0)
+			lost_information = true;
+		out.append(chunk, out_cursor - chunk);
+		if (in_cursor == nullptr)
+			break;
+		else if (in_left == 0)
+			in_cursor = nullptr;
+	}
+	if (lost_information)
+		return {ot::st::information_lost,
+		        "Some characters could not be converted into the target encoding "
+		        "in string '" + in + "'."};
+	return ot::st::ok;
+}

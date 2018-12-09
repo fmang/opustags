@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <iconv.h>
 #include <ogg/ogg.h>
 #include <stdio.h>
 
@@ -55,6 +56,9 @@ enum class st {
 	error,
 	standard_error, /**< Error raised by the C standard library. */
 	int_overflow,
+	/* System */
+	badly_encoded,
+	information_lost,
 	/* Ogg */
 	bad_stream,
 	end_of_stream,
@@ -131,6 +135,27 @@ private:
 	std::string temporary_name;
 	std::string final_name;
 	ot::file file;
+};
+
+/** C++ wrapper for iconv. */
+class encoding_converter {
+public:
+	/**
+	 * Allocate the iconv conversion state, initializing the given source and destination
+	 * character encodings. If it's okay to have some information lost, make sure `to` ends with
+	 * "//TRANSLIT", otherwise the conversion will fail when a character cannot be represented
+	 * in the target encoding. See the documentation of iconv_open for details.
+	 */
+	encoding_converter(const char* from, const char* to);
+	~encoding_converter();
+	/**
+	 * Convert text using iconv. If the input sequence is invalid, return #st::badly_encoded and
+	 * abort the processing. If some character could not be converted perfectly, keep converting
+	 * the string and finally return #st::information_lost.
+	 */
+	status operator()(const std::string& in, std::string& out);
+private:
+	iconv_t cd; /**< conversion descriptor */
 };
 
 /** \} */

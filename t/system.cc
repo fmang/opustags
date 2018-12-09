@@ -36,9 +36,31 @@ void check_partial_files()
 		throw failure("could not remove the result file");
 }
 
+void check_converter()
+{
+	const char* ephemere_iso = "\xc9\x70\x68\xe9\x6d\xe8\x72\x65";
+	ot::encoding_converter to_utf8("ISO-8859-1", "UTF-8");
+	std::string out;
+	ot::status rc = to_utf8(ephemere_iso, out);
+	if (rc != ot::st::ok || out != "Éphémère")
+		throw failure("conversion to UTF-8 should have worked");
+
+	ot::encoding_converter from_utf8("UTF-8", "ISO-8859-1//TRANSLIT");
+	rc = from_utf8("Éphémère", out);
+	if (rc != ot::st::ok || out != ephemere_iso)
+		throw failure("conversion from UTF-8 should have worked");
+	rc = from_utf8("\xFF\xFF", out);
+	if (rc != ot::st::badly_encoded)
+		throw failure("conversion from bad UTF-8 should have failed");
+	rc = from_utf8("cat 猫 chat", out);
+	if (rc != ot::st::information_lost || out != "cat ? chat")
+		throw failure("lossy conversion from UTF-8 should have worked");
+}
+
 int main(int argc, char **argv)
 {
-	std::cout << "1..1\n";
+	std::cout << "1..2\n";
 	run(check_partial_files, "test partial files");
+	run(check_converter, "test encoding converter");
 	return 0;
 }
