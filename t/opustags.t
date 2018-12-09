@@ -1,10 +1,14 @@
 #!/usr/bin/env perl
 
+# This test assumes the following system environment:
+#  - The current locale is UTF-8.
+#  - Locale fr_FR.ISO-8859-1 is available.
+
 use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 29;
+use Test::More tests => 33;
 
 use Digest::MD5;
 use File::Basename;
@@ -202,3 +206,36 @@ error: Muxed streams are not supported yet.
 END_ERR
 
 unlink('muxed.ogg');
+
+####################################################################################################
+# Locale
+
+opustags(qw(gobble.opus -a TITLE=七面鳥 -a ARTIST=éàç -o out.opus -y));
+
+$ENV{LC_ALL} = 'fr_FR.ISO-8859-1';
+
+is_deeply(opustags(qw(-S out.opus), {in => <<"END_IN", mode => ':raw'}), [<<"END_OUT", '', 0], 'set all in ISO-8859-1');
+T=\xef\xef\xf6
+END_IN
+T=\xef\xef\xf6
+END_OUT
+
+is_deeply(opustags('-i', 'out.opus', "--add=I=\xf9\xce", {mode => ':raw'}), ['', '', 0], 'write tags in ISO-8859-1');
+
+is_deeply(opustags('out.opus', {mode => ':raw'}), [<<"END_OUT", <<'END_ERR', 0], 'read tags in ISO-8859-1');
+encoder=Lavc58.18.100 libopus
+TITLE=???
+ARTIST=\xe9\xe0\xe7
+I=\xf9\xce
+END_OUT
+warning: Some tags have been transliterated to your system encoding.
+END_ERR
+
+$ENV{LC_ALL} = '';
+
+is_deeply(opustags('out.opus'), [<<"END_OUT", '', 0], 'read tags in UTF-8');
+encoder=Lavc58.18.100 libopus
+TITLE=七面鳥
+ARTIST=éàç
+I=ùÎ
+END_OUT
