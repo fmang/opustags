@@ -133,14 +133,34 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 {
+	static ot::encoding_converter from_utf8("UTF-8", "//TRANSLIT");
+	std::string local;
+	bool info_lost = false;
+	bool bad_comments = false;
 	for (const std::string& comment : comments) {
-		fwrite(comment.data(), 1, comment.size(), output);
-		puts("");
+		ot::status rc = from_utf8(comment, local);
+		if (rc == ot::st::information_lost) {
+			info_lost = true;
+		} else if (rc != ot::st::ok) {
+			bad_comments = true;
+			continue;
+		}
+		fwrite(local.data(), 1, local.size(), output);
+		putchar('\n');
 	}
+	if (info_lost)
+		fputs("warning: Some tags have been transliterated to your system encoding.\n", stderr);
+	if (bad_comments)
+		fputs("warning: Some tags are not properly encoded and have not been displayed.\n", stderr);
 }
 
+/**
+ * \todo Report errors to the caller, so the program exits with a failure instead of skipping tags.
+ *       This could wait until we throw ot::status instead of returning them.
+ */
 std::list<std::string> ot::read_comments(FILE* input)
 {
+	static ot::encoding_converter to_utf8("", "UTF-8");
 	std::list<std::string> comments;
 	char* line = nullptr;
 	size_t buflen = 0;
@@ -154,7 +174,12 @@ std::list<std::string> ot::read_comments(FILE* input)
 			fputs("warning: skipping malformed tag\n", stderr);
 			continue;
 		}
-		comments.emplace_back(line, nread);
+		std::string utf8;
+		ot::status rc = to_utf8(line, nread, utf8);
+		if (rc == ot::st::ok)
+			comments.emplace_back(std::move(utf8));
+		else
+			fprintf(stderr, "warning: Skipping tag with UTF-8 conversion error: %s\n", rc.message.c_str());
 	}
 	free(line);
 	return comments;

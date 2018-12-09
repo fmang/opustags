@@ -7,12 +7,15 @@
 
 #include <opustags.h>
 
+#include <locale.h>
+
 /**
  * Main function of the opustags binary.
  *
  * Does practically nothing but call the cli module.
  */
 int main(int argc, char** argv) {
+	setlocale(LC_ALL, "");
 	ot::options opt;
 	ot::status rc = ot::parse_options(argc, argv, opt);
 	if (rc == ot::st::ok)
