@@ -52,7 +52,7 @@ void check_good_arguments()
 
 	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z"});
 	if (opt.path_in != "x" || opt.path_out != "y" || !opt.delete_all || opt.overwrite ||
-	    opt.to_delete.size() != 1 || opt.to_delete[0] != "X=Y Z" ||
+	    opt.to_delete.size() != 1 || opt.to_delete[0] != "X" ||
 	    opt.to_add.size() != 1 || opt.to_add[0] != "X=Y Z")
 		throw failure("unexpected option parsing result for case #1");
 
@@ -75,8 +75,8 @@ void check_bad_arguments()
 	error_case({"opustags"}, "No arguments specified. Use -h for help.", "no arguments");
 	error_case({"opustags", "--output", ""}, "Output file path cannot be empty.", "empty output path");
 	error_case({"opustags", "--delete", "X="}, "Invalid field name 'X='.", "bad field name for -d");
-	error_case({"opustags", "-a", "X"}, "Invalid comment 'X'.", "bad comment for -a");
-	error_case({"opustags", "--set", "X"}, "Invalid comment 'X'.", "bad comment for --set");
+	error_case({"opustags", "-a", "X"}, "Comment does not contain an equal sign: X.", "bad comment for -a");
+	error_case({"opustags", "--set", "X"}, "Comment does not contain an equal sign: X.", "bad comment for --set");
 	error_case({"opustags", "-a"}, "Missing value for option '-a'.", "short option with missing value");
 	error_case({"opustags", "--add"}, "Missing value for option '--add'.", "long option with missing value");
 	error_case({"opustags", "-x"}, "Unrecognized option '-x'.", "unrecognized short option");

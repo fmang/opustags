@@ -58,6 +58,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	std::string utf8;
+	std::string::size_type equal;
 	ot::status rc;
 	opt = {};
 	if (argc == 1)
@@ -96,10 +97,10 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 			rc = to_utf8(optarg, strlen(optarg), utf8);
 			if (rc != ot::st::ok)
 				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
-			if (strchr(utf8.c_str(), '=') == NULL)
-				return {st::bad_arguments, "Invalid comment '"s + optarg + "'."};
+			if ((equal = utf8.find('=')) == std::string::npos)
+				return {st::bad_arguments, "Comment does not contain an equal sign: "s + optarg + "."};
 			if (c == 's')
-				opt.to_delete.emplace_back(utf8);
+				opt.to_delete.emplace_back(utf8.substr(0, equal));
 			opt.to_add.emplace_back(std::move(utf8));
 			break;
 		case 'S':
