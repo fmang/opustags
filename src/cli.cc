@@ -176,14 +176,10 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
-/**
- * \todo Report errors to the caller, so the program exits with a failure instead of skipping tags.
- *       This could wait until we throw ot::status instead of returning them.
- */
-std::list<std::string> ot::read_comments(FILE* input)
+ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
-	std::list<std::string> comments;
+	comments.clear();
 	char* line = nullptr;
 	size_t buflen = 0;
 	ssize_t nread;
@@ -193,29 +189,33 @@ std::list<std::string> ot::read_comments(FILE* input)
 		if (nread == 0)
 			continue;
 		if (memchr(line, '=', nread) == nullptr) {
-			fputs("warning: skipping malformed tag\n", stderr);
-			continue;
+			ot::status rc = {ot::st::error, "Malformed tag: " + std::string(line, nread)};
+			free(line);
+			return rc;
 		}
 		std::string utf8;
 		ot::status rc = to_utf8(line, nread, utf8);
 		if (rc == ot::st::ok)
 			comments.emplace_back(std::move(utf8));
 		else
-			fprintf(stderr, "warning: Skipping tag with UTF-8 conversion error: %s\n", rc.message.c_str());
+			return {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
 	}
 	free(line);
-	return comments;
+	return ot::st::ok;
 }
 
 /** Apply the modifications requested by the user to the opustags packet. */
 static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
-	if (opt.set_all)
-		tags.comments = ot::read_comments(stdin);
-	else if (opt.delete_all)
+	if (opt.set_all) {
+		auto rc = ot::read_comments(stdin, tags.comments);
+		if (rc != ot::st::ok)
+			return rc;
+	} else if (opt.delete_all) {
 		tags.comments.clear();
-	else for (const std::string& name : opt.to_delete)
+	} else for (const std::string& name : opt.to_delete) {
 		ot::delete_comments(tags, name.c_str());
+	}
 
 	for (const std::string& comment : opt.to_add)
 		tags.comments.emplace_back(comment);

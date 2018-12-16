@@ -3,19 +3,36 @@
 
 #include <string.h>
 
-const char *user_comments = R"raw(
-TITLE=a b c
-
-ARTIST=X
-Artist=Y)raw";
+using namespace std::literals::string_literals;
 
 void check_read_comments()
 {
-	ot::file input = fmemopen(const_cast<char*>(user_comments), strlen(user_comments), "r");
-	auto comments = ot::read_comments(input.get());
-	auto&& expected = {"TITLE=a b c", "ARTIST=X", "Artist=Y"};
-	if (!std::equal(comments.begin(), comments.end(), expected.begin(), expected.end()))
-		throw failure("parsed user comments did not match expectations");
+	std::list<std::string> comments;
+	ot::status rc;
+	{
+		std::string txt = "TITLE=a b c\n\nARTIST=X\nArtist=Y\n"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		rc = ot::read_comments(input.get(), comments);
+		if (rc != ot::st::ok)
+			throw failure("could not read comments");
+		auto&& expected = {"TITLE=a b c", "ARTIST=X", "Artist=Y"};
+		if (!std::equal(comments.begin(), comments.end(), expected.begin(), expected.end()))
+			throw failure("parsed user comments did not match expectations");
+	}
+	{
+		std::string txt = "CORRUPTED=\xFF\xFF\n"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		rc = ot::read_comments(input.get(), comments);
+		if (rc != ot::st::badly_encoded)
+			throw failure("did not get the expected error reading corrupted data");
+	}
+	{
+		std::string txt = "MALFORMED\n"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		rc = ot::read_comments(input.get(), comments);
+		if (rc != ot::st::error)
+			throw failure("did not get the expected error reading malformed comments");
+	}
 }
 
 void check_good_arguments()

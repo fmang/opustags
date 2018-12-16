@@ -466,7 +466,7 @@ void print_comments(const std::list<std::string>& comments, FILE* output);
  *
  * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
  */
-std::list<std::string> read_comments(FILE* input);
+status read_comments(FILE* input, std::list<std::string>& comments);
 
 /**
  * Main entry point to the opustags program, and pretty much the same as calling opustags from the

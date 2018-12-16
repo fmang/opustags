@@ -175,18 +175,12 @@ A=B
 X=Z
 END_OUT
 
-is_deeply(opustags(qw(out.opus -S), {in => <<'END_IN'}), [<<'END_OUT', <<'END_ERR', 0], 'set all with bad tags');
+is_deeply(opustags(qw(out.opus -S), {in => <<'END_IN'}), [<<'END_OUT', <<'END_ERR', 256], 'set all with bad tags');
 whatever
-
-# thing
-!
 wrong=yes
 END_IN
-wrong=yes
 END_OUT
-warning: skipping malformed tag
-warning: skipping malformed tag
-warning: skipping malformed tag
+error: Malformed tag: whatever
 END_ERR
 
 sub slurp {
