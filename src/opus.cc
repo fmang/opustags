@@ -121,16 +121,3 @@ ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)
 
 	return op;
 }
-
-void ot::delete_comments(opus_tags& tags, const std::string& field_name)
-{
-	auto field_len = field_name.size();
-	auto it = tags.comments.begin(), end = tags.comments.end();
-	while (it != end) {
-		auto current = it++;
-		if (current->size() > field_len + 1 &&
-		    (*current)[field_len] == '=' &&
-		    strncmp(current->data(), field_name.data(), field_len) == 0)
-			tags.comments.erase(current);
-	}
-}

@@ -205,6 +205,19 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 	return ot::st::ok;
 }
 
+void ot::delete_comments(std::list<std::string>& comments, const std::string& field_name)
+{
+	auto field_len = field_name.size();
+	auto it = comments.begin(), end = comments.end();
+	while (it != end) {
+		auto current = it++;
+		if (current->size() > field_len + 1 &&
+		    (*current)[field_len] == '=' &&
+		    strncmp(current->data(), field_name.data(), field_len) == 0)
+			comments.erase(current);
+	}
+}
+
 /** Apply the modifications requested by the user to the opustags packet. */
 static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
@@ -215,7 +228,7 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 	} else if (opt.delete_all) {
 		tags.comments.clear();
 	} else for (const std::string& name : opt.to_delete) {
-		ot::delete_comments(tags, name.c_str());
+		ot::delete_comments(tags.comments, name.c_str());
 	}
 
 	for (const std::string& comment : opt.to_add)

@@ -356,15 +356,6 @@ status parse_tags(const ogg_packet& packet, opus_tags& tags);
  */
 dynamic_ogg_packet render_tags(const opus_tags& tags);
 
-/**
- * Remove all the comments whose field name is equal to the special one, case-sensitive.
- *
- * \todo Become case-insensitive.
- * \todo Move to module cli.
- * \todo Accept fields like X=Y to remove only comments X=Y, instead of all X.
- */
-void delete_comments(opus_tags& tags, const std::string& field_name);
-
 /** \} */
 
 /***********************************************************************************************//**
@@ -467,6 +458,14 @@ void print_comments(const std::list<std::string>& comments, FILE* output);
  * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
  */
 status read_comments(FILE* input, std::list<std::string>& comments);
+
+/**
+ * Remove all the comments whose field name is equal to the special one, case-sensitive.
+ *
+ * \todo Become case-insensitive.
+ * \todo Accept fields like X=Y to remove only comments X=Y, instead of all X.
+ */
+void delete_comments(std::list<std::string>& comments, const std::string& field_name);
 
 /**
  * Main entry point to the opustags program, and pretty much the same as calling opustags from the
