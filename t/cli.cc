@@ -104,7 +104,7 @@ static void check_delete_comments()
 		throw failure("should not have deleted anything");
 
 	ot::delete_comments(edited, "Title");
-	C expected = {"TITLE=X", "ARTIST=A", "artIst=B"};
+	C expected = {"ARTIST=A", "artIst=B"};
 	if (!std::equal(edited.begin(), edited.end(), expected.begin(), expected.end()))
 		throw failure("did not delete Title correctly");
 }

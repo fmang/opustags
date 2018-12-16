@@ -462,7 +462,6 @@ status read_comments(FILE* input, std::list<std::string>& comments);
 /**
  * Remove all the comments whose field name is equal to the special one, case-sensitive.
  *
- * \todo Become case-insensitive.
  * \todo Accept fields like X=Y to remove only comments X=Y, instead of all X.
  */
 void delete_comments(std::list<std::string>& comments, const std::string& field_name);

@@ -68,8 +68,8 @@ Use \fB-y\fP to allow overwriting.
 Note that this option is not needed when the output is a special file like \fI/dev/null\fP.
 .TP
 .B \-d, \-\-delete \fIFIELD\fP
-Delete all the tags whose field name is \fIFIELD\fP. They may be several one of them, though usually
-there is only one of each type.
+Delete all the tags whose field name is \fIFIELD\fP. The field names are case-insensitive, and
+expected to be ASCII.
 .TP
 .B \-a, \-\-add \fIFIELD=VALUE\fP
 Add a tag. Note that multiple tags with the same field name are perfectly acceptable, so you can add

@@ -213,7 +213,7 @@ void ot::delete_comments(std::list<std::string>& comments, const std::string& fi
 		auto current = it++;
 		if (current->size() > field_len + 1 &&
 		    (*current)[field_len] == '=' &&
-		    strncmp(current->data(), field_name.data(), field_len) == 0)
+		    strncasecmp(current->data(), field_name.data(), field_len) == 0)
 			comments.erase(current);
 	}
 }
