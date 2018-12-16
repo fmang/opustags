@@ -122,28 +122,15 @@ ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)
 	return op;
 }
 
-/**
- * \todo Make the field name case-insensitive?
- */
-static int match_field(const char *comment, uint32_t len, const char *field)
+void ot::delete_comments(opus_tags& tags, const std::string& field_name)
 {
-	size_t field_len;
-	for (field_len = 0; field[field_len] != '\0' && field[field_len] != '='; field_len++);
-	if (len <= field_len)
-		return 0;
-	if (comment[field_len] != '=')
-		return 0;
-	if (strncmp(comment, field, field_len) != 0)
-		return 0;
-	return 1;
-}
-
-void ot::delete_comments(opus_tags& tags, const char* field_name)
-{
+	auto field_len = field_name.size();
 	auto it = tags.comments.begin(), end = tags.comments.end();
 	while (it != end) {
 		auto current = it++;
-		if (match_field(current->data(), current->size(), field_name))
+		if (current->size() > field_len + 1 &&
+		    (*current)[field_len] == '=' &&
+		    strncmp(current->data(), field_name.data(), field_len) == 0)
 			tags.comments.erase(current);
 	}
 }

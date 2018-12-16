@@ -363,7 +363,7 @@ dynamic_ogg_packet render_tags(const opus_tags& tags);
  * \todo Move to module cli.
  * \todo Accept fields like X=Y to remove only comments X=Y, instead of all X.
  */
-void delete_comments(opus_tags& tags, const char* field_name);
+void delete_comments(opus_tags& tags, const std::string& field_name);
 
 /** \} */
 
