@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 33;
+use Test::More tests => 34;
 
 use Digest::MD5;
 use File::Basename;
@@ -142,6 +142,14 @@ is_deeply(opustags(qw(-i out.opus -a fatal=yes -a FOO -a BAR)), ['', <<'EOF', 25
 error: Invalid comment 'FOO'.
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
+
+is_deeply(opustags('out.opus', '-D', '-a', "X=foo\nbar\tquux"), [<<'END_OUT', <<'END_ERR', 0], 'control characters');
+X=foo
+bar	quux
+END_OUT
+warning: Some tags contain newline characters. These are not supported by --set-all.
+warning: Some tags contain control characters.
+END_ERR
 
 is_deeply(opustags(qw(-i out.opus -s fatal=yes -s FOO -s BAR)), ['', <<'EOF', 256], 'bad tag with --set');
 error: Invalid comment 'FOO'.

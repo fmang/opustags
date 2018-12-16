@@ -146,6 +146,8 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 	std::string local;
 	bool info_lost = false;
 	bool bad_comments = false;
+	bool has_newline = false;
+	bool has_control = false;
 	for (const std::string& comment : comments) {
 		ot::status rc = from_utf8(comment, local);
 		if (rc == ot::st::information_lost) {
@@ -154,6 +156,12 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 			bad_comments = true;
 			continue;
 		}
+		for (unsigned char c : comment) {
+			if (c == '\n')
+				has_newline = true;
+			else if (c < 0x20)
+				has_control = true;
+		}
 		fwrite(local.data(), 1, local.size(), output);
 		putchar('\n');
 	}
@@ -161,6 +169,11 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 		fputs("warning: Some tags have been transliterated to your system encoding.\n", stderr);
 	if (bad_comments)
 		fputs("warning: Some tags are not properly encoded and have not been displayed.\n", stderr);
+	if (has_newline)
+		fputs("warning: Some tags contain newline characters. "
+		      "These are not supported by --set-all.\n", stderr);
+	if (has_control)
+		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
 /**
