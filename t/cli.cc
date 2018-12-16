@@ -93,11 +93,28 @@ void check_bad_arguments()
 	           "Cannot specify --output more than once.", "double output");
 }
 
+static void check_delete_comments()
+{
+	using C = std::list<std::string>;
+	C original = {"TITLE=X", "Title=Y", "Title=Z", "ARTIST=A", "artIst=B"};
+
+	C edited = original;
+	ot::delete_comments(edited, "derp");
+	if (!std::equal(edited.begin(), edited.end(), original.begin(), original.end()))
+		throw failure("should not have deleted anything");
+
+	ot::delete_comments(edited, "Title");
+	C expected = {"TITLE=X", "ARTIST=A", "artIst=B"};
+	if (!std::equal(edited.begin(), edited.end(), expected.begin(), expected.end()))
+		throw failure("did not delete Title correctly");
+}
+
 int main(int argc, char **argv)
 {
-	std::cout << "1..3\n";
+	std::cout << "1..4\n";
 	run(check_read_comments, "check tags parsing");
 	run(check_good_arguments, "check options parsing");
 	run(check_bad_arguments, "check options parsing errors");
+	run(check_delete_comments, "delete comments");
 	return 0;
 }
