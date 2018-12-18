@@ -11,7 +11,9 @@
 
 #include <opustags.h>
 
+#include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 ot::status ot::partial_file::open(const char* destination)
 {

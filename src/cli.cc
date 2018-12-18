@@ -12,6 +12,7 @@
 #include <config.h>
 #include <opustags.h>
 
+#include <errno.h>
 #include <getopt.h>
 #include <limits.h>
 #include <string.h>
