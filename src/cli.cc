@@ -28,15 +28,15 @@ Usage: opustags --help
        opustags OPTIONS FILE -o FILE
 
 Options:
-  -h, --help              print this help
-  -o, --output FILE       set the output file
-  -i, --in-place          overwrite the input file instead of writing a different output file
-  -y, --overwrite         overwrite the output file if it already exists
-  -a, --add FIELD=VALUE   add a comment
-  -d, --delete FIELD      delete all previously existing comments of a specific type
-  -D, --delete-all        delete all the previously existing comments
-  -s, --set FIELD=VALUE   replace a comment (shorthand for --delete FIELD --add FIELD=VALUE)
-  -S, --set-all           replace all the comments with the ones read from standard input
+  -h, --help                    print this help
+  -o, --output FILE             specify the output file
+  -i, --in-place                overwrite the input file
+  -y, --overwrite               overwrite the output file if it already exists
+  -a, --add FIELD=VALUE         add a comment
+  -d, --delete FIELD[=VALUE]    delete previously existing comments
+  -D, --delete-all              delete all the previously existing comments
+  -s, --set FIELD=VALUE         replace a comment
+  -S, --set-all                 import comments from standard input
 
 See the man page for extensive documentation.
 )raw";
@@ -88,8 +88,6 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 			rc = to_utf8(optarg, strlen(optarg), utf8);
 			if (rc != ot::st::ok)
 				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
-			if (strchr(utf8.c_str(), '=') != nullptr)
-				return {st::bad_arguments, "Invalid field name '"s + optarg + "'."};
 			opt.to_delete.emplace_back(std::move(utf8));
 			break;
 		case 'a':
@@ -205,15 +203,25 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 	return ot::st::ok;
 }
 
-void ot::delete_comments(std::list<std::string>& comments, const std::string& field_name)
+void ot::delete_comments(std::list<std::string>& comments, const std::string& selector)
 {
-	auto field_len = field_name.size();
+	auto name = selector.data();
+	auto equal = selector.find('=');
+	auto value = (equal == std::string::npos ? nullptr : name + equal + 1);
+	auto name_len = value ? equal : selector.size();
+	auto value_len = value ? selector.size() - equal - 1 : 0;
 	auto it = comments.begin(), end = comments.end();
 	while (it != end) {
 		auto current = it++;
-		if (current->size() > field_len + 1 &&
-		    (*current)[field_len] == '=' &&
-		    strncasecmp(current->data(), field_name.data(), field_len) == 0)
+		bool name_match = current->size() > name_len + 1 &&
+		                  (*current)[name_len] == '=' &&
+		                  strncasecmp(current->data(), name, name_len) == 0;
+		if (!name_match)
+			continue;
+		bool value_match = value == nullptr ||
+		                   (current->size() == selector.size() &&
+		                    memcmp(current->data() + equal + 1, value, value_len) == 0);
+		if (value_match)
 			comments.erase(current);
 	}
 }

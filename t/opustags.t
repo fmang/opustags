@@ -57,15 +57,15 @@ Usage: opustags --help
        opustags OPTIONS FILE -o FILE
 
 Options:
-  -h, --help              print this help
-  -o, --output FILE       set the output file
-  -i, --in-place          overwrite the input file instead of writing a different output file
-  -y, --overwrite         overwrite the output file if it already exists
-  -a, --add FIELD=VALUE   add a comment
-  -d, --delete FIELD      delete all previously existing comments of a specific type
-  -D, --delete-all        delete all the previously existing comments
-  -s, --set FIELD=VALUE   replace a comment (shorthand for --delete FIELD --add FIELD=VALUE)
-  -S, --set-all           replace all the comments with the ones read from standard input
+  -h, --help                    print this help
+  -o, --output FILE             specify the output file
+  -i, --in-place                overwrite the input file
+  -y, --overwrite               overwrite the output file if it already exists
+  -a, --add FIELD=VALUE         add a comment
+  -d, --delete FIELD[=VALUE]    delete previously existing comments
+  -D, --delete-all              delete all the previously existing comments
+  -s, --set FIELD=VALUE         replace a comment
+  -S, --set-all                 import comments from standard input
 
 See the man page for extensive documentation.
 EOF
@@ -130,7 +130,8 @@ X=2
 X=3
 EOF
 
-is_deeply(opustags(qw(out.opus -d A -d foo -s X=4 -a TITLE=gobble -d TITLE)), [<<'EOF', '', 0], 'dry editing');
+is_deeply(opustags(qw(out.opus -d A -d foo -s X=4 -a TITLE=gobble -d title=七面鳥)), [<<'EOF', '', 0], 'dry editing');
+TITLE=Foo Bar
 encoder=whatever
 1=2
 X=4

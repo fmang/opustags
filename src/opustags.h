@@ -394,16 +394,15 @@ struct options {
 	 */
 	bool overwrite = false;
 	/**
-	 * List of field names to delete. `{"ARTIST"}` will delete *all* the comments `ARTIST=*`. It
-	 * is currently case-sensitive. When #delete_all is true, it becomes meaningless.
+	 * List of comments to delete. Each string is a selector according to the definition of
+	 * #delete_comments.
+	 *
+	 * When #delete_all is true, this option is meaningless.
 	 *
 	 * #to_add takes precedence over #to_delete, so if the same comment appears in both lists,
 	 * the one in #to_delete applies only to the previously existing tags.
 	 *
 	 * The strings are stored in UTF-8.
-	 *
-	 * \todo Consider making it case-insensitive.
-	 * \todo Allow values like `ARTIST=x` to delete only the ARTIST comment whose value is x.
 	 *
 	 * Option: --delete, --set
 	 */
@@ -460,11 +459,12 @@ void print_comments(const std::list<std::string>& comments, FILE* output);
 status read_comments(FILE* input, std::list<std::string>& comments);
 
 /**
- * Remove all the comments whose field name is equal to the special one, case-sensitive.
+ * Remove all comments matching the specified selector, which may either be a field name or a
+ * NAME=VALUE pair. The field name is case-insensitive.
  *
- * \todo Accept fields like X=Y to remove only comments X=Y, instead of all X.
+ * The strings are all UTF-8.
  */
-void delete_comments(std::list<std::string>& comments, const std::string& field_name);
+void delete_comments(std::list<std::string>& comments, const std::string& selector);
 
 /**
  * Main entry point to the opustags program, and pretty much the same as calling opustags from the

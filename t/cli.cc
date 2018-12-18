@@ -50,9 +50,9 @@ void check_good_arguments()
 	if (!opt.print_help)
 		throw failure("did not catch --help");
 
-	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z"});
+	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z", "-d", "a=b"});
 	if (opt.path_in != "x" || opt.path_out != "y" || !opt.delete_all || opt.overwrite ||
-	    opt.to_delete.size() != 1 || opt.to_delete[0] != "X" ||
+	    opt.to_delete.size() != 2 || opt.to_delete[0] != "X" || opt.to_delete[1] != "a=b" ||
 	    opt.to_add.size() != 1 || opt.to_add[0] != "X=Y Z")
 		throw failure("unexpected option parsing result for case #1");
 
@@ -74,7 +74,6 @@ void check_bad_arguments()
 	};
 	error_case({"opustags"}, "No arguments specified. Use -h for help.", "no arguments");
 	error_case({"opustags", "--output", ""}, "Output file path cannot be empty.", "empty output path");
-	error_case({"opustags", "--delete", "X="}, "Invalid field name 'X='.", "bad field name for -d");
 	error_case({"opustags", "-a", "X"}, "Comment does not contain an equal sign: X.", "bad comment for -a");
 	error_case({"opustags", "--set", "X"}, "Comment does not contain an equal sign: X.", "bad comment for --set");
 	error_case({"opustags", "-a"}, "Missing value for option '-a'.", "short option with missing value");
@@ -106,7 +105,14 @@ static void check_delete_comments()
 	ot::delete_comments(edited, "Title");
 	C expected = {"ARTIST=A", "artIst=B"};
 	if (!std::equal(edited.begin(), edited.end(), expected.begin(), expected.end()))
-		throw failure("did not delete Title correctly");
+		throw failure("did not delete all titles correctly");
+
+	edited = original;
+	ot::delete_comments(edited, "titlE=Y");
+	ot::delete_comments(edited, "Title=z");
+	expected = {"TITLE=X", "Title=Z", "ARTIST=A", "artIst=B"};
+	if (!std::equal(edited.begin(), edited.end(), expected.begin(), expected.end()))
+		throw failure("did not delete a specific title correctly");
 }
 
 int main(int argc, char **argv)
