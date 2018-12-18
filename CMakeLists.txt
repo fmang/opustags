@@ -18,7 +18,7 @@ include_directories(BEFORE src "${CMAKE_BINARY_DIR}")
 
 add_library(
 	libopustags
-	OBJECT
+	STATIC
 	src/cli.cc
 	src/ogg.cc
 	src/opus.cc
