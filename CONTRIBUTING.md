@@ -1,6 +1,7 @@
 # Contributing to opustags
 
-opustags is slowing getting more mature, and contributions are welcome.
+opustags should now be mature enough, and contributions for new features are
+welcome.
 
 Before you open a pull request, you might want to talk about the change you'd
 like to make to make sure it's relevant. In that case, feel free to open an
@@ -45,15 +46,27 @@ Today, opustags is written in C++14 and features a unit test suite in C++, and
 an integration test suite in Perl. The code was refactored, organized into
 modules, and reviewed for safety.
 
-The next release will focus on correctness, with the following technical
-objectives:
+1.3.0 was focused on correctness, and detects edge cases as early as possible,
+instead of hoping something will eventually fail if something is weird.
 
-1. Validate the comments: field name in ASCII and value in UTF-8.
-2. Allow selecting the stream to edit, instead of assuming the Ogg contains only
-   one Opus stream.
-3. Provide an --escape option for escaping the newlines inside comment strings.
-4. Take into account the system's encoding: the tags must always be stored as
-   UTF-8, and converted from and to the console encoding when reading input or
-   printing.
-5. Maybe provide a --binary option to dump the raw OpusTags packet, that can be
-   combined to --set-all to read it back.
+## Candidate features
+
+The code contains a few `\todo` markers where something could be improved in the
+code.
+
+More generally, here are a few features that could be added in the future:
+
+- Discouraging non-ASCII field names.
+- Logicial stream listing and selection for multiplexed files.
+- Escaping control characters with --escape.
+- Dump binary packets with --binary.
+- Skip encoding conversion with --raw.
+- Edition of the vendor string.
+- Edition of the arbitrary binary block past the comments.
+- Support for OpusTags packets spanning multiple pages (> 64 kB).
+- Interactive edition of comments inside the EDITOR (--edit).
+- Support for cover arts.
+- Load tags from a file with --set-all=tags.txt.
+- Colored output.
+
+Don't hesitate to contact me before you do anything, I'll give you directions.
