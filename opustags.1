@@ -67,9 +67,10 @@ By default, \fBopustags\fP refuses to overwrite an already-existent file.
 Use \fB-y\fP to allow overwriting.
 Note that this option is not needed when the output is a special file like \fI/dev/null\fP.
 .TP
-.B \-d, \-\-delete \fIFIELD\fP
-Delete all the tags whose field name is \fIFIELD\fP. The field names are case-insensitive, and
-expected to be ASCII.
+.B \-d, \-\-delete \fIFIELD[=VALUE]\fP
+If value is not specified, delete all the tags whose field name is \fIFIELD\fP.
+Otherwise, delete all the comments whose field name is \fIFIELD\fP and value is \fIVALUE\fP.
+In both cases, the field names are case-insensitive, and expected to be ASCII.
 .TP
 .B \-a, \-\-add \fIFIELD=VALUE\fP
 Add a tag. Note that multiple tags with the same field name are perfectly acceptable, so you can add
@@ -91,8 +92,7 @@ Delete all the previously existing tags.
 Sets the tags from scratch.
 All the original tags are deleted and new ones are read from standard input.
 Each line must specify a \fIFIELD=VALUE\fP pair and be separated with line feeds.
-Invalid lines are skipped and cause a warning to be issued. Blank lines are ignored.
-This mode could be useful for batch processing tags through an utility like \fBsed\fP.
+Blank lines are ignored.
 .SH EXAMPLES
 .PP
 List all the tags in file foo.opus:
@@ -111,10 +111,25 @@ Remove the previously existing ARTIST tags and add the two X and Y ARTIST tags, 
 tags without writing them to the Opus file:
 .PP
 	opustags in.opus --add ARTIST=X --add ARTIST=Y --delete ARTIST
-.SH SEE ALSO
-.BR vorbiscomment (1),
-.BR sed (1)
+.SH CAVEATS
+.PP
+\fBopustags\fP currently has the following limitations:
+.IP \[bu]
+The total size of all tags cannot exceed 64 kB, the maximum size of one Ogg page.
+.IP \[bu]
+Multiplexed streams are not supported.
+.IP \[bu]
+Newlines inside tags are not supported by `--set-all`.
+.IP \[bu]
+Newlines and control characters are not escaped when printing tags.
+.PP
+Internally, the OpusTags packet in an Ogg Opus file may contain extra arbitrary binary data after
+the comments.  This block of data is currently not editable, but is always preserved. The same
+applies for the vendor string.
+.PP
+If you need a feature not currently supported, feel free to open an issue or send an email with your
+use case.
 .SH AUTHOR
-Frédéric Mangano-Tarumi <fmang@mg0.fr>
+Frédéric Mangano-Tarumi <fmang+opustags@mg0.fr>
 .PP
 Report bugs at <https://github.com/fmang/opustags/issues>

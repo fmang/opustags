@@ -1,33 +1,32 @@
 opustags
 ========
 
-View and edit Opus comments.
+View and edit Ogg Opus comments.
 
-The current code quality of this project is getting better, and is suitable for reliably editing any
-Opus file provided it does not contain other multiplexed streams. Only UTF-8 is currently supported.
+opustags is designed to be fast and as conservative as possible, to the point that if you edit tags
+then edit them again to their previous values, you should get a bit-perfect copy of the original
+file. No under-the-cover operation like writing "edited with opustags" or timestamp tagging will
+ever be performed.
 
-Until opustags becomes top-quality software, if it ever does, you might want to
-check out these more mature tag editors:
+It currently has the following limitations:
 
-- [EasyTAG](https://wiki.gnome.org/Apps/EasyTAG)
-- [Beets](http://beets.io/)
-- [Picard](https://picard.musicbrainz.org/)
-- [puddletag](http://docs.puddletag.net/)
-- [Quod Libet](https://quodlibet.readthedocs.io/en/latest/)
-- [Goggles Music Manager](https://gogglesmm.github.io/)
+- The total size of all tags cannot exceed 64 kB, the maximum size of one Ogg page.
+- Multiplexed streams are not supported.
+- Newlines inside tags are not supported by `--set-all`.
 
-See also these libraries if you need a lower-level access:
-
-- [TagLib](http://taglib.org/)
-- [mutagen](https://mutagen.readthedocs.io/en/latest/)
+If you'd like one of these limitations lifted, please do open an issue explaining your use case.
+Feel free to ask for new features too.
 
 Requirements
 ------------
 
-* a C++14 compiler,
-* CMake,
 * a POSIX-compliant system,
-* libogg.
+* a C++14 compiler,
+* CMake ≥ 3.9,
+* libogg 1.3.3.
+
+The version numbers are indicative, and it's very likely opustags will build and work fine with
+other versions too, as CMake and libogg are quite mature.
 
 Installing
 ----------

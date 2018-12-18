@@ -1,6 +1,17 @@
 opustags changelog
 ==================
 
+1.3.0 - TBA
+-----------
+
+- Support for non-Unicode systems. Tags are automatically converted to and from the system locale.
+- It is now possible to delete specific NAME=VALUE pairs.
+- Option `--set-all` is now stricter and aborts with an error if the input is not valid.
+- Printing tags will display a warning if the tags contain control characters.
+
+opustags is now more aware of its limitations, and will print more helpful error messages when
+trying to edit an unsupported file. It is also more cautious against corrupted streams.
+
 1.2.0 - 2018-11-25
 ------------------
 
