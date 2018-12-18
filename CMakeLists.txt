@@ -12,9 +12,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(OGG REQUIRED ogg)
 add_compile_options(${OGG_CFLAGS})
+link_directories(${OGG_LIBRARY_DIRS})
 
 configure_file(src/config.h.in config.h @ONLY)
-include_directories(BEFORE src "${CMAKE_BINARY_DIR}")
+include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS})
 
 add_library(
 	libopustags
@@ -25,6 +26,10 @@ add_library(
 	src/system.cc
 )
 target_link_libraries(libopustags PUBLIC ${OGG_LIBRARIES})
+
+if (APPLE)
+	target_link_libraries(libopustags PUBLIC iconv)
+endif()
 
 add_executable(opustags src/opustags.cc)
 target_link_libraries(opustags libopustags)
