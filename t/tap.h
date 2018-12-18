@@ -22,7 +22,7 @@ static void run(F test, const char *name)
 		test();
 		ok = true;
 	} catch (failure& e) {
-		std::cout << "# " << e.what() << "\n";
+		std::cerr << "# " << e.what() << "\n";
 	}
 	std::cout << (ok ? "ok" : "not ok") << " - " << name << "\n";
 }
