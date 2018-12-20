@@ -13,6 +13,7 @@ use Test::More tests => 34;
 use Digest::MD5;
 use File::Basename;
 use IPC::Open3;
+use List::MoreUtils qw(any);
 use Symbol 'gensym';
 
 my $opustags = '../opustags';
@@ -213,9 +214,15 @@ unlink('muxed.ogg');
 ####################################################################################################
 # Locale
 
+my $locale = 'fr_FR.iso88591';
+my @all_locales = split(' ', `locale -a`);
+
+SKIP: {
+skip "locale $locale is not present", 4 unless (any { $_ eq $locale } @all_locales);
+
 opustags(qw(gobble.opus -a TITLE=七面鳥 -a ARTIST=éàç -o out.opus -y));
 
-$ENV{LC_ALL} = 'fr_FR.ISO-8859-1';
+local $ENV{LC_ALL} = $locale;
 
 is_deeply(opustags(qw(-S out.opus), {in => <<"END_IN", mode => ':raw'}), [<<"END_OUT", '', 0], 'set all in ISO-8859-1');
 T=\xef\xef\xf6
@@ -242,3 +249,4 @@ TITLE=七面鳥
 ARTIST=éàç
 I=ùÎ
 END_OUT
+}
