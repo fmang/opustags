@@ -1,9 +1,5 @@
 #!/usr/bin/env perl
 
-# This test assumes the following system environment:
-#  - The current locale is UTF-8.
-#  - Locale fr_FR.ISO-8859-1 is available.
-
 use strict;
 use warnings;
 use utf8;
@@ -18,6 +14,12 @@ use Symbol 'gensym';
 
 my $opustags = '../opustags';
 BAIL_OUT("$opustags does not exist or is not executable") if (! -x $opustags);
+
+my $is_utf8;
+open(my $ctype, 'locale -k LC_CTYPE |');
+while (<$ctype>) { $is_utf8 = 1 if (/^charmap="UTF-?8"$/i) }
+close($ctype);
+BAIL_OUT("this test must be run from an UTF-8 environment") unless $is_utf8;
 
 sub opustags {
 	my %opt;

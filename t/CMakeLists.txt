@@ -17,6 +17,6 @@ configure_file(gobble.opus . COPYONLY)
 
 add_custom_target(
 	check
-	COMMAND prove "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}"
+	COMMAND prove "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}"
 	DEPENDS opustags gobble.opus system.t opus.t ogg.t cli.t
 )
