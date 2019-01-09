@@ -194,10 +194,12 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 		}
 		std::string utf8;
 		ot::status rc = to_utf8(line, nread, utf8);
-		if (rc == ot::st::ok)
+		if (rc == ot::st::ok) {
 			comments.emplace_back(std::move(utf8));
-		else
+		} else {
+			free(line);
 			return {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
+		}
 	}
 	free(line);
 	return ot::st::ok;
