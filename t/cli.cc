@@ -35,11 +35,27 @@ void check_read_comments()
 	}
 }
 
+/**
+ * Wrap #ot::parse_options with a higher-level interface much more convenient for testing.
+ * In practice, the argc/argv combo are enough though for the current state of opustags.
+ */
+static ot::status parse_options(const std::vector<const char*>& args, ot::options& opt)
+{
+	int argc = args.size();
+	char* argv[argc];
+	for (size_t i = 0; i < argc; ++i)
+		argv[i] = strdup(args[i]);
+	ot::status rc = ot::parse_options(argc, argv, opt);
+	for (size_t i = 0; i < argc; ++i)
+		free(argv[i]);
+	return rc;
+}
+
 void check_good_arguments()
 {
 	auto parse = [](std::vector<const char*> args) {
 		ot::options opt;
-		ot::status rc = ot::parse_options(args.size(), const_cast<char**>(args.data()), opt);
+		ot::status rc = parse_options(args, opt);
 		if (rc.code != ot::st::ok)
 			throw failure("unexpected option parsing error");
 		return opt;
@@ -66,7 +82,7 @@ void check_bad_arguments()
 {
 	auto error_case = [](std::vector<const char*> args, const char* message, const std::string& name) {
 		ot::options opt;
-		ot::status rc = ot::parse_options(args.size(), const_cast<char**>(args.data()), opt);
+		ot::status rc = parse_options(args, opt);
 		if (rc.code != ot::st::bad_arguments)
 			throw failure("bad error code for case " + name);
 		if (rc.message != message)
