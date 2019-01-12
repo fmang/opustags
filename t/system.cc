@@ -33,8 +33,8 @@ void check_partial_files()
 void check_converter()
 {
 	const char* ephemere_iso = "\xc9\x70\x68\xe9\x6d\xe8\x72\x65";
-	ot::encoding_converter to_utf8("ISO-8859-1", "UTF-8");
-	ot::encoding_converter from_utf8("UTF-8", "ISO-8859-1//TRANSLIT");
+	ot::encoding_converter to_utf8("ISO_8859-1", "UTF-8");
+	ot::encoding_converter from_utf8("UTF-8", "ISO_8859-1//TRANSLIT");
 	std::string out;
 
 	ot::status rc = to_utf8(ephemere_iso, out);
@@ -47,10 +47,6 @@ void check_converter()
 
 	rc = from_utf8("\xFF\xFF", out);
 	is(rc, ot::st::badly_encoded, "conversion from bad UTF-8 fails");
-
-	rc = from_utf8("cat 猫 chat", out);
-	is(rc, ot::st::information_lost, "lossy conversion from UTF-8 is detected");
-	is(out, "cat ? chat", "check result of lossy conversion");
 }
 
 int main(int argc, char **argv)
