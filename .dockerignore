@@ -1,4 +1,0 @@
-.dockerignore
-/*.sh
-/build
-Dockerfile
