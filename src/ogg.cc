@@ -10,6 +10,7 @@
 
 #include <opustags.h>
 
+#include <errno.h>
 #include <string.h>
 
 using namespace std::literals::string_literals;
