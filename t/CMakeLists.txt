@@ -1,17 +1,17 @@
 add_executable(system.t EXCLUDE_FROM_ALL system.cc)
-target_link_libraries(system.t libopustags)
+target_link_libraries(system.t ot)
 
 add_executable(opus.t EXCLUDE_FROM_ALL opus.cc)
-target_link_libraries(opus.t libopustags)
+target_link_libraries(opus.t ot)
 
 add_executable(ogg.t EXCLUDE_FROM_ALL ogg.cc)
-target_link_libraries(ogg.t libopustags)
+target_link_libraries(ogg.t ot)
 
 add_executable(cli.t EXCLUDE_FROM_ALL cli.cc)
-target_link_libraries(cli.t libopustags)
+target_link_libraries(cli.t ot)
 
 add_executable(oggdump EXCLUDE_FROM_ALL oggdump.cc)
-target_link_libraries(oggdump libopustags)
+target_link_libraries(oggdump ot)
 
 configure_file(gobble.opus . COPYONLY)
 

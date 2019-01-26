@@ -18,21 +18,21 @@ configure_file(src/config.h.in config.h @ONLY)
 include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS})
 
 add_library(
-	libopustags
+	ot
 	STATIC
 	src/cli.cc
 	src/ogg.cc
 	src/opus.cc
 	src/system.cc
 )
-target_link_libraries(libopustags PUBLIC ${OGG_LIBRARIES})
+target_link_libraries(ot PUBLIC ${OGG_LIBRARIES})
 
 if (APPLE)
-	target_link_libraries(libopustags PUBLIC iconv)
+	target_link_libraries(ot PUBLIC iconv)
 endif()
 
 add_executable(opustags src/opustags.cc)
-target_link_libraries(opustags libopustags)
+target_link_libraries(opustags ot)
 
 include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
