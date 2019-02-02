@@ -1,8 +1,8 @@
 opustags changelog
 ==================
 
-1.3.0 - TBA
------------
+1.3.0 - 2019-02-02
+------------------
 
 - Support for non-Unicode systems. Tags are automatically converted to and from the system locale.
 - It is now possible to delete specific NAME=VALUE pairs.
