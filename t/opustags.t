@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 34;
+use Test::More tests => 37;
 
 use Digest::MD5;
 use File::Basename;
@@ -101,8 +101,11 @@ encoder=Lavc58.18.100 libopus
 EOF
 
 unlink('out.opus');
+my $previous_umask = umask(0022);
 is_deeply(opustags(qw(gobble.opus -o out.opus)), ['', '', 0], 'copy the file without changes');
 is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the copy is faithful');
+is((stat 'out.opus')[2] & 0777, 0644, 'apply umask on new files');
+umask($previous_umask);
 
 # empty out.opus
 { my $fh; open($fh, '>', 'out.opus') and close($fh) or die }
@@ -113,13 +116,17 @@ is(md5('out.opus'), 'd41d8cd98f00b204e9800998ecf8427e', 'the output wasn\'t writ
 
 is_deeply(opustags(qw(gobble.opus -o /dev/null)), ['', '', 0], 'write to /dev/null');
 
+chmod(0604, 'out.opus');
 is_deeply(opustags(qw(gobble.opus -o out.opus --overwrite)), ['', '', 0], 'overwrite');
 is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'successfully overwritten');
+is((stat 'out.opus')[2] & 0777, 0604, 'overwriting preserves output file\'s mode');
 
+chmod(0700, 'out.opus');
 is_deeply(opustags(qw(--in-place out.opus -a A=B --add=A=C --add), "TITLE=Foo Bar",
                    qw(--delete A --add TITLE=七面鳥 --set encoder=whatever -s 1=2 -s X=1 -a X=2 -s X=3)),
           ['', '', 0], 'complex tag editing');
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'check the footprint');
+is((stat 'out.opus')[2] & 0777, 0700, 'in-place editing preserves file mode');
 
 is_deeply(opustags('out.opus'), [<<'EOF', '', 0], 'check the tags written');
 A=B
