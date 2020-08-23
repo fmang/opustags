@@ -52,12 +52,13 @@ static struct option getopt_options[] = {
 	{NULL, 0, 0, 0}
 };
 
-ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
+ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comments_input)
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	std::string utf8;
 	std::string::size_type equal;
 	ot::status rc;
+	bool set_all = false;
 	opt = {};
 	if (argc == 1)
 		return {st::bad_arguments, "No arguments specified. Use -h for help."};
@@ -100,7 +101,8 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 			opt.to_add.emplace_back(std::move(utf8));
 			break;
 		case 'S':
-			opt.set_all = true;
+			opt.delete_all = true;
+			set_all = true;
 			break;
 		case 'D':
 			opt.delete_all = true;
@@ -128,9 +130,18 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 		opt.path_out = opt.path_in;
 		opt.overwrite = true;
 	}
-	if (opt.path_in == "-" && opt.set_all)
+	if (opt.path_in == "-" && set_all)
 		return {st::bad_arguments,
 		        "Cannot use standard input as input file when --set-all is specified."};
+	if (set_all) {
+		std::vector<std::string> comments;
+		auto rc = read_comments(comments_input, comments);
+		if (rc != st::ok)
+			return rc;
+		comments.reserve(comments.size() + opt.to_add.size());
+		std::move(opt.to_add.begin(), opt.to_add.end(), std::back_inserter(comments));
+		opt.to_add = std::move(comments);
+	}
 	return st::ok;
 }
 
@@ -177,10 +188,12 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
-ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
+/**
+ * Insert comments in the order read before any already in the list.
+ */
+ot::status ot::read_comments(FILE* input, std::vector<std::string>& comments)
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
-	comments.clear();
 	char* line = nullptr;
 	size_t buflen = 0;
 	ssize_t nread;
@@ -233,11 +246,7 @@ void ot::delete_comments(std::list<std::string>& comments, const std::string& se
 /** Apply the modifications requested by the user to the opustags packet. */
 static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
-	if (opt.set_all) {
-		auto rc = ot::read_comments(stdin, tags.comments);
-		if (rc != ot::st::ok)
-			return rc;
-	} else if (opt.delete_all) {
+	if (opt.delete_all) {
 		tags.comments.clear();
 	} else for (const std::string& name : opt.to_delete) {
 		ot::delete_comments(tags.comments, name.c_str());

@@ -410,7 +410,7 @@ struct options {
 	/**
 	 * Delete all the existing comments.
 	 *
-	 * Option: --delete-all
+	 * Option: --delete-all, --set-all
 	 */
 	bool delete_all = false;
 	/**
@@ -422,24 +422,15 @@ struct options {
 	 * Options: --add, --set, --set-all
 	 */
 	std::vector<std::string> to_add;
-	/**
-	 * Replace the previous comments by the ones supplied by the user.
-	 *
-	 * Read a list of comments from stdin and populate #to_add. Further comments may be added
-	 * with the --add option.
-	 *
-	 * Option: --set-all
-	 */
-	bool set_all = false;
 };
 
 /**
  * Parse the command-line arguments. Does not perform I/O related validations, but checks the
- * consistency of its arguments.
+ * consistency of its arguments. Comments are read if necessary from the given stream.
  *
  * On error, the state of the options structure is unspecified.
  */
-status parse_options(int argc, char** argv, options& opt);
+status parse_options(int argc, char** argv, options& opt, FILE* comments);
 
 /**
  * Print all the comments, separated by line breaks. Since a comment may contain line breaks, this
@@ -452,11 +443,11 @@ status parse_options(int argc, char** argv, options& opt);
 void print_comments(const std::list<std::string>& comments, FILE* output);
 
 /**
- * Parse the comments outputted by #ot::print_comments.
+ * Parse the comments outputted by #ot::print_comments, prepending them to comments.
  *
  * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
  */
-status read_comments(FILE* input, std::list<std::string>& comments);
+status read_comments(FILE* input, std::vector<std::string>& comments);
 
 /**
  * Remove all comments matching the specified selector, which may either be a field name or a

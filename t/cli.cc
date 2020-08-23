@@ -7,7 +7,7 @@ using namespace std::literals::string_literals;
 
 void check_read_comments()
 {
-	std::list<std::string> comments;
+	std::vector<std::string> comments;
 	ot::status rc;
 	{
 		std::string txt = "TITLE=a b c\n\nARTIST=X\nArtist=Y\n"s;
@@ -39,13 +39,13 @@ void check_read_comments()
  * Wrap #ot::parse_options with a higher-level interface much more convenient for testing.
  * In practice, the argc/argv combo are enough though for the current state of opustags.
  */
-static ot::status parse_options(const std::vector<const char*>& args, ot::options& opt)
+static ot::status parse_options(const std::vector<const char*>& args, ot::options& opt, FILE *comments)
 {
 	int argc = args.size();
 	char* argv[argc];
 	for (size_t i = 0; i < argc; ++i)
 		argv[i] = strdup(args[i]);
-	ot::status rc = ot::parse_options(argc, argv, opt);
+	ot::status rc = ot::parse_options(argc, argv, opt, comments);
 	for (size_t i = 0; i < argc; ++i)
 		free(argv[i]);
 	return rc;
@@ -55,7 +55,9 @@ void check_good_arguments()
 {
 	auto parse = [](std::vector<const char*> args) {
 		ot::options opt;
-		ot::status rc = parse_options(args, opt);
+		std::string txt = "N=1\n"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		ot::status rc = parse_options(args, opt, input.get());
 		if (rc.code != ot::st::ok)
 			throw failure("unexpected option parsing error");
 		return opt;
@@ -73,20 +75,26 @@ void check_good_arguments()
 		throw failure("unexpected option parsing result for case #1");
 
 	opt = parse({"opustags", "-S", "x", "-S", "-a", "x=y z", "-i"});
-	if (opt.path_in != "x" || opt.path_out != "x" || !opt.set_all || !opt.overwrite ||
-	    opt.to_delete.size() != 0 || opt.to_add.size() != 1 || opt.to_add[0] != "x=y z")
+	if (opt.path_in != "x" || opt.path_out != "x" || !opt.overwrite ||
+	    opt.to_delete.size() != 0 || opt.to_add.size() != 2 || opt.to_add[0] != "N=1" ||
+	    opt.to_add[1] != "x=y z")
 		throw failure("unexpected option parsing result for case #2");
 }
 
 void check_bad_arguments()
 {
-	auto error_case = [](std::vector<const char*> args, const char* message, const std::string& name) {
+	auto error_code_case = [](std::vector<const char*> args, const char* message, ot::st error_code, const std::string& name) {
 		ot::options opt;
-		ot::status rc = parse_options(args, opt);
-		if (rc.code != ot::st::bad_arguments)
+		std::string txt = "N=1\nINVALID"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		ot::status rc = parse_options(args, opt, input.get());
+		if (rc.code != error_code)
 			throw failure("bad error code for case " + name);
 		if (rc.message != message)
 			throw failure("bad error message for case " + name + ", got: " + rc.message);
+	};
+	auto error_case = [&error_code_case](std::vector<const char*> args, const char* message, const std::string& name) {
+		 error_code_case(args, message, ot::st::bad_arguments, name);
 	};
 	error_case({"opustags"}, "No arguments specified. Use -h for help.", "no arguments");
 	error_case({"opustags", "--output", ""}, "Output file path cannot be empty.", "empty output path");
@@ -106,6 +114,7 @@ void check_bad_arguments()
 	error_case({"opustags", "-i", "-"}, "Cannot modify standard input in place.", "write stdin in-place");
 	error_case({"opustags", "-o", "x", "--output", "y", "z"},
 	           "Cannot specify --output more than once.", "double output");
+	error_code_case({"opustags", "-S", "x"}, "Malformed tag: INVALID", ot::st::error, "attempt to read invalid argument with -S");
 }
 
 static void check_delete_comments()
