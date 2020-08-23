@@ -4,10 +4,11 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 37;
+use Test::More tests => 41;
 
 use Digest::MD5;
 use File::Basename;
+use File::Copy;
 use IPC::Open3;
 use List::MoreUtils qw(any);
 use Symbol 'gensym';
@@ -57,12 +58,13 @@ $version
 
 Usage: opustags --help
        opustags [OPTIONS] FILE
+       opustags [OPTIONS] -i FILE...
        opustags OPTIONS FILE -o FILE
 
 Options:
   -h, --help                    print this help
   -o, --output FILE             specify the output file
-  -i, --in-place                overwrite the input file
+  -i, --in-place                overwrite the input files
   -y, --overwrite               overwrite the output file if it already exists
   -a, --add FIELD=VALUE         add a comment
   -d, --delete FIELD[=VALUE]    delete previously existing comments
@@ -207,6 +209,17 @@ my $data = slurp 'out.opus';
 is_deeply(opustags('-', '-o', '-', {in => $data, mode => ':raw'}), [$data, '', 0], 'read opus from stdin and write to stdout');
 
 unlink('out.opus');
+
+# Test --in-place
+unlink('out2.opus');
+copy('gobble.opus', 'out.opus');
+is_deeply(opustags(qw(out.opus --add BAR=baz -o out2.opus)), ['', '', 0], 'process multiple files with --in-place');
+is_deeply(opustags(qw(--in-place --add FOO=bar out.opus out2.opus)), ['', '', 0], 'process multiple files with --in-place');
+is(md5('out.opus'), '30ba30c4f236c09429473f36f8f861d2', 'the tags were added correctly (out.opus)');
+is(md5('out2.opus'), '0a4d20c287b2e46b26cb0eee353c2069', 'the tags were added correctly (out2.opus)');
+
+unlink('out.opus');
+unlink('out2.opus');
 
 ####################################################################################################
 # Test muxed streams

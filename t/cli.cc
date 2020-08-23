@@ -69,16 +69,22 @@ void check_good_arguments()
 		throw failure("did not catch --help");
 
 	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z", "-d", "a=b"});
-	if (opt.path_in != "x" || opt.path_out != "y" || !opt.delete_all || opt.overwrite ||
-	    opt.to_delete.size() != 2 || opt.to_delete[0] != "X" || opt.to_delete[1] != "a=b" ||
+	if (opt.paths_in.size() != 1 || opt.paths_in.front() != "x" || !opt.path_out ||
+	    opt.path_out != "y" || !opt.delete_all || opt.overwrite || opt.to_delete.size() != 2 ||
+	    opt.to_delete[0] != "X" || opt.to_delete[1] != "a=b" ||
 	    opt.to_add.size() != 1 || opt.to_add[0] != "X=Y Z")
 		throw failure("unexpected option parsing result for case #1");
 
 	opt = parse({"opustags", "-S", "x", "-S", "-a", "x=y z", "-i"});
-	if (opt.path_in != "x" || opt.path_out != "x" || !opt.overwrite ||
-	    opt.to_delete.size() != 0 || opt.to_add.size() != 2 || opt.to_add[0] != "N=1" ||
-	    opt.to_add[1] != "x=y z")
+	if (opt.paths_in.size() != 1 || opt.paths_in.front() != "x" || opt.path_out ||
+	    !opt.overwrite || opt.to_delete.size() != 0 ||
+	    opt.to_add.size() != 2 || opt.to_add[0] != "N=1" || opt.to_add[1] != "x=y z")
 		throw failure("unexpected option parsing result for case #2");
+
+	opt = parse({"opustags", "-i", "x", "y", "z"});
+	if (opt.paths_in.size() != 3 || opt.paths_in[0] != "x" || opt.paths_in[1] != "y" ||
+	    opt.paths_in[2] != "z" || !opt.overwrite)
+		throw failure("unexpected option parsing result for case #3");
 }
 
 void check_bad_arguments()
@@ -106,7 +112,6 @@ void check_bad_arguments()
 	error_case({"opustags", "-x=y"}, "Unrecognized option '-x'.", "unrecognized short option with value");
 	error_case({"opustags", "--derp=y"}, "Unrecognized option '--derp=y'.", "unrecognized long option with value");
 	error_case({"opustags", "-aX=Y"}, "Exactly one input file must be specified.", "no input file");
-	error_case({"opustags", ""}, "Input file path cannot be empty.", "empty input file path");
 	error_case({"opustags", "-i", "-o", "/dev/null", "-"}, "Cannot combine --in-place and --output.", "in-place + output");
 	error_case({"opustags", "-S", "-"}, "Cannot use standard input as input file when --set-all is specified.",
 	                                    "set all and read opus from stdin");

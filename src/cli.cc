@@ -23,12 +23,13 @@ R"raw(
 
 Usage: opustags --help
        opustags [OPTIONS] FILE
+       opustags [OPTIONS] -i FILE...
        opustags OPTIONS FILE -o FILE
 
 Options:
   -h, --help                    print this help
   -o, --output FILE             specify the output file
-  -i, --in-place                overwrite the input file
+  -i, --in-place                overwrite the input files
   -y, --overwrite               overwrite the output file if it already exists
   -a, --add FIELD=VALUE         add a comment
   -d, --delete FIELD[=VALUE]    delete previously existing comments
@@ -62,7 +63,6 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	opt = {};
 	if (argc == 1)
 		return {st::bad_arguments, "No arguments specified. Use -h for help."};
-	bool in_place = false;
 	int c;
 	optind = 0;
 	while ((c = getopt_long(argc, argv, ":ho:iyd:a:s:DS", getopt_options, NULL)) != -1) {
@@ -76,7 +76,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			opt.path_out = optarg;
 			break;
 		case 'i':
-			in_place = true;
+			opt.in_place = true;
 			break;
 		case 'y':
 			opt.overwrite = true;
@@ -115,22 +115,23 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	}
 	if (opt.print_help)
 		return st::ok;
-	if (optind != argc - 1)
-		return {st::bad_arguments, "Exactly one input file must be specified."};
-	opt.path_in = argv[optind];
-	if (opt.path_in.empty())
-		return {st::bad_arguments, "Input file path cannot be empty."};
-	if (in_place) {
+	if (opt.in_place) {
 		if (opt.path_out)
 			return {st::bad_arguments, "Cannot combine --in-place and --output."};
-		if (opt.path_in == "-")
-			return {st::bad_arguments, "Cannot modify standard input in place."};
-		opt.path_out = opt.path_in;
 		opt.overwrite = true;
+		for (int i = optind; i < argc; i++) {
+			if (strcmp(argv[i], "-") == 0)
+				return {st::bad_arguments, "Cannot modify standard input in place."};
+			opt.paths_in.emplace_back(argv[i]);
+		}
+	} else {
+		if (optind != argc - 1)
+			return {st::bad_arguments, "Exactly one input file must be specified."};
+		if (set_all && strcmp(argv[optind], "-") == 0)
+			return {st::bad_arguments,
+				"Cannot use standard input as input file when --set-all is specified."};
+		opt.paths_in.emplace_back(argv[optind]);
 	}
-	if (opt.path_in == "-" && set_all)
-		return {st::bad_arguments,
-		        "Cannot use standard input as input file when --set-all is specified."};
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
 		std::vector<std::string> comments;
@@ -319,6 +320,87 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 	return ot::st::ok;
 }
 
+ot::status run_single(const ot::options& opt, const std::string& path_in, const std::optional<std::string>& path_out)
+{
+	ot::status rc = ot::st::ok;
+
+	ot::file input;
+	if (path_in == "-")
+		input = stdin;
+	else if ((input = fopen(path_in.c_str(), "r")) == nullptr)
+		rc = {ot::st::standard_error,
+			"Could not open '" + path_in + "' for reading: " + strerror(errno)};
+
+	if (rc == ot::st::ok) {
+		ot::ogg_reader reader(input.get());
+
+		/* Read-only mode. */
+		if (!path_out)
+			rc = process(reader, nullptr, opt);
+		else {
+			/* Read-write mode.
+			 *
+			 * The output pointer is set to one of:
+			 *  - stdout for "-",
+			 *  - final_output.get() for special files like /dev/null,
+			 *  - temporary_output.get() for regular files.
+			 *
+			 * We use a temporary output file for the following reasons:
+			 *  1. A partial .opus output would be seen by softwares like media players, but a .part
+			 *     (for partial) won’t.
+			 *  2. If the process crashes badly, or the power cuts off, we don't want to leave a partial
+			 *     file at the final location. The temporary file is going to remain though.
+			 *  3. If we're overwriting a regular file, we'd rather avoid wiping its content before we
+			 *     even started reading the input file. That way, the original file is always preserved
+			 *     on error or crash.
+			 *  4. It is necessary for in-place editing. We can't reliably open the same file as both
+			 *     input and output.
+			 */
+
+			FILE* output = nullptr;
+			ot::partial_file temporary_output;
+			ot::file final_output;
+
+			struct stat output_info;
+			if (path_out == "-") {
+				output = stdout;
+			} else if (stat(path_out->c_str(), &output_info) == 0) {
+				/* The output file exists. */
+				if (!S_ISREG(output_info.st_mode)) {
+					/* Special files are opened for writing directly. */
+					if ((final_output = fopen(path_out->c_str(), "w")) == nullptr)
+						rc = {ot::st::standard_error,
+							"Could not open '" + path_out.value() + "' for writing: " +
+							strerror(errno)};
+					output = final_output.get();
+				} else if (opt.overwrite) {
+					rc = temporary_output.open(path_out->c_str());
+					output = temporary_output.get();
+				} else {
+					rc = {ot::st::error,
+						"'" + path_out.value() + "' already exists. Use -y to overwrite."};
+				}
+			} else if (errno == ENOENT) {
+				rc = temporary_output.open(path_out->c_str());
+				output = temporary_output.get();
+			} else {
+				rc = {ot::st::error,
+					"Could not identify '" + path_in + "': " + strerror(errno)};
+			}
+			if (rc == ot::st::ok) {
+				ot::ogg_writer writer(output);
+				rc = process(reader, &writer, opt);
+				if (rc == ot::st::ok)
+					rc = temporary_output.commit();
+			}
+		}
+	}
+
+	if (rc != ot::st::ok)
+		fprintf(stderr, "error: %s\n", rc.message.c_str());
+	return rc;
+}
+
 ot::status ot::run(const ot::options& opt)
 {
 	if (opt.print_help) {
@@ -326,75 +408,13 @@ ot::status ot::run(const ot::options& opt)
 		return st::ok;
 	}
 
-	ot::file input;
-	if (opt.path_in == "-")
-		input = stdin;
-	else if ((input = fopen(opt.path_in.c_str(), "r")) == nullptr)
-		return {ot::st::standard_error,
-		        "Could not open '" + opt.path_in + "' for reading: " + strerror(errno)};
-	ot::ogg_reader reader(input.get());
-
-	/* Read-only mode. */
-	if (!opt.path_out)
-		return process(reader, nullptr, opt);
-
-	/* Read-write mode.
-	 *
-	 * The output pointer is set to one of:
-	 *  - stdout for "-",
-	 *  - final_output.get() for special files like /dev/null,
-	 *  - temporary_output.get() for regular files.
-	 *
-	 * We use a temporary output file for the following reasons:
-	 *  1. A partial .opus output would be seen by softwares like media players, but a .part
-	 *     (for partial) won’t.
-	 *  2. If the process crashes badly, or the power cuts off, we don't want to leave a partial
-	 *     file at the final location. The temporary file is going to remain though.
-	 *  3. If we're overwriting a regular file, we'd rather avoid wiping its content before we
-	 *     even started reading the input file. That way, the original file is always preserved
-	 *     on error or crash.
-	 *  4. It is necessary for in-place editing. We can't reliably open the same file as both
-	 *     input and output.
-	 */
-
-	FILE* output = nullptr;
-	ot::partial_file temporary_output;
-	ot::file final_output;
-
-	ot::status rc = ot::st::ok;
-	struct stat output_info;
-	if (opt.path_out == "-") {
-		output = stdout;
-	} else if (stat(opt.path_out->c_str(), &output_info) == 0) {
-		/* The output file exists. */
-		if (!S_ISREG(output_info.st_mode)) {
-			/* Special files are opened for writing directly. */
-			if ((final_output = fopen(opt.path_out->c_str(), "w")) == nullptr)
-				rc = {ot::st::standard_error,
-				      "Could not open '" + opt.path_out.value() + "' for writing: " +
-				      strerror(errno)};
-			output = final_output.get();
-		} else if (opt.overwrite) {
-			rc = temporary_output.open(opt.path_out->c_str());
-			output = temporary_output.get();
-		} else {
-			rc = {ot::st::error,
-			      "'" + opt.path_out.value() + "' already exists. Use -y to overwrite."};
+	ot::status rc = st::ok;
+	if (!opt.in_place)
+		rc = run_single(opt, opt.paths_in[0], opt.path_out);
+	else
+		for (const auto& path_in : opt.paths_in) {
+			rc = run_single(opt, path_in, std::optional(path_in));
 		}
-	} else if (errno == ENOENT) {
-		rc = temporary_output.open(opt.path_out->c_str());
-		output = temporary_output.get();
-	} else {
-		rc = {ot::st::error,
-		      "Could not identify '" + opt.path_in + "': " + strerror(errno)};
-	}
-	if (rc != ot::st::ok)
-		return rc;
-
-	ot::ogg_writer writer(output);
-	rc = process(reader, &writer, opt);
-	if (rc == ot::st::ok)
-		rc = temporary_output.commit();
 
 	return rc;
 }

@@ -374,14 +374,16 @@ struct options {
 	 */
 	bool print_help = false;
 	/**
-	 * Path to the input file. It cannot be empty. The special "-" string means stdin.
+	 * Paths to the input files. The special string "-" means stdin.
 	 *
-	 * This is the mandatory non-flagged parameter.
+	 * At least one input file must be given. If `--in-place` is used,
+	 * more than one may be given.
 	 */
-	std::string path_in;
+	std::vector<std::string> paths_in;
 	/**
-	 * Optional path to output file. The special "-" string means stdout. When absent, opustags
-	 * runs in read-only mode. For in-place editing, path_out is defined equal to path_in.
+	 * Optional path to output file. The special string "-" means stdout. For in-place
+	 * editing, the input file name is used. If no output file name is supplied, and
+	 * --in-place is not used, opustags runs in read-only mode.
 	 *
 	 * Options: --output, --in-place
 	 */
@@ -393,6 +395,12 @@ struct options {
 	 * Options: --overwrite, --in-place
 	 */
 	bool overwrite = false;
+	/**
+	 * Process files in-place.
+	 *
+	 * Options: --in-place
+	 */
+	bool in_place = false;
 	/**
 	 * List of comments to delete. Each string is a selector according to the definition of
 	 * #delete_comments.

@@ -20,12 +20,8 @@ int main(int argc, char** argv) {
 	ot::status rc = ot::parse_options(argc, argv, opt, stdin);
 	if (rc == ot::st::ok)
 		rc = ot::run(opt);
+	else if (!rc.message.empty())
+		fprintf(stderr, "error: %s\n", rc.message.c_str());
 
-	if (rc != ot::st::ok) {
-		if (!rc.message.empty())
-			fprintf(stderr, "error: %s\n", rc.message.c_str());
-		return EXIT_FAILURE;
-	} else {
-		return EXIT_SUCCESS;
-	}
+	return rc == ot::st::ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }
