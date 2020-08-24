@@ -4,9 +4,6 @@
  *
  * Provide all the features of the opustags executable from a C++ API. The main point of separating
  * this module from the main one is to allow easy testing.
- *
- * \todo Use a safer temporary file name for in-place editing, like tmpnam.
- * \todo Abort editing with --set-all if one comment is invalid?
  */
 
 #include <config.h>
@@ -138,7 +135,11 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt)
 }
 
 /**
- * \todo Escape new lines.
+ * \todo Find a way to support new lines such that they can be read back by #read_comment without
+ *       ambiguity. We could add a raw mode and separate comments with a \0, or escape control
+ *       characters with a backslash, but we should also preserve compatibiltity with potential
+ *       callers that don’t escape backslashes. Maybe add options to select a mode between simple,
+ *       raw, and escaped.
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 {
@@ -258,7 +259,6 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 {
 	bool focused = false; /*< the stream on which we operate is defined */
 	int focused_serialno; /*< when focused, the serialno of the focused stream */
-	/** \todo Become stream-aware instead of counting the pages of all streams together. */
 	int absolute_page_no = -1; /*< page number in the physical stream, not logical */
 	for (;;) {
 		ot::status rc = reader.next_page();
@@ -275,6 +275,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			focused = true;
 			focused_serialno = serialno;
 		} else if (serialno != focused_serialno) {
+			/** \todo Support mixed streams. */
 			return {ot::st::error, "Muxed streams are not supported yet."};
 		}
 		if (absolute_page_no == 0) { // Identification header
@@ -339,11 +340,10 @@ ot::status ot::run(const ot::options& opt)
 	 *  - temporary_output.get() for regular files.
 	 *
 	 * We use a temporary output file for the following reasons:
-	 *  1. The partial .opus output may be seen by softwares like media players, or through
-	 *     inotify for the most attentive process.
+	 *  1. A partial .opus output would be seen by softwares like media players, but a .part
+	 *     (for partial) won’t.
 	 *  2. If the process crashes badly, or the power cuts off, we don't want to leave a partial
-	 *     file at the final location. The temporary file is still going to stay but will have an
-	 *     obvious name.
+	 *     file at the final location. The temporary file is going to remain though.
 	 *  3. If we're overwriting a regular file, we'd rather avoid wiping its content before we
 	 *     even started reading the input file. That way, the original file is always preserved
 	 *     on error or crash.

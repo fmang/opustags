@@ -447,7 +447,7 @@ status parse_options(int argc, char** argv, options& opt);
  *
  * The comments must be encoded in UTF-8, and are converted to the system locale when printed.
  *
- * The output generated is meant to be parseable by #ot::read_tags.
+ * The output generated is meant to be parseable by #ot::read_comments.
  */
 void print_comments(const std::list<std::string>& comments, FILE* output);
 

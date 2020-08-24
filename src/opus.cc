@@ -18,7 +18,6 @@
  *
  * \todo Validate that the vendor string and comments are valid UTF-8.
  * \todo Validate that field names are ASCII: 0x20 through 0x7D, 0x3D ('=') excluded.
- * \todo Field names are case insensitive, respect that.
  *
  */
 
@@ -32,9 +31,6 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
-/**
- * \todo See if the packet's data could be casted more nicely into a string.
- */
 ot::status ot::parse_tags(const ogg_packet& packet, opus_tags& tags)
 {
 	if (packet.bytes < 0)
