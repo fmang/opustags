@@ -42,7 +42,7 @@ questioned, and it was thus abandoned for a few years. Judging by the
 inquiries and contributions, albeit few, on GitHub, it looks like it remains
 relevant, so let's dust it off a bit.
 
-Today, opustags is written in C++14 and features a unit test suite in C++, and
+Today, opustags is written in C++ and features a unit test suite in C++, and
 an integration test suite in Perl. The code was refactored, organized into
 modules, and reviewed for safety.
 
