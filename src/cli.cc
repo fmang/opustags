@@ -71,11 +71,9 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			opt.print_help = true;
 			break;
 		case 'o':
-			if (!opt.path_out.empty())
+			if (opt.path_out)
 				return {st::bad_arguments, "Cannot specify --output more than once."};
 			opt.path_out = optarg;
-			if (opt.path_out.empty())
-				return {st::bad_arguments, "Output file path cannot be empty."};
 			break;
 		case 'i':
 			in_place = true;
@@ -123,7 +121,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	if (opt.path_in.empty())
 		return {st::bad_arguments, "Input file path cannot be empty."};
 	if (in_place) {
-		if (!opt.path_out.empty())
+		if (opt.path_out)
 			return {st::bad_arguments, "Cannot combine --in-place and --output."};
 		if (opt.path_in == "-")
 			return {st::bad_arguments, "Cannot modify standard input in place."};
@@ -337,7 +335,7 @@ ot::status ot::run(const ot::options& opt)
 	ot::ogg_reader reader(input.get());
 
 	/* Read-only mode. */
-	if (opt.path_out.empty())
+	if (!opt.path_out)
 		return process(reader, nullptr, opt);
 
 	/* Read-write mode.
@@ -367,24 +365,24 @@ ot::status ot::run(const ot::options& opt)
 	struct stat output_info;
 	if (opt.path_out == "-") {
 		output = stdout;
-	} else if (stat(opt.path_out.c_str(), &output_info) == 0) {
+	} else if (stat(opt.path_out->c_str(), &output_info) == 0) {
 		/* The output file exists. */
 		if (!S_ISREG(output_info.st_mode)) {
 			/* Special files are opened for writing directly. */
-			if ((final_output = fopen(opt.path_out.c_str(), "w")) == nullptr)
+			if ((final_output = fopen(opt.path_out->c_str(), "w")) == nullptr)
 				rc = {ot::st::standard_error,
-				      "Could not open '" + opt.path_out + "' for writing: " +
-				       strerror(errno)};
+				      "Could not open '" + opt.path_out.value() + "' for writing: " +
+				      strerror(errno)};
 			output = final_output.get();
 		} else if (opt.overwrite) {
-			rc = temporary_output.open(opt.path_out.c_str());
+			rc = temporary_output.open(opt.path_out->c_str());
 			output = temporary_output.get();
 		} else {
 			rc = {ot::st::error,
-			      "'" + opt.path_out + "' already exists. Use -y to overwrite."};
+			      "'" + opt.path_out.value() + "' already exists. Use -y to overwrite."};
 		}
 	} else if (errno == ENOENT) {
-		rc = temporary_output.open(opt.path_out.c_str());
+		rc = temporary_output.open(opt.path_out->c_str());
 		output = temporary_output.get();
 	} else {
 		rc = {ot::st::error,
