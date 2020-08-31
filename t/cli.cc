@@ -97,7 +97,6 @@ void check_bad_arguments()
 		 error_code_case(args, message, ot::st::bad_arguments, name);
 	};
 	error_case({"opustags"}, "No arguments specified. Use -h for help.", "no arguments");
-	error_case({"opustags", "--output", ""}, "Output file path cannot be empty.", "empty output path");
 	error_case({"opustags", "-a", "X"}, "Comment does not contain an equal sign: X.", "bad comment for -a");
 	error_case({"opustags", "--set", "X"}, "Comment does not contain an equal sign: X.", "bad comment for --set");
 	error_case({"opustags", "-a"}, "Missing value for option '-a'.", "short option with missing value");
@@ -115,6 +114,8 @@ void check_bad_arguments()
 	error_case({"opustags", "-o", "x", "--output", "y", "z"},
 	           "Cannot specify --output more than once.", "double output");
 	error_code_case({"opustags", "-S", "x"}, "Malformed tag: INVALID", ot::st::error, "attempt to read invalid argument with -S");
+	error_case({"opustags", "-o", "", "--output", "y", "z"},
+	           "Cannot specify --output more than once.", "double output with first filename empty");
 }
 
 static void check_delete_comments()

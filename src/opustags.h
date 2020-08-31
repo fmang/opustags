@@ -380,12 +380,12 @@ struct options {
 	 */
 	std::string path_in;
 	/**
-	 * Path to the optional file. The special "-" string means stdout. When empty, opustags runs
-	 * in read-only mode. For in-place editing, path_out is defined equal to path_in.
+	 * Optional path to output file. The special "-" string means stdout. When absent, opustags
+	 * runs in read-only mode. For in-place editing, path_out is defined equal to path_in.
 	 *
 	 * Options: --output, --in-place
 	 */
-	std::string path_out;
+	std::optional<std::string> path_out;
 	/**
 	 * By default, opustags won't overwrite the output file if it already exists. This can be
 	 * forced with --overwrite. It is also enabled by --in-place.
