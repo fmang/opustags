@@ -9,6 +9,11 @@ project(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# opustags is mainly developed with glibc, which introduces a few
+# incompatibilites with BSDs, like getline not being defined by default.
+# _GNU_SOURCE should trigger BSD’s libc GNU compatibility mode to fix that.
+add_definitions(-D_GNU_SOURCE)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(OGG REQUIRED ogg)
 add_compile_options(${OGG_CFLAGS})
