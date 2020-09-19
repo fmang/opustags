@@ -134,6 +134,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 		return {st::bad_arguments,
 		        "Cannot use standard input as input file when --set-all is specified."};
 	if (set_all) {
+		// Read comments from stdin and prepend them to opt.to_add.
 		std::vector<std::string> comments;
 		auto rc = read_comments(comments_input, comments);
 		if (rc != st::ok)
@@ -188,12 +189,10 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
-/**
- * Insert comments in the order read before any already in the list.
- */
 ot::status ot::read_comments(FILE* input, std::vector<std::string>& comments)
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
+	comments.clear();
 	char* line = nullptr;
 	size_t buflen = 0;
 	ssize_t nread;

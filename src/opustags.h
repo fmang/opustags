@@ -443,7 +443,7 @@ status parse_options(int argc, char** argv, options& opt, FILE* comments);
 void print_comments(const std::list<std::string>& comments, FILE* output);
 
 /**
- * Parse the comments outputted by #ot::print_comments, prepending them to comments.
+ * Parse the comments outputted by #ot::print_comments.
  *
  * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
  */
