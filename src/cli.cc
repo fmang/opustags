@@ -408,7 +408,7 @@ ot::status ot::run(const ot::options& opt)
 		if (rc != st::ok) {
 			global_rc = st::error;
 			if (!rc.message.empty())
-				fprintf(stderr, "error: %s\n", rc.message.c_str());
+				fprintf(stderr, "%s: error: %s\n", path_in.c_str(), rc.message.c_str());
 		}
 	}
 	return global_rc;

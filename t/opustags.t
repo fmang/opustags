@@ -83,7 +83,7 @@ error: Unrecognized option '--derp'.
 EOF
 
 is_deeply(opustags('../opustags'), ['', <<"EOF", 256], 'not an Ogg stream');
-error: Input is not a valid Ogg file.
+../opustags: error: Input is not a valid Ogg file.
 EOF
 
 ####################################################################################################
@@ -112,7 +112,7 @@ umask($previous_umask);
 # empty out.opus
 { my $fh; open($fh, '>', 'out.opus') and close($fh) or die }
 is_deeply(opustags(qw(gobble.opus -o out.opus)), ['', <<'EOF', 256], 'refuse to override');
-error: 'out.opus' already exists. Use -y to overwrite.
+gobble.opus: error: 'out.opus' already exists. Use -y to overwrite.
 EOF
 is(md5('out.opus'), 'd41d8cd98f00b204e9800998ecf8427e', 'the output wasn\'t written');
 
@@ -228,7 +228,7 @@ system('ffmpeg -loglevel error -y -i gobble.opus -c copy -map 0:0 -map 0:0 -shor
 	or BAIL_OUT('could not create a muxed stream');
 
 is_deeply(opustags('muxed.ogg'), ['', <<'END_ERR', 256], 'muxed streams detection');
-error: Muxed streams are not supported yet.
+muxed.ogg: error: Muxed streams are not supported yet.
 END_ERR
 
 unlink('muxed.ogg');
