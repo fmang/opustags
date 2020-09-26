@@ -10,6 +10,11 @@ opustags \- Ogg Opus tag editor
 .br
 .B opustags
 .I OPTIONS
+.B -i
+.R \fIFILE\fP...
+.br
+.B opustags
+.I OPTIONS
 .B -o
 .I OUTPUT INPUT
 .SH DESCRIPTION
@@ -24,7 +29,7 @@ You can use the options below to edit the tags before printing them.
 This could be useful to preview some changes before writing them.
 .PP
 In editing mode, you need to specify an output file with \fB--output\fP, or use \fB--in-place\fP to
-overwrite the input file. If the output is a regular file, the result is first written to a
+overwrite the input files. If the output is a regular file, the result is first written to a
 temporary file and then moved to its final location on success. On error, the temporary output file
 is deleted.
 .PP

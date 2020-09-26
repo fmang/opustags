@@ -48,12 +48,13 @@ Documentation
 
     Usage: opustags --help
            opustags [OPTIONS] FILE
+           opustags OPTIONS -i FILE...
            opustags OPTIONS FILE -o FILE
 
     Options:
       -h, --help                    print this help
       -o, --output FILE             specify the output file
-      -i, --in-place                overwrite the input file
+      -i, --in-place                overwrite the input files
       -y, --overwrite               overwrite the output file if it already exists
       -a, --add FIELD=VALUE         add a comment
       -d, --delete FIELD[=VALUE]    delete previously existing comments

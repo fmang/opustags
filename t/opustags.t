@@ -4,10 +4,11 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 37;
+use Test::More tests => 41;
 
 use Digest::MD5;
 use File::Basename;
+use File::Copy;
 use IPC::Open3;
 use List::MoreUtils qw(any);
 use Symbol 'gensym';
@@ -57,12 +58,13 @@ $version
 
 Usage: opustags --help
        opustags [OPTIONS] FILE
+       opustags OPTIONS -i FILE...
        opustags OPTIONS FILE -o FILE
 
 Options:
   -h, --help                    print this help
   -o, --output FILE             specify the output file
-  -i, --in-place                overwrite the input file
+  -i, --in-place                overwrite the input files
   -y, --overwrite               overwrite the output file if it already exists
   -a, --add FIELD=VALUE         add a comment
   -d, --delete FIELD[=VALUE]    delete previously existing comments
@@ -81,7 +83,7 @@ error: Unrecognized option '--derp'.
 EOF
 
 is_deeply(opustags('../opustags'), ['', <<"EOF", 256], 'not an Ogg stream');
-error: Input is not a valid Ogg file.
+../opustags: error: Input is not a valid Ogg file.
 EOF
 
 ####################################################################################################
@@ -110,7 +112,7 @@ umask($previous_umask);
 # empty out.opus
 { my $fh; open($fh, '>', 'out.opus') and close($fh) or die }
 is_deeply(opustags(qw(gobble.opus -o out.opus)), ['', <<'EOF', 256], 'refuse to override');
-error: 'out.opus' already exists. Use -y to overwrite.
+gobble.opus: error: 'out.opus' already exists. Use -y to overwrite.
 EOF
 is(md5('out.opus'), 'd41d8cd98f00b204e9800998ecf8427e', 'the output wasn\'t written');
 
@@ -208,6 +210,17 @@ is_deeply(opustags('-', '-o', '-', {in => $data, mode => ':raw'}), [$data, '', 0
 
 unlink('out.opus');
 
+# Test --in-place
+unlink('out2.opus');
+copy('gobble.opus', 'out.opus');
+is_deeply(opustags(qw(out.opus --add BAR=baz -o out2.opus)), ['', '', 0], 'process multiple files with --in-place');
+is_deeply(opustags(qw(--in-place --add FOO=bar out.opus out2.opus)), ['', '', 0], 'process multiple files with --in-place');
+is(md5('out.opus'), '30ba30c4f236c09429473f36f8f861d2', 'the tags were added correctly (out.opus)');
+is(md5('out2.opus'), '0a4d20c287b2e46b26cb0eee353c2069', 'the tags were added correctly (out2.opus)');
+
+unlink('out.opus');
+unlink('out2.opus');
+
 ####################################################################################################
 # Test muxed streams
 
@@ -215,7 +228,7 @@ system('ffmpeg -loglevel error -y -i gobble.opus -c copy -map 0:0 -map 0:0 -shor
 	or BAIL_OUT('could not create a muxed stream');
 
 is_deeply(opustags('muxed.ogg'), ['', <<'END_ERR', 256], 'muxed streams detection');
-error: Muxed streams are not supported yet.
+muxed.ogg: error: Muxed streams are not supported yet.
 END_ERR
 
 unlink('muxed.ogg');
