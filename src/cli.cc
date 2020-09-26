@@ -23,7 +23,7 @@ R"raw(
 
 Usage: opustags --help
        opustags [OPTIONS] FILE
-       opustags [OPTIONS] -i FILE...
+       opustags OPTIONS -i FILE...
        opustags OPTIONS FILE -o FILE
 
 Options:
