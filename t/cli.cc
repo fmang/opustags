@@ -83,7 +83,7 @@ void check_good_arguments()
 
 	opt = parse({"opustags", "-i", "x", "y", "z"});
 	if (opt.paths_in.size() != 3 || opt.paths_in[0] != "x" || opt.paths_in[1] != "y" ||
-	    opt.paths_in[2] != "z" || !opt.overwrite)
+	    opt.paths_in[2] != "z" || !opt.overwrite || !opt.in_place)
 		throw failure("unexpected option parsing result for case #3");
 }
 
