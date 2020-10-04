@@ -1,6 +1,16 @@
 opustags changelog
 ==================
 
+1.4.0 - 2020-10-04
+------------------
+
+- Preserve permissions when overwriting files.
+- Support multiple files with --in-place.
+- Fix BSD support.
+
+Thanks to Reuben Thomas for contributing the pièce de résistance of this
+release!
+
 1.3.0 - 2019-02-02
 ------------------
 
