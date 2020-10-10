@@ -19,8 +19,10 @@ pkg_check_modules(OGG REQUIRED ogg)
 add_compile_options(${OGG_CFLAGS})
 link_directories(${OGG_LIBRARY_DIRS})
 
+include(FindIconv)
+
 configure_file(src/config.h.in config.h @ONLY)
-include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS})
+include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS} ${Iconv_INCLUDE_DIRS})
 
 add_library(
 	ot
@@ -30,11 +32,7 @@ add_library(
 	src/opus.cc
 	src/system.cc
 )
-target_link_libraries(ot PUBLIC ${OGG_LIBRARIES})
-
-if (APPLE)
-	target_link_libraries(ot PUBLIC iconv)
-endif()
+target_link_libraries(ot PUBLIC ${OGG_LIBRARIES} ${Iconv_LIBRARIES})
 
 add_executable(opustags src/opustags.cc)
 target_link_libraries(opustags ot)
