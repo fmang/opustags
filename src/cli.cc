@@ -202,6 +202,8 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 			--nread;
 		if (nread == 0)
 			continue;
+		if (line[0] == '#') // comment
+			continue;
 		if (memchr(line, '=', nread) == nullptr) {
 			ot::status rc = {ot::st::error, "Malformed tag: " + std::string(line, nread)};
 			free(line);

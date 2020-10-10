@@ -179,6 +179,7 @@ ARTIST=七面鳥
 
 A=A
 X=Y
+#IGNORE=COMMENTS
 END_IN
 OK=yes again
 ARTIST=七面鳥
