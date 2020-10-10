@@ -77,6 +77,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			break;
 		case 'i':
 			opt.in_place = true;
+			opt.overwrite = true;
 			break;
 		case 'y':
 			opt.overwrite = true;
@@ -115,23 +116,26 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	}
 	if (opt.print_help)
 		return st::ok;
-	if (opt.in_place) {
-		if (opt.path_out)
-			return {st::bad_arguments, "Cannot combine --in-place and --output."};
-		opt.overwrite = true;
-		for (int i = optind; i < argc; i++) {
-			if (strcmp(argv[i], "-") == 0)
-				return {st::bad_arguments, "Cannot modify standard input in place."};
-			opt.paths_in.emplace_back(argv[i]);
-		}
-	} else {
-		if (optind != argc - 1)
-			return {st::bad_arguments, "Exactly one input file must be specified."};
-		if (set_all && strcmp(argv[optind], "-") == 0)
-			return {st::bad_arguments,
-				"Cannot use standard input as input file when --set-all is specified."};
-		opt.paths_in.emplace_back(argv[optind]);
+
+	// All non-option arguments are input files.
+	bool stdin_as_input = false;
+	for (int i = optind; i < argc; i++) {
+		stdin_as_input = stdin_as_input || strcmp(argv[i], "-") == 0;
+		opt.paths_in.emplace_back(argv[i]);
 	}
+
+	if (opt.in_place && opt.path_out)
+		return {st::bad_arguments, "Cannot combine --in-place and --output."};
+
+	if (opt.in_place && stdin_as_input)
+		return {st::bad_arguments, "Cannot modify standard input in place."};
+
+	if (!opt.in_place && opt.paths_in.size() != 1)
+		return {st::bad_arguments, "Exactly one input file must be specified."};
+
+	if (set_all && stdin_as_input)
+		return {st::bad_arguments, "Cannot use standard input as input file when --set-all is specified."};
+
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
 		std::vector<std::string> comments;
