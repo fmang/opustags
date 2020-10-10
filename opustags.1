@@ -98,6 +98,10 @@ Sets the tags from scratch.
 All the original tags are deleted and new ones are read from standard input.
 Each line must specify a \fIFIELD=VALUE\fP pair and be separated with line feeds.
 Blank lines and lines starting with \fI#\fP are ignored.
+.TP
+.B \-e, \-\-edit
+Edit tags interactively by spawning the program specified by the EDITOR
+environment variable. The allowed format is the same as \fB--set-all\fP.
 .SH EXAMPLES
 .PP
 List all the tags in file foo.opus:
@@ -116,6 +120,10 @@ Remove the previously existing ARTIST tags and add the two X and Y ARTIST tags, 
 tags without writing them to the Opus file:
 .PP
 	opustags in.opus --add ARTIST=X --add ARTIST=Y --delete ARTIST
+.PP
+Edit tags interactively in Vim:
+.PP
+	EDITOR=vim opustags --in-place --edit file.opus
 .SH CAVEATS
 .PP
 \fBopustags\fP currently has the following limitations:

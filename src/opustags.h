@@ -289,6 +289,10 @@ struct ogg_writer {
 	 * represented as a block of data and a length.
 	 */
 	FILE* file;
+	/**
+	 * Path to the output file.
+	 */
+	std::optional<std::string> path;
 };
 
 /**
@@ -408,6 +412,15 @@ struct options {
 	 * Options: --in-place
 	 */
 	bool in_place = false;
+	/**
+	 * Spawn EDITOR to edit tags interactively.
+	 *
+	 * stdin and stdout must be left free for the editor, so paths_in and
+	 * path_out can’t take `-`, and --set-all is not supported.
+	 *
+	 * Option: --edit
+	 */
+	bool edit_interactively = false;
 	/**
 	 * List of comments to delete. Each string is a selector according to the definition of
 	 * #delete_comments.

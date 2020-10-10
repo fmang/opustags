@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 41;
+use Test::More tests => 45;
 
 use Digest::MD5;
 use File::Basename;
@@ -71,6 +71,7 @@ Options:
   -D, --delete-all              delete all the previously existing comments
   -s, --set FIELD=VALUE         replace a comment
   -S, --set-all                 import comments from standard input
+  -e, --edit                    edit tags interactively in EDITOR
 
 See the man page for extensive documentation.
 EOF
@@ -221,6 +222,21 @@ is(md5('out2.opus'), '0a4d20c287b2e46b26cb0eee353c2069', 'the tags were added co
 
 unlink('out.opus');
 unlink('out2.opus');
+
+####################################################################################################
+# Interactive edition
+
+$ENV{EDITOR} = './screamer';
+is_deeply(opustags(qw(gobble.opus --add artist=aaah -o screaming.opus -e)), ['', '', 0], 'edit a file with EDITOR');
+is(md5('screaming.opus'), '682229df1df6b0ca147e2778737d449e', 'the tags were modified');
+
+$ENV{EDITOR} = './emptier';
+is_deeply(opustags(qw(--add mystery=1 -i screaming.opus -e)), ['', "screaming.opus: error: Tag edition was cancelled because all the tags were deleted.\n", 256], 'edit a file with EDITOR');
+is(md5('screaming.opus'), '682229df1df6b0ca147e2778737d449e', 'the tags were not modified');
+
+$ENV{EDITOR} = '';
+unlink('screaming.opus');
+
 
 ####################################################################################################
 # Test muxed streams

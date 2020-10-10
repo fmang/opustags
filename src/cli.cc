@@ -36,6 +36,7 @@ Options:
   -D, --delete-all              delete all the previously existing comments
   -s, --set FIELD=VALUE         replace a comment
   -S, --set-all                 import comments from standard input
+  -e, --edit                    edit tags interactively in EDITOR
 
 See the man page for extensive documentation.
 )raw";
@@ -50,6 +51,7 @@ static struct option getopt_options[] = {
 	{"set", required_argument, 0, 's'},
 	{"delete-all", no_argument, 0, 'D'},
 	{"set-all", no_argument, 0, 'S'},
+	{"edit", no_argument, 0, 'e'},
 	{NULL, 0, 0, 0}
 };
 
@@ -65,7 +67,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 		return {st::bad_arguments, "No arguments specified. Use -h for help."};
 	int c;
 	optind = 0;
-	while ((c = getopt_long(argc, argv, ":ho:iyd:a:s:DS", getopt_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, ":ho:iyd:a:s:DSe", getopt_options, NULL)) != -1) {
 		switch (c) {
 		case 'h':
 			opt.print_help = true;
@@ -106,6 +108,9 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 		case 'D':
 			opt.delete_all = true;
 			break;
+		case 'e':
+			opt.edit_interactively = true;
+			break;
 		case ':':
 			return {st::bad_arguments,
 			        "Missing value for option '"s + argv[optind - 1] + "'."};
@@ -130,11 +135,17 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	if (opt.in_place && stdin_as_input)
 		return {st::bad_arguments, "Cannot modify standard input in place."};
 
-	if (!opt.in_place && opt.paths_in.size() != 1)
+	if ((!opt.in_place || opt.edit_interactively) && opt.paths_in.size() != 1)
 		return {st::bad_arguments, "Exactly one input file must be specified."};
 
 	if (set_all && stdin_as_input)
 		return {st::bad_arguments, "Cannot use standard input as input file when --set-all is specified."};
+
+	if (opt.edit_interactively && (set_all || stdin_as_input || opt.path_out == "-"))
+		return {st::bad_arguments, "Cannot edit interactively when standard input or standard output are already used."};
+
+	if (opt.edit_interactively && !opt.path_out.has_value() && !opt.in_place)
+		return {st::bad_arguments, "Cannot edit interactively when no output is specified."};
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
@@ -260,6 +271,55 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 	return ot::st::ok;
 }
 
+/** Spawn EDITOR to edit the given tags. */
+static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path)
+{
+	const char* editor = getenv("EDITOR");
+	if (editor == nullptr || *editor == '\0')
+		return {ot::st::error,
+		        "No editor specified in environment variable EDITOR."};
+
+	std::string tags_path = base_path.value_or("tags") + ".XXXXXX.opustags";
+	int fd = mkstemps(const_cast<char*>(tags_path.data()), 9);
+	FILE* tags_file;
+	if (fd == -1 || (tags_file = fdopen(fd, "w")) == nullptr)
+		return {ot::st::standard_error,
+		        "Could not open '" + tags_path + "': " + strerror(errno)};
+
+	ot::print_comments(tags.comments, tags_file);
+	fputs("\n"
+	      "# Edit these tags to your liking and close your editor to apply them.\n"
+	      "# If you delete all the tags however, tag edition will be cancelled.\n",
+	      tags_file);
+	if (fclose(tags_file) != 0)
+		return {ot::st::standard_error, "fclose error: "s + strerror(errno)};
+
+	ot::status rc = ot::execute_process(editor, tags_path);
+	if (rc != ot::st::ok)
+		return rc;
+
+	tags_file = fopen(tags_path.c_str(), "r");
+	if (tags_file == nullptr)
+		return {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
+	if ((rc = ot::read_comments(tags_file, tags.comments)) != ot::st::ok) {
+		fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
+		return rc;
+	}
+	fclose(tags_file);
+
+	if (tags.comments.size() == 0) {
+		remove(tags_path.c_str()); // it’s empty anyway
+		return {ot::st::error, "Tag edition was cancelled because all the tags were deleted."};
+	}
+
+	// Remove the temporary tags file only on success, because unlike the
+	// partial Ogg file that is irrecoverable, the edited tags file
+	// contains user data, so let’s leave users a chance to recover it.
+	remove(tags_path.c_str());
+
+	return ot::st::ok;
+}
+
 /**
  * Main loop of opustags. Read the packets from the reader, and forwards them to the writer.
  * Transform the OpusTags packet on the fly.
@@ -306,6 +366,9 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			if ((rc = edit_tags(tags, opt)) != ot::st::ok)
 				return rc;
 			if (writer) {
+				if (opt.edit_interactively &&
+				    (rc = edit_tags_interactively(tags, writer->path)) != ot::st::ok)
+					return rc;
 				auto packet = ot::render_tags(tags);
 				rc = writer->write_header_packet(serialno, pageno, packet);
 				if (rc != ot::st::ok)
@@ -392,6 +455,7 @@ static ot::status run_single(const ot::options& opt, const std::string& path_in,
 		return rc;
 
 	ot::ogg_writer writer(output);
+	writer.path = path_out;
 	rc = process(reader, &writer, opt);
 	if (rc == ot::st::ok)
 		rc = temporary_output.commit();

@@ -85,6 +85,11 @@ void check_good_arguments()
 	if (opt.paths_in.size() != 3 || opt.paths_in[0] != "x" || opt.paths_in[1] != "y" ||
 	    opt.paths_in[2] != "z" || !opt.overwrite || !opt.in_place)
 		throw failure("unexpected option parsing result for case #3");
+
+	opt = parse({"opustags", "-ie", "x"});
+	if (opt.paths_in.size() != 1 || opt.paths_in[0] != "x" ||
+	    !opt.edit_interactively || !opt.overwrite || !opt.in_place)
+		throw failure("unexpected option parsing result for case #4");
 }
 
 void check_bad_arguments()
@@ -121,6 +126,18 @@ void check_bad_arguments()
 	error_code_case({"opustags", "-S", "x"}, "Malformed tag: INVALID", ot::st::error, "attempt to read invalid argument with -S");
 	error_case({"opustags", "-o", "", "--output", "y", "z"},
 	           "Cannot specify --output more than once.", "double output with first filename empty");
+	error_case({"opustags", "-e", "-i", "x", "y"},
+	           "Exactly one input file must be specified.", "editing interactively two files at once");
+	error_case({"opustags", "--edit", "-S", "x"},
+	           "Cannot edit interactively when standard input or standard output are already used.",
+	           "editing interactively with --set-all");
+	error_case({"opustags", "--edit", "-", "-o", "x"},
+	           "Cannot edit interactively when standard input or standard output are already used.",
+	           "editing interactively from stdandard intput");
+	error_case({"opustags", "--edit", "x", "-o", "-"},
+	           "Cannot edit interactively when standard input or standard output are already used.",
+	           "editing interactively to stdandard output");
+	error_case({"opustags", "--edit", "x"}, "Cannot edit interactively when no output is specified.", "editing without output");
 }
 
 static void check_delete_comments()
