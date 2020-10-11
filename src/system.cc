@@ -14,7 +14,10 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
+
+using namespace std::string_literals;
 
 ot::status ot::partial_file::open(const char* destination)
 {
@@ -131,4 +134,29 @@ ot::status ot::encoding_converter::operator()(const char* in, size_t n, std::str
 		        "Some characters could not be converted into the target encoding "
 		        "in string '" + std::string(in, n) + "'."};
 	return ot::st::ok;
+}
+
+ot::status ot::execute_process(std::string_view arg0, std::string_view arg1)
+{
+	pid_t pid = fork();
+	if (pid == -1) {
+		return {st::standard_error, "Could not fork: "s + strerror(errno)};
+	} else if (pid == 0) {
+		execlp(arg0.data(), arg0.data(), arg1.data(), nullptr);
+		// execvp only returns on error. Let’s not have a runaway child process and kill it.
+		fprintf(stderr, "error: execvp failed: %s\n", strerror(errno));
+		exit(1);
+	}
+
+	int status = 0;
+	if (waitpid(pid, &status, 0) == -1)
+		return {st::standard_error, "waitpid error: "s + strerror(errno)};
+	else if (!WIFEXITED(status))
+		return {st::child_process_failed,
+		        "Child process did not terminate normally: "s + strerror(errno)};
+	else if (WEXITSTATUS(status) != 0)
+		return {st::child_process_failed,
+		        "Child process exited with " + std::to_string(WEXITSTATUS(status))};
+
+	return st::ok;
 }

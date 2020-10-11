@@ -61,6 +61,7 @@ enum class st {
 	/* System */
 	badly_encoded,
 	information_lost,
+	child_process_failed,
 	/* Ogg */
 	bad_stream,
 	end_of_stream,
@@ -161,6 +162,11 @@ public:
 private:
 	iconv_t cd; /**< conversion descriptor */
 };
+
+// Execute the process specified in args using execlp. Wait for the process to
+// exit and return st::ok on success, or st::child_process_failed if it did not
+// exit with 0.
+ot::status execute_process(std::string_view arg0, std::string_view arg1);
 
 /** \} */
 
