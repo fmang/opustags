@@ -177,7 +177,7 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 				has_control = true;
 		}
 		fwrite(local.data(), 1, local.size(), output);
-		putchar('\n');
+		putc('\n', output);
 	}
 	if (info_lost)
 		fputs("warning: Some tags have been transliterated to your system encoding.\n", stderr);
