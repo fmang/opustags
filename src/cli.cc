@@ -138,13 +138,11 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
-		std::vector<std::string> comments;
+		std::list<std::string> comments;
 		auto rc = read_comments(comments_input, comments);
 		if (rc != st::ok)
 			return rc;
-		comments.reserve(comments.size() + opt.to_add.size());
-		std::move(opt.to_add.begin(), opt.to_add.end(), std::back_inserter(comments));
-		opt.to_add = std::move(comments);
+		opt.to_add.splice(opt.to_add.begin(), std::move(comments));
 	}
 	return st::ok;
 }
@@ -192,7 +190,7 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
-ot::status ot::read_comments(FILE* input, std::vector<std::string>& comments)
+ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	comments.clear();

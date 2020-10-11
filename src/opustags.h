@@ -430,7 +430,7 @@ struct options {
 	 *
 	 * Options: --add, --set, --set-all
 	 */
-	std::vector<std::string> to_add;
+	std::list<std::string> to_add;
 };
 
 /**
@@ -456,7 +456,7 @@ void print_comments(const std::list<std::string>& comments, FILE* output);
  *
  * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
  */
-status read_comments(FILE* input, std::vector<std::string>& comments);
+status read_comments(FILE* input, std::list<std::string>& comments);
 
 /**
  * Remove all comments matching the specified selector, which may either be a field name or a

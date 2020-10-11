@@ -7,7 +7,7 @@ using namespace std::literals::string_literals;
 
 void check_read_comments()
 {
-	std::vector<std::string> comments;
+	std::list<std::string> comments;
 	ot::status rc;
 	{
 		std::string txt = "TITLE=a b c\n\nARTIST=X\nArtist=Y\n"s;
@@ -72,13 +72,13 @@ void check_good_arguments()
 	if (opt.paths_in.size() != 1 || opt.paths_in.front() != "x" || !opt.path_out ||
 	    opt.path_out != "y" || !opt.delete_all || opt.overwrite || opt.to_delete.size() != 2 ||
 	    opt.to_delete[0] != "X" || opt.to_delete[1] != "a=b" ||
-	    opt.to_add.size() != 1 || opt.to_add[0] != "X=Y Z")
+	    opt.to_add != std::list<std::string>{"X=Y Z"})
 		throw failure("unexpected option parsing result for case #1");
 
 	opt = parse({"opustags", "-S", "x", "-S", "-a", "x=y z", "-i"});
 	if (opt.paths_in.size() != 1 || opt.paths_in.front() != "x" || opt.path_out ||
 	    !opt.overwrite || opt.to_delete.size() != 0 ||
-	    opt.to_add.size() != 2 || opt.to_add[0] != "N=1" || opt.to_add[1] != "x=y z")
+	    opt.to_add != std::list<std::string>{"N=1", "x=y z"})
 		throw failure("unexpected option parsing result for case #2");
 
 	opt = parse({"opustags", "-i", "x", "y", "z"});
