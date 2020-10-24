@@ -1,6 +1,0 @@
-#!/bin/sh
-cat > "$1" << EOF
-
-# Here’s a file with nothing but comments and newlines.
-
-EOF

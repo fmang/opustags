@@ -27,6 +27,7 @@
 #include <iconv.h>
 #include <ogg/ogg.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <functional>
 #include <list>
@@ -58,6 +59,7 @@ enum class st {
 	error,
 	standard_error, /**< Error raised by the C standard library. */
 	int_overflow,
+	cancel,
 	/* System */
 	badly_encoded,
 	information_lost,
@@ -171,6 +173,12 @@ private:
  * path is the name of the file to edit, which will be passed as the last argument to editor.
  */
 ot::status run_editor(const char* editor, const char* path);
+
+/**
+ * Return the specified path’s mtime, i.e. the last data modification
+ * timestamp.
+ */
+ot::status get_file_timestamp(const char* path, timespec& mtime);
 
 /** \} */
 

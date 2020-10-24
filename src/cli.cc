@@ -283,25 +283,39 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 		return {ot::st::error,
 		        "No editor specified in environment variable VISUAL or EDITOR."};
 
+	// Building the temporary tags file.
 	std::string tags_path = base_path.value_or("tags") + ".XXXXXX.opustags";
 	int fd = mkstemps(const_cast<char*>(tags_path.data()), 9);
 	FILE* tags_file;
 	if (fd == -1 || (tags_file = fdopen(fd, "w")) == nullptr)
 		return {ot::st::standard_error,
 		        "Could not open '" + tags_path + "': " + strerror(errno)};
-
 	ot::print_comments(tags.comments, tags_file);
-	fputs("\n"
-	      "# Edit these tags to your liking and close your editor to apply them.\n"
-	      "# If you delete all the tags however, tag edition will be cancelled.\n",
-	      tags_file);
 	if (fclose(tags_file) != 0)
-		return {ot::st::standard_error, "fclose error: "s + strerror(errno)};
+		return {ot::st::standard_error, tags_path + ": fclose error: "s + strerror(errno)};
 
-	ot::status rc = ot::run_editor(editor, tags_path.c_str());
-	if (rc != ot::st::ok)
+	// Spawn the editor, and watch the modification timestamps.
+	ot::status rc;
+	timespec before, after;
+	if ((rc = ot::get_file_timestamp(tags_path.c_str(), before)) != ot::st::ok)
 		return rc;
+	ot::status editor_rc = ot::run_editor(editor, tags_path.c_str());
+	if ((rc = ot::get_file_timestamp(tags_path.c_str(), after)) != ot::st::ok)
+		return rc; // probably because the file was deleted
+	bool modified = (before.tv_sec != after.tv_sec || before.tv_nsec != after.tv_nsec);
+	if (editor_rc != ot::st::ok) {
+		if (modified)
+			fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
+		else
+			remove(tags_path.c_str());
+		return rc;
+	} else if (!modified) {
+		remove(tags_path.c_str());
+		fputs("Cancelling edition because the tags file was not modified.\n", stderr);
+		return ot::st::cancel;
+	}
 
+	// Applying the new tags.
 	tags_file = fopen(tags_path.c_str(), "r");
 	if (tags_file == nullptr)
 		return {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
@@ -310,11 +324,6 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 		return rc;
 	}
 	fclose(tags_file);
-
-	if (tags.comments.size() == 0) {
-		remove(tags_path.c_str()); // it’s empty anyway
-		return {ot::st::error, "Tag edition was cancelled because all the tags were deleted."};
-	}
 
 	// Remove the temporary tags file only on success, because unlike the
 	// partial Ogg file that is irrecoverable, the edited tags file

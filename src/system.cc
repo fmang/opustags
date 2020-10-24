@@ -177,3 +177,12 @@ ot::status ot::run_editor(const char* editor, const char* path)
 
 	return st::ok;
 }
+
+ot::status ot::get_file_timestamp(const char* path, timespec& mtime)
+{
+	struct stat st;
+	if (stat(path, &st) == -1)
+		return {st::standard_error, path + ": stat error: "s + strerror(errno)};
+	mtime = st.st_mtim; // more precise than st_mtime
+	return st::ok;
+}

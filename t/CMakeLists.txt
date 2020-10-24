@@ -14,7 +14,6 @@ add_executable(oggdump EXCLUDE_FROM_ALL oggdump.cc)
 target_link_libraries(oggdump ot)
 
 configure_file(gobble.opus . COPYONLY)
-configure_file(emptier . COPYONLY)
 
 add_custom_target(
 	check

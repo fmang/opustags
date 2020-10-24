@@ -230,13 +230,11 @@ $ENV{EDITOR} = 'sed -i -e y/a/A/';
 is_deeply(opustags(qw(gobble.opus --add artist=aaah -o screaming.opus -e)), ['', '', 0], 'edit a file with EDITOR');
 is(md5('screaming.opus'), '682229df1df6b0ca147e2778737d449e', 'the tags were modified');
 
-$ENV{EDITOR} = './emptier';
-is_deeply(opustags(qw(--add mystery=1 -i screaming.opus -e)), ['', "screaming.opus: error: Tag edition was cancelled because all the tags were deleted.\n", 256], 'edit a file with EDITOR');
+$ENV{EDITOR} = 'true';
+is_deeply(opustags(qw(--add mystery=1 -i screaming.opus -e)), ['', "Cancelling edition because the tags file was not modified.\n", 256], 'close -e without saving');
 is(md5('screaming.opus'), '682229df1df6b0ca147e2778737d449e', 'the tags were not modified');
 
-$ENV{EDITOR} = '';
 unlink('screaming.opus');
-
 
 ####################################################################################################
 # Test muxed streams
