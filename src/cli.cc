@@ -36,7 +36,7 @@ Options:
   -D, --delete-all              delete all the previously existing comments
   -s, --set FIELD=VALUE         replace a comment
   -S, --set-all                 import comments from standard input
-  -e, --edit                    edit tags interactively in EDITOR
+  -e, --edit                    edit tags interactively in VISUAL/EDITOR
 
 See the man page for extensive documentation.
 )raw";
@@ -271,13 +271,17 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 	return ot::st::ok;
 }
 
-/** Spawn EDITOR to edit the given tags. */
+/** Spawn VISUAL or EDITOR to edit the given tags. */
 static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path)
 {
-	const char* editor = getenv("EDITOR");
-	if (editor == nullptr || *editor == '\0')
+	const char* editor = nullptr;
+	if (getenv("TERM") != nullptr)
+		editor = getenv("VISUAL");
+	if (editor == nullptr) // without a terminal, or if VISUAL is unset
+		editor = getenv("EDITOR");
+	if (editor == nullptr)
 		return {ot::st::error,
-		        "No editor specified in environment variable EDITOR."};
+		        "No editor specified in environment variable VISUAL or EDITOR."};
 
 	std::string tags_path = base_path.value_or("tags") + ".XXXXXX.opustags";
 	int fd = mkstemps(const_cast<char*>(tags_path.data()), 9);

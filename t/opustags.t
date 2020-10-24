@@ -71,7 +71,7 @@ Options:
   -D, --delete-all              delete all the previously existing comments
   -s, --set FIELD=VALUE         replace a comment
   -S, --set-all                 import comments from standard input
-  -e, --edit                    edit tags interactively in EDITOR
+  -e, --edit                    edit tags interactively in VISUAL/EDITOR
 
 See the man page for extensive documentation.
 EOF
