@@ -128,9 +128,6 @@ void check_bad_arguments()
 	           "Cannot specify --output more than once.", "double output with first filename empty");
 	error_case({"opustags", "-e", "-i", "x", "y"},
 	           "Exactly one input file must be specified.", "editing interactively two files at once");
-	error_case({"opustags", "--edit", "-S", "x"},
-	           "Cannot edit interactively when standard input or standard output are already used.",
-	           "editing interactively with --set-all");
 	error_case({"opustags", "--edit", "-", "-o", "x"},
 	           "Cannot edit interactively when standard input or standard output are already used.",
 	           "editing interactively from stdandard intput");
@@ -138,6 +135,10 @@ void check_bad_arguments()
 	           "Cannot edit interactively when standard input or standard output are already used.",
 	           "editing interactively to stdandard output");
 	error_case({"opustags", "--edit", "x"}, "Cannot edit interactively when no output is specified.", "editing without output");
+	error_case({"opustags", "--edit", "x", "-i", "-a", "X=Y"}, "Cannot mix --edit with -adDsS.", "mixing -e and -a");
+	error_case({"opustags", "--edit", "x", "-i", "-d", "X"}, "Cannot mix --edit with -adDsS.", "mixing -e and -d");
+	error_case({"opustags", "--edit", "x", "-i", "-D"}, "Cannot mix --edit with -adDsS.", "mixing -e and -D");
+	error_case({"opustags", "--edit", "x", "-i", "-S"}, "Cannot mix --edit with -adDsS.", "mixing -e and -S");
 }
 
 static void check_delete_comments()

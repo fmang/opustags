@@ -141,11 +141,14 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	if (set_all && stdin_as_input)
 		return {st::bad_arguments, "Cannot use standard input as input file when --set-all is specified."};
 
-	if (opt.edit_interactively && (set_all || stdin_as_input || opt.path_out == "-"))
+	if (opt.edit_interactively && (stdin_as_input || opt.path_out == "-"))
 		return {st::bad_arguments, "Cannot edit interactively when standard input or standard output are already used."};
 
 	if (opt.edit_interactively && !opt.path_out.has_value() && !opt.in_place)
 		return {st::bad_arguments, "Cannot edit interactively when no output is specified."};
+
+	if (opt.edit_interactively && (opt.delete_all || !opt.to_add.empty() || !opt.to_delete.empty()))
+		return {st::bad_arguments, "Cannot mix --edit with -adDsS."};
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.

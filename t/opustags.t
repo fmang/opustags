@@ -226,13 +226,13 @@ unlink('out2.opus');
 ####################################################################################################
 # Interactive edition
 
-$ENV{EDITOR} = 'sed -i -e y/a/A/';
-is_deeply(opustags(qw(gobble.opus --add artist=aaah -o screaming.opus -e)), ['', '', 0], 'edit a file with EDITOR');
-is(md5('screaming.opus'), '682229df1df6b0ca147e2778737d449e', 'the tags were modified');
+$ENV{EDITOR} = 'sed -i -e y/aeiou/AEIOU/';
+is_deeply(opustags(qw(gobble.opus -o screaming.opus -e)), ['', '', 0], 'edit a file with EDITOR');
+is(md5('screaming.opus'), '56e85ccaa83a13c15576d75bbd6d835f', 'the tags were modified');
 
 $ENV{EDITOR} = 'true';
-is_deeply(opustags(qw(--add mystery=1 -i screaming.opus -e)), ['', "Cancelling edition because the tags file was not modified.\n", 256], 'close -e without saving');
-is(md5('screaming.opus'), '682229df1df6b0ca147e2778737d449e', 'the tags were not modified');
+is_deeply(opustags(qw(-i screaming.opus -e)), ['', "Cancelling edition because the tags file was not modified.\n", 256], 'close -e without saving');
+is(md5('screaming.opus'), '56e85ccaa83a13c15576d75bbd6d835f', 'the tags were not modified');
 
 unlink('screaming.opus');
 
