@@ -1,2 +1,0 @@
-#!/bin/sh
-exec sed -i -e 'y/a/A/' "$1"

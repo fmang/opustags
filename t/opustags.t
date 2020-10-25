@@ -226,7 +226,7 @@ unlink('out2.opus');
 ####################################################################################################
 # Interactive edition
 
-$ENV{EDITOR} = './screamer';
+$ENV{EDITOR} = 'sed -i -e y/a/A/';
 is_deeply(opustags(qw(gobble.opus --add artist=aaah -o screaming.opus -e)), ['', '', 0], 'edit a file with EDITOR');
 is(md5('screaming.opus'), '682229df1df6b0ca147e2778737d449e', 'the tags were modified');
 

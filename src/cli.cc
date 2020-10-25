@@ -298,7 +298,7 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	if (fclose(tags_file) != 0)
 		return {ot::st::standard_error, "fclose error: "s + strerror(errno)};
 
-	ot::status rc = ot::execute_process(editor, tags_path);
+	ot::status rc = ot::run_editor(editor, tags_path.c_str());
 	if (rc != ot::st::ok)
 		return rc;
 

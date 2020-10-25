@@ -163,10 +163,14 @@ private:
 	iconv_t cd; /**< conversion descriptor */
 };
 
-// Execute the process specified in args using execlp. Wait for the process to
-// exit and return st::ok on success, or st::child_process_failed if it did not
-// exit with 0.
-ot::status execute_process(std::string_view arg0, std::string_view arg1);
+/**
+ * Execute the editor process specified in editor using execlp. Wait for the process to exit and
+ * return st::ok on success, or st::child_process_failed if it did not exit with 0.
+ *
+ * editor may contain options, which will be expanded using wordexp(3).
+ * path is the name of the file to edit, which will be passed as the last argument to editor.
+ */
+ot::status run_editor(const char* editor, const char* path);
 
 /** \} */
 

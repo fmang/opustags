@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <wordexp.h>
 
 using namespace std::string_literals;
 
@@ -136,15 +137,31 @@ ot::status ot::encoding_converter::operator()(const char* in, size_t n, std::str
 	return ot::st::ok;
 }
 
-ot::status ot::execute_process(std::string_view arg0, std::string_view arg1)
+ot::status ot::run_editor(const char* editor, const char* path)
 {
 	pid_t pid = fork();
 	if (pid == -1) {
 		return {st::standard_error, "Could not fork: "s + strerror(errno)};
 	} else if (pid == 0) {
-		execlp(arg0.data(), arg0.data(), arg1.data(), nullptr);
+		wordexp_t p;
+		if (wordexp(editor, &p, WRDE_SHOWERR) != 0) {
+			fprintf(stderr, "error: wordexp failed while expanding %s\n", editor);
+			exit(1);
+		}
+		// After expansion of editor into an array of words by wordexp, append the file path
+		// and a sentinel nullptr for execvp.
+		std::vector<char*> argv;
+		argv.reserve(p.we_wordc + 2);
+		for (size_t i = 0; i < p.we_wordc; ++i)
+			argv.push_back(p.we_wordv[i]);
+		std::string path_copy = path; // execvp wants a char* and not a const char*
+		argv.push_back(path_copy.data());
+		argv.push_back(nullptr);
+
+		execvp(argv[0], argv.data());
 		// execvp only returns on error. Let’s not have a runaway child process and kill it.
-		fprintf(stderr, "error: execvp failed: %s\n", strerror(errno));
+		fprintf(stderr, "error: execvp %s failed: %s\n", argv[0], strerror(errno));
+		wordfree(&p);
 		exit(1);
 	}
 

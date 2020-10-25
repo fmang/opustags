@@ -103,6 +103,7 @@ Blank lines and lines starting with \fI#\fP are ignored.
 Edit tags interactively by spawning the program specified by the EDITOR
 environment variable. The allowed format is the same as \fB--set-all\fP.
 If TERM and VISUAL are set, VISUAL takes precedence over EDITOR.
+Both variables are expanded with wordexp(3).
 .SH EXAMPLES
 .PP
 List all the tags in file foo.opus:
