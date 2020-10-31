@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 45;
+use Test::More tests => 47;
 
 use Digest::MD5;
 use File::Basename;
@@ -226,12 +226,16 @@ unlink('out2.opus');
 ####################################################################################################
 # Interactive edition
 
-$ENV{EDITOR} = 'sed -i -e y/aeiou/AEIOU/';
+$ENV{EDITOR} = 'sed -i -e y/aeiou/AEIOU/ `sleep 0.1`';
 is_deeply(opustags(qw(gobble.opus -o screaming.opus -e)), ['', '', 0], 'edit a file with EDITOR');
 is(md5('screaming.opus'), '56e85ccaa83a13c15576d75bbd6d835f', 'the tags were modified');
 
 $ENV{EDITOR} = 'true';
 is_deeply(opustags(qw(-i screaming.opus -e)), ['', "Cancelling edition because the tags file was not modified.\n", 256], 'close -e without saving');
+is(md5('screaming.opus'), '56e85ccaa83a13c15576d75bbd6d835f', 'the tags were not modified');
+
+$ENV{EDITOR} = 'false';
+is_deeply(opustags(qw(-i screaming.opus -e)), ['', "screaming.opus: error: Child process exited with 1\n", 256], 'editor exiting with an error');
 is(md5('screaming.opus'), '56e85ccaa83a13c15576d75bbd6d835f', 'the tags were not modified');
 
 unlink('screaming.opus');

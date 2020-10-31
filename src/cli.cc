@@ -311,7 +311,7 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 			fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
 		else
 			remove(tags_path.c_str());
-		return rc;
+		return editor_rc;
 	} else if (!modified) {
 		remove(tags_path.c_str());
 		fputs("Cancelling edition because the tags file was not modified.\n", stderr);
