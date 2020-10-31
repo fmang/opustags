@@ -382,9 +382,11 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			if ((rc = edit_tags(tags, opt)) != ot::st::ok)
 				return rc;
 			if (writer) {
-				if (opt.edit_interactively &&
-				    (rc = edit_tags_interactively(tags, writer->path)) != ot::st::ok)
-					return rc;
+				if (opt.edit_interactively) {
+					fflush(writer->file); // flush before calling the subprocess
+					if ((rc = edit_tags_interactively(tags, writer->path)) != ot::st::ok)
+						return rc;
+				}
 				auto packet = ot::render_tags(tags);
 				rc = writer->write_header_packet(serialno, pageno, packet);
 				if (rc != ot::st::ok)
