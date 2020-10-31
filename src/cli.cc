@@ -319,7 +319,7 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	}
 
 	// Applying the new tags.
-	tags_file = fopen(tags_path.c_str(), "r");
+	tags_file = fopen(tags_path.c_str(), "re");
 	if (tags_file == nullptr)
 		return {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
 	if ((rc = ot::read_comments(tags_file, tags.comments)) != ot::st::ok) {
@@ -410,7 +410,7 @@ static ot::status run_single(const ot::options& opt, const std::string& path_in,
 	ot::file input;
 	if (path_in == "-")
 		input = stdin;
-	else if ((input = fopen(path_in.c_str(), "r")) == nullptr)
+	else if ((input = fopen(path_in.c_str(), "re")) == nullptr)
 		return {ot::st::standard_error,
 		        "Could not open '" + path_in + "' for reading: " + strerror(errno)};
 	ot::ogg_reader reader(input.get());
@@ -450,7 +450,7 @@ static ot::status run_single(const ot::options& opt, const std::string& path_in,
 		/* The output file exists. */
 		if (!S_ISREG(output_info.st_mode)) {
 			/* Special files are opened for writing directly. */
-			if ((final_output = fopen(path_out->c_str(), "w")) == nullptr)
+			if ((final_output = fopen(path_out->c_str(), "we")) == nullptr)
 				rc = {ot::st::standard_error,
 				      "Could not open '" + path_out.value() + "' for writing: " +
 				      strerror(errno)};
