@@ -1,6 +1,11 @@
 opustags changelog
 ==================
 
+1.5.0 - 2020-11-08
+------------------
+
+- Introduce --edit for interactive edition.
+
 1.4.0 - 2020-10-04
 ------------------
 
