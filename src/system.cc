@@ -12,11 +12,11 @@
 #include <opustags.h>
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <wordexp.h>
 
 using namespace std::string_literals;
 
@@ -157,36 +157,12 @@ std::string ot::shell_escape(std::string_view word)
 	return escaped_word;
 }
 
-ot::status ot::run_editor(const char* editor, const char* path)
+ot::status ot::run_editor(std::string_view editor, std::string_view path)
 {
-	pid_t pid = fork();
-	if (pid == -1) {
-		return {st::standard_error, "Could not fork: "s + strerror(errno)};
-	} else if (pid == 0) {
-		wordexp_t p;
-		if (wordexp(editor, &p, WRDE_SHOWERR) != 0) {
-			fprintf(stderr, "error: wordexp failed while expanding %s\n", editor);
-			exit(1);
-		}
-		// After expansion of editor into an array of words by wordexp, append the file path
-		// and a sentinel nullptr for execvp.
-		std::vector<char*> argv;
-		argv.reserve(p.we_wordc + 2);
-		for (size_t i = 0; i < p.we_wordc; ++i)
-			argv.push_back(p.we_wordv[i]);
-		std::string path_copy = path; // execvp wants a char* and not a const char*
-		argv.push_back(path_copy.data());
-		argv.push_back(nullptr);
+	std::string command = std::string(editor) + " " + shell_escape(path);
+	int status = system(command.c_str());
 
-		execvp(argv[0], argv.data());
-		// execvp only returns on error. Let’s not have a runaway child process and kill it.
-		fprintf(stderr, "error: execvp %s failed: %s\n", argv[0], strerror(errno));
-		wordfree(&p);
-		exit(1);
-	}
-
-	int status = 0;
-	if (waitpid(pid, &status, 0) == -1)
+	if (status == -1)
 		return {st::standard_error, "waitpid error: "s + strerror(errno)};
 	else if (!WIFEXITED(status))
 		return {st::child_process_failed,

@@ -170,13 +170,13 @@ private:
 std::string shell_escape(std::string_view word);
 
 /**
- * Execute the editor process specified in editor using execlp. Wait for the process to exit and
+ * Execute the editor process specified in editor. Wait for the process to exit and
  * return st::ok on success, or st::child_process_failed if it did not exit with 0.
  *
- * editor may contain options, which will be expanded using wordexp(3).
+ * editor is passed unescaped to the shell, and may contain CLI options.
  * path is the name of the file to edit, which will be passed as the last argument to editor.
  */
-ot::status run_editor(const char* editor, const char* path);
+ot::status run_editor(std::string_view editor, std::string_view path);
 
 /**
  * Return the specified path’s mtime, i.e. the last data modification

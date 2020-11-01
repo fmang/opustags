@@ -302,7 +302,7 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	timespec before, after;
 	if ((rc = ot::get_file_timestamp(tags_path.c_str(), before)) != ot::st::ok)
 		return rc;
-	ot::status editor_rc = ot::run_editor(editor, tags_path.c_str());
+	ot::status editor_rc = ot::run_editor(editor, tags_path);
 	if ((rc = ot::get_file_timestamp(tags_path.c_str(), after)) != ot::st::ok)
 		return rc; // probably because the file was deleted
 	bool modified = (before.tv_sec != after.tv_sec || before.tv_nsec != after.tv_nsec);
