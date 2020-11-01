@@ -49,10 +49,19 @@ void check_converter()
 	is(rc, ot::st::badly_encoded, "conversion from bad UTF-8 fails");
 }
 
+void check_shell_esape()
+{
+	is(ot::shell_escape("foo"), "'foo'", "simple string");
+	is(ot::shell_escape("a'b"), "'a'\\''b'", "string with a simple quote");
+	is(ot::shell_escape("a!b"), "'a'\\!'b'", "string with a bang");
+	is(ot::shell_escape("a!b'c!d'e"), "'a'\\!'b'\\''c'\\!'d'\\''e'", "string with a bang");
+}
+
 int main(int argc, char **argv)
 {
-	plan(2);
+	plan(3);
 	run(check_partial_files, "test partial files");
 	run(check_converter, "test encoding converter");
+	run(check_shell_esape, "test shell escaping");
 	return 0;
 }

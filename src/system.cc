@@ -137,6 +137,26 @@ ot::status ot::encoding_converter::operator()(const char* in, size_t n, std::str
 	return ot::st::ok;
 }
 
+std::string ot::shell_escape(std::string_view word)
+{
+	std::string escaped_word;
+	// Pre-allocate the result, assuming most of the time enclosing it in single quotes is enough.
+	escaped_word.reserve(2 + word.size());
+
+	escaped_word += '\'';
+	for (char c : word) {
+		if (c == '\'')
+			escaped_word += "'\\''";
+		else if (c == '!')
+			escaped_word += "'\\!'";
+		else
+			escaped_word += c;
+	}
+	escaped_word += '\'';
+
+	return escaped_word;
+}
+
 ot::status ot::run_editor(const char* editor, const char* path)
 {
 	pid_t pid = fork();

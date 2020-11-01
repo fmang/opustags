@@ -34,6 +34,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace ot {
@@ -164,6 +165,9 @@ public:
 private:
 	iconv_t cd; /**< conversion descriptor */
 };
+
+/** Escape a string so that a POSIX shell interprets it as a single argument. */
+std::string shell_escape(std::string_view word);
 
 /**
  * Execute the editor process specified in editor using execlp. Wait for the process to exit and
