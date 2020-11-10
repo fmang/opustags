@@ -12,8 +12,10 @@
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 using namespace std::literals::string_literals;
 
