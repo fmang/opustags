@@ -1,2 +1,5 @@
 #cmakedefine PROJECT_NAME "@PROJECT_NAME@"
 #cmakedefine PROJECT_VERSION "@PROJECT_VERSION@"
+
+#cmakedefine HAVE_ENDIAN_H @HAVE_ENDIAN_H@
+#cmakedefine HAVE_SYS_ENDIAN_H @HAVE_SYS_ENDIAN_H@

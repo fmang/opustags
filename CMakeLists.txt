@@ -21,6 +21,11 @@ link_directories(${OGG_LIBRARY_DIRS})
 
 include(FindIconv)
 
+# We need endian.h on Linux, and sys/endian.h on BSD.
+include(CheckIncludeFileCXX)
+check_include_file_cxx(endian.h HAVE_ENDIAN_H)
+check_include_file_cxx(sys/endian.h HAVE_SYS_ENDIAN_H)
+
 configure_file(src/config.h.in config.h @ONLY)
 include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS} ${Iconv_INCLUDE_DIRS})
 
