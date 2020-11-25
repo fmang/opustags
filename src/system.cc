@@ -179,6 +179,13 @@ ot::status ot::get_file_timestamp(const char* path, timespec& mtime)
 	struct stat st;
 	if (stat(path, &st) == -1)
 		return {st::standard_error, path + ": stat error: "s + strerror(errno)};
-	mtime = st.st_mtim; // more precise than st_mtime
+#if defined(HAVE_STAT_ST_MTIM)
+	mtime = st.st_mtim;
+#elif defined(HAVE_STAT_ST_MTIMESPEC)
+	mtime = st.st_mtimespec;
+#else
+	mtime.tv_sec = st.st_mtime;
+	mtime.tv_nsec = st.st_mtimensec;
+#endif
 	return st::ok;
 }

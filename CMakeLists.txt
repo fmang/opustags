@@ -26,6 +26,10 @@ include(CheckIncludeFileCXX)
 check_include_file_cxx(endian.h HAVE_ENDIAN_H)
 check_include_file_cxx(sys/endian.h HAVE_SYS_ENDIAN_H)
 
+include(CheckStructHasMember)
+check_struct_has_member("struct stat" st_mtim sys/stat.h HAVE_STAT_ST_MTIM LANGUAGE CXX)
+check_struct_has_member("struct stat" st_mtimespec sys/stat.h HAVE_STAT_ST_MTIMESPEC LANGUAGE CXX)
+
 configure_file(src/config.h.in config.h @ONLY)
 include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS} ${Iconv_INCLUDE_DIRS})
 
