@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <config.h>
+
 #include <iconv.h>
 #include <ogg/ogg.h>
 #include <stdio.h>

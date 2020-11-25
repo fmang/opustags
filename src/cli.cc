@@ -6,7 +6,6 @@
  * this module from the main one is to allow easy testing.
  */
 
-#include <config.h>
 #include <opustags.h>
 
 #include <errno.h>
