@@ -71,7 +71,7 @@ void check_good_arguments()
 	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z", "-d", "a=b"});
 	if (opt.paths_in.size() != 1 || opt.paths_in.front() != "x" || !opt.path_out ||
 	    opt.path_out != "y" || !opt.delete_all || opt.overwrite || opt.to_delete.size() != 2 ||
-	    opt.to_delete[0] != "X" || opt.to_delete[1] != "a=b" ||
+	    opt.to_delete.front() != "X" || *std::next(opt.to_delete.begin()) != "a=b" ||
 	    opt.to_add != std::list<std::string>{"X=Y Z"})
 		throw failure("unexpected option parsing result for case #1");
 

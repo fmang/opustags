@@ -60,7 +60,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	std::string utf8;
-	std::string::size_type equal;
+	const char* equal;
 	ot::status rc;
 	bool set_all = false;
 	opt = {};
@@ -86,21 +86,16 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			opt.overwrite = true;
 			break;
 		case 'd':
-			rc = to_utf8(optarg, utf8);
-			if (rc != ot::st::ok)
-				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
-			opt.to_delete.emplace_back(std::move(utf8));
+			opt.to_delete.emplace_back(optarg);
 			break;
 		case 'a':
 		case 's':
-			rc = to_utf8(optarg, utf8);
-			if (rc != ot::st::ok)
-				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
-			if ((equal = utf8.find('=')) == std::string::npos)
+			equal = strchr(optarg, '=');
+			if (equal == nullptr)
 				return {st::bad_arguments, "Comment does not contain an equal sign: "s + optarg + "."};
 			if (c == 's')
-				opt.to_delete.emplace_back(utf8.substr(0, equal));
-			opt.to_add.emplace_back(std::move(utf8));
+				opt.to_delete.emplace_back(optarg, equal - optarg);
+			opt.to_add.emplace_back(optarg);
 			break;
 		case 'S':
 			opt.delete_all = true;
@@ -128,6 +123,16 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	for (int i = optind; i < argc; i++) {
 		stdin_as_input = stdin_as_input || strcmp(argv[i], "-") == 0;
 		opt.paths_in.emplace_back(argv[i]);
+	}
+
+	// Convert arguments to UTF-8.
+	for (std::list<std::string>* args : { &opt.to_add, &opt.to_delete }) {
+		for (std::string& arg : *args) {
+			rc = to_utf8(arg, utf8);
+			if (rc != ot::st::ok)
+				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
+			arg = std::move(utf8);
+		}
 	}
 
 	if (opt.in_place && opt.path_out)

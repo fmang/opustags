@@ -450,7 +450,7 @@ struct options {
 	 *
 	 * Option: --delete, --set
 	 */
-	std::vector<std::string> to_delete;
+	std::list<std::string> to_delete;
 	/**
 	 * Delete all the existing comments.
 	 *
