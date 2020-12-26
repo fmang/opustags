@@ -466,6 +466,12 @@ struct options {
 	 * Options: --add, --set, --set-all
 	 */
 	std::list<std::string> to_add;
+	/**
+	 * Disable encoding conversions. OpusTags are specified to always be encoded as UTF-8, but
+	 * if for some reason a specific file contains binary tags that someone would like to
+	 * extract and set as-is, encoding conversion would get in the way.
+	 */
+	bool raw = false;
 };
 
 /**
@@ -484,14 +490,14 @@ status parse_options(int argc, char** argv, options& opt, FILE* comments);
  *
  * The output generated is meant to be parseable by #ot::read_comments.
  */
-void print_comments(const std::list<std::string>& comments, FILE* output);
+void print_comments(const std::list<std::string>& comments, FILE* output, bool raw);
 
 /**
  * Parse the comments outputted by #ot::print_comments.
  *
  * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
  */
-status read_comments(FILE* input, std::list<std::string>& comments);
+status read_comments(FILE* input, std::list<std::string>& comments, bool raw);
 
 /**
  * Remove all comments matching the specified selector, which may either be a field name or a

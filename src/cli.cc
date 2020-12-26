@@ -38,6 +38,7 @@ Options:
   -s, --set FIELD=VALUE         replace a comment
   -S, --set-all                 import comments from standard input
   -e, --edit                    edit tags interactively in VISUAL/EDITOR
+  --raw                         disable encoding conversion
 
 See the man page for extensive documentation.
 )raw";
@@ -53,6 +54,7 @@ static struct option getopt_options[] = {
 	{"delete-all", no_argument, 0, 'D'},
 	{"set-all", no_argument, 0, 'S'},
 	{"edit", no_argument, 0, 'e'},
+	{"raw", no_argument, 0, 'r'},
 	{NULL, 0, 0, 0}
 };
 
@@ -107,6 +109,9 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 		case 'e':
 			opt.edit_interactively = true;
 			break;
+		case 'r':
+			opt.raw = true;
+			break;
 		case ':':
 			return {st::bad_arguments,
 			        "Missing value for option '"s + argv[optind - 1] + "'."};
@@ -126,12 +131,14 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	}
 
 	// Convert arguments to UTF-8.
-	for (std::list<std::string>* args : { &opt.to_add, &opt.to_delete }) {
-		for (std::string& arg : *args) {
-			rc = to_utf8(arg, utf8);
-			if (rc != ot::st::ok)
-				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
-			arg = std::move(utf8);
+	if (!opt.raw) {
+		for (std::list<std::string>* args : { &opt.to_add, &opt.to_delete }) {
+			for (std::string& arg : *args) {
+				rc = to_utf8(arg, utf8);
+				if (rc != ot::st::ok)
+					return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
+				arg = std::move(utf8);
+			}
 		}
 	}
 
@@ -159,7 +166,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
 		std::list<std::string> comments;
-		auto rc = read_comments(comments_input, comments);
+		auto rc = read_comments(comments_input, comments, opt.raw);
 		if (rc != st::ok)
 			return rc;
 		opt.to_add.splice(opt.to_add.begin(), std::move(comments));
@@ -174,7 +181,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
  *       callers that don’t escape backslashes. Maybe add options to select a mode between simple,
  *       raw, and escaped.
  */
-void ot::print_comments(const std::list<std::string>& comments, FILE* output)
+void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
 {
 	static ot::encoding_converter from_utf8("UTF-8", "//IGNORE");
 	std::string local;
@@ -182,25 +189,33 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 	bool bad_comments = false;
 	bool has_newline = false;
 	bool has_control = false;
-	for (const std::string& comment : comments) {
-		ot::status rc = from_utf8(comment, local);
-		if (rc == ot::st::information_lost) {
-			info_lost = true;
-		} else if (rc != ot::st::ok) {
-			bad_comments = true;
-			continue;
+	for (const std::string& utf8_comment : comments) {
+		const std::string* comment;
+		// Convert the comment from UTF-8 to the system encoding if relevant.
+		if (raw) {
+			comment = &utf8_comment;
+		} else {
+			ot::status rc = from_utf8(utf8_comment, local);
+			comment = &local;
+			if (rc == ot::st::information_lost) {
+				info_lost = true;
+			} else if (rc != ot::st::ok) {
+				bad_comments = true;
+				continue;
+			}
 		}
-		for (unsigned char c : comment) {
+
+		for (unsigned char c : *comment) {
 			if (c == '\n')
 				has_newline = true;
 			else if (c < 0x20)
 				has_control = true;
 		}
-		fwrite(local.data(), 1, local.size(), output);
+		fwrite(comment->data(), 1, comment->size(), output);
 		putc('\n', output);
 	}
 	if (info_lost)
-		fputs("warning: Some characters are not supported by your system encoding and have been discarded.\n", stderr);
+		fputs("warning: Some characters could not be converted to your system encoding and have been discarded. See --raw.\n", stderr);
 	if (bad_comments)
 		fputs("warning: Some tags are not properly encoded and have not been displayed.\n", stderr);
 	if (has_newline)
@@ -210,7 +225,7 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
-ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
+ot::status ot::read_comments(FILE* input, std::list<std::string>& comments, bool raw)
 {
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	comments.clear();
@@ -229,13 +244,17 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 			free(line);
 			return rc;
 		}
-		std::string utf8;
-		ot::status rc = to_utf8(std::string_view(line, nread), utf8);
-		if (rc == ot::st::ok) {
-			comments.emplace_back(std::move(utf8));
+		if (raw) {
+			comments.emplace_back(line, nread);
 		} else {
-			free(line);
-			return {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
+			std::string utf8;
+			ot::status rc = to_utf8(std::string_view(line, nread), utf8);
+			if (rc == ot::st::ok) {
+				comments.emplace_back(std::move(utf8));
+			} else {
+				free(line);
+				return {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
+			}
 		}
 	}
 	free(line);
@@ -281,7 +300,7 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 }
 
 /** Spawn VISUAL or EDITOR to edit the given tags. */
-static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path)
+static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path, bool raw)
 {
 	const char* editor = nullptr;
 	if (getenv("TERM") != nullptr)
@@ -299,7 +318,7 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	if (fd == -1 || (tags_file = fdopen(fd, "w")) == nullptr)
 		return {ot::st::standard_error,
 		        "Could not open '" + tags_path + "': " + strerror(errno)};
-	ot::print_comments(tags.comments, tags_file);
+	ot::print_comments(tags.comments, tags_file, raw);
 	if (fclose(tags_file) != 0)
 		return {ot::st::standard_error, tags_path + ": fclose error: "s + strerror(errno)};
 
@@ -328,7 +347,7 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	tags_file = fopen(tags_path.c_str(), "re");
 	if (tags_file == nullptr)
 		return {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
-	if ((rc = ot::read_comments(tags_file, tags.comments)) != ot::st::ok) {
+	if ((rc = ot::read_comments(tags_file, tags.comments, raw)) != ot::st::ok) {
 		fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
 		return rc;
 	}
@@ -390,7 +409,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			if (writer) {
 				if (opt.edit_interactively) {
 					fflush(writer->file); // flush before calling the subprocess
-					if ((rc = edit_tags_interactively(tags, writer->path)) != ot::st::ok)
+					if ((rc = edit_tags_interactively(tags, writer->path, opt.raw)) != ot::st::ok)
 						return rc;
 				}
 				auto packet = ot::render_tags(tags);
@@ -398,7 +417,7 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 				if (rc != ot::st::ok)
 					return rc;
 			} else {
-				ot::print_comments(tags.comments, stdout);
+				ot::print_comments(tags.comments, stdout, opt.raw);
 				break;
 			}
 		} else {

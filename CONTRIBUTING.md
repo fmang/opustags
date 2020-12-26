@@ -60,7 +60,6 @@ More generally, here are a few features that could be added in the future:
 - Logicial stream listing and selection for multiplexed files.
 - Escaping control characters with --escape.
 - Dump binary packets with --binary.
-- Skip encoding conversion with --raw.
 - Edition of the vendor string.
 - Edition of the arbitrary binary block past the comments.
 - Support for OpusTags packets spanning multiple pages (> 64 kB).

@@ -12,7 +12,7 @@ void check_read_comments()
 	{
 		std::string txt = "TITLE=a b c\n\nARTIST=X\nArtist=Y\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
-		rc = ot::read_comments(input.get(), comments);
+		rc = ot::read_comments(input.get(), comments, false);
 		if (rc != ot::st::ok)
 			throw failure("could not read comments");
 		auto&& expected = {"TITLE=a b c", "ARTIST=X", "Artist=Y"};
@@ -22,14 +22,23 @@ void check_read_comments()
 	{
 		std::string txt = "CORRUPTED=\xFF\xFF\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
-		rc = ot::read_comments(input.get(), comments);
+		rc = ot::read_comments(input.get(), comments, false);
 		if (rc != ot::st::badly_encoded)
 			throw failure("did not get the expected error reading corrupted data");
 	}
 	{
+		std::string txt = "RAW=\xFF\xFF\n"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		rc = ot::read_comments(input.get(), comments, true);
+		if (rc != ot::st::ok)
+			throw failure("could not read comments");
+		if (comments.front() != "RAW=\xFF\xFF")
+			throw failure("parsed user comments did not match expectations");
+	}
+	{
 		std::string txt = "MALFORMED\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
-		rc = ot::read_comments(input.get(), comments);
+		rc = ot::read_comments(input.get(), comments, false);
 		if (rc != ot::st::error)
 			throw failure("did not get the expected error reading malformed comments");
 	}
@@ -90,6 +99,10 @@ void check_good_arguments()
 	if (opt.paths_in.size() != 1 || opt.paths_in[0] != "x" ||
 	    !opt.edit_interactively || !opt.overwrite || !opt.in_place)
 		throw failure("unexpected option parsing result for case #4");
+
+	opt = parse({"opustags", "-a", "X=\xFF", "--raw", "x"});
+	if (!opt.raw || opt.to_add.front() != "X=\xFF")
+		throw failure("--raw did not disable transcoding");
 }
 
 void check_bad_arguments()
@@ -139,6 +152,15 @@ void check_bad_arguments()
 	error_case({"opustags", "--edit", "x", "-i", "-d", "X"}, "Cannot mix --edit with -adDsS.", "mixing -e and -d");
 	error_case({"opustags", "--edit", "x", "-i", "-D"}, "Cannot mix --edit with -adDsS.", "mixing -e and -D");
 	error_case({"opustags", "--edit", "x", "-i", "-S"}, "Cannot mix --edit with -adDsS.", "mixing -e and -S");
+	error_case({"opustags", "-d", "\xFF", "x"},
+	           "Could not encode argument into UTF-8: Some characters could not be converted into the target encoding.",
+	           "-d with binary data");
+	error_case({"opustags", "-a", "X=\xFF", "x"},
+	           "Could not encode argument into UTF-8: Some characters could not be converted into the target encoding.",
+	           "-a with binary data");
+	error_case({"opustags", "-s", "X=\xFF", "x"},
+	           "Could not encode argument into UTF-8: Some characters could not be converted into the target encoding.",
+	           "-s with binary data");
 }
 
 static void check_delete_comments()

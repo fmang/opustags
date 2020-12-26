@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 47;
+use Test::More tests => 50;
 
 use Digest::MD5;
 use File::Basename;
@@ -72,6 +72,7 @@ Options:
   -s, --set FIELD=VALUE         replace a comment
   -S, --set-all                 import comments from standard input
   -e, --edit                    edit tags interactively in VISUAL/EDITOR
+  --raw                         disable encoding conversion
 
 See the man page for extensive documentation.
 EOF
@@ -279,7 +280,7 @@ TITLE=
 ARTIST=\xe9\xe0\xe7
 I=\xf9\xce
 END_OUT
-warning: Some characters are not supported by your system encoding and have been discarded.
+warning: Some characters could not be converted to your system encoding and have been discarded. See --raw.
 END_ERR
 
 $ENV{LC_ALL} = '';
@@ -291,3 +292,23 @@ ARTIST=éàç
 I=ùÎ
 END_OUT
 }
+
+
+####################################################################################################
+# Raw edition
+
+is_deeply(opustags(qw(-S out.opus -i --raw -a), "U=\xFE", {in => <<"END_IN", mode => ':raw'}), ['', '', 0], 'raw set-all with binary data');
+T=\xFF
+END_IN
+
+is_deeply(opustags(qw(out.opus)), [<<"END_OUT", <<'END_ERR', 0], 'default read with binary data');
+T=
+U=
+END_OUT
+warning: Some characters could not be converted to your system encoding and have been discarded. See --raw.
+END_ERR
+
+is_deeply(opustags(qw(out.opus --raw), { mode => ':raw' }), [<<"END_OUT", '', 0], 'raw read');
+T=\xFF
+U=\xFE
+END_OUT

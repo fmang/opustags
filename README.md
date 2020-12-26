@@ -62,5 +62,6 @@ Documentation
       -s, --set FIELD=VALUE         replace a comment
       -S, --set-all                 import comments from standard input
       -e, --edit                    edit tags interactively in VISUAL/EDITOR
+      --raw                         disable encoding conversion
 
 See the man page, `opustags.1`, for extensive documentation.

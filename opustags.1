@@ -103,6 +103,13 @@ Blank lines and lines starting with \fI#\fP are ignored.
 Edit tags interactively by spawning the program specified by the EDITOR
 environment variable. The allowed format is the same as \fB--set-all\fP.
 If TERM and VISUAL are set, VISUAL takes precedence over EDITOR.
+.TP
+.B \-\-raw
+OpusTags metadata should always be encoded in UTF-8, as per RFC 7845. However, some files may be
+corrupted or possibly even contain intentional binary data. In that case, --raw lets you edit that
+kind of binary data without ensuring the validity of the tags encoding. This option may also be
+useful when your system encoding is different from UTF-8 and you wish to preserve the full UTF-8
+character set even though your system cannot display it.
 .SH EXAMPLES
 .PP
 List all the tags in file foo.opus:
