@@ -275,11 +275,11 @@ is_deeply(opustags('-i', 'out.opus', "--add=I=\xf9\xce", {mode => ':raw'}), ['',
 
 is_deeply(opustags('out.opus', {mode => ':raw'}), [<<"END_OUT", <<'END_ERR', 0], 'read tags in ISO-8859-1');
 encoder=Lavc58.18.100 libopus
-TITLE=???
+TITLE=
 ARTIST=\xe9\xe0\xe7
 I=\xf9\xce
 END_OUT
-warning: Some tags have been transliterated to your system encoding.
+warning: Some characters are not supported by your system encoding and have been discarded.
 END_ERR
 
 $ENV{LC_ALL} = '';

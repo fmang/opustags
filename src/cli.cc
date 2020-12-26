@@ -171,7 +171,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 {
-	static ot::encoding_converter from_utf8("UTF-8", "//TRANSLIT");
+	static ot::encoding_converter from_utf8("UTF-8", "//IGNORE");
 	std::string local;
 	bool info_lost = false;
 	bool bad_comments = false;
@@ -195,7 +195,7 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output)
 		putc('\n', output);
 	}
 	if (info_lost)
-		fputs("warning: Some tags have been transliterated to your system encoding.\n", stderr);
+		fputs("warning: Some characters are not supported by your system encoding and have been discarded.\n", stderr);
 	if (bad_comments)
 		fputs("warning: Some tags are not properly encoded and have not been displayed.\n", stderr);
 	if (has_newline)
