@@ -161,9 +161,7 @@ public:
 	 * abort the processing. If some character could not be converted perfectly, keep converting
 	 * the string and finally return #st::information_lost.
 	 */
-	status operator()(const std::string& in, std::string& out)
-		{ return (*this)(in.data(), in.size(), out); }
-	status operator()(const char* in, size_t n, std::string& out);
+	status operator()(std::string_view in, std::string& out);
 private:
 	iconv_t cd; /**< conversion descriptor */
 };

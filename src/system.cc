@@ -104,13 +104,13 @@ ot::encoding_converter::~encoding_converter()
 	iconv_close(cd);
 }
 
-ot::status ot::encoding_converter::operator()(const char* in, size_t n, std::string& out)
+ot::status ot::encoding_converter::operator()(std::string_view in, std::string& out)
 {
 	iconv(cd, nullptr, nullptr, nullptr, nullptr);
 	out.clear();
-	out.reserve(n);
-	char* in_cursor = const_cast<char*>(in);
-	size_t in_left = n;
+	out.reserve(in.size());
+	char* in_cursor = const_cast<char*>(in.data());
+	size_t in_left = in.size();
 	constexpr size_t chunk_size = 1024;
 	char chunk[chunk_size];
 	bool lost_information = false;
@@ -130,7 +130,7 @@ ot::status ot::encoding_converter::operator()(const char* in, size_t n, std::str
 			break;
 		} else if (rc == (size_t) -1 && errno != E2BIG) {
 			return {ot::st::badly_encoded,
-			        "Could not convert string '" + std::string(in, n) + "': " +
+			        "Could not convert string '" + std::string(in) + "': " +
 			        strerror(errno)};
 		} else if (rc != 0 && rc != (size_t) -1) {
 			lost_information = true;

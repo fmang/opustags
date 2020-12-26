@@ -86,14 +86,14 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			opt.overwrite = true;
 			break;
 		case 'd':
-			rc = to_utf8(optarg, strlen(optarg), utf8);
+			rc = to_utf8(optarg, utf8);
 			if (rc != ot::st::ok)
 				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
 			opt.to_delete.emplace_back(std::move(utf8));
 			break;
 		case 'a':
 		case 's':
-			rc = to_utf8(optarg, strlen(optarg), utf8);
+			rc = to_utf8(optarg, utf8);
 			if (rc != ot::st::ok)
 				return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
 			if ((equal = utf8.find('=')) == std::string::npos)
@@ -225,7 +225,7 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments)
 			return rc;
 		}
 		std::string utf8;
-		ot::status rc = to_utf8(line, nread, utf8);
+		ot::status rc = to_utf8(std::string_view(line, nread), utf8);
 		if (rc == ot::st::ok) {
 			comments.emplace_back(std::move(utf8));
 		} else {
