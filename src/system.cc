@@ -121,7 +121,7 @@ ot::status ot::encoding_converter::operator()(std::string_view in, std::string& 
 		if (rc == (size_t) -1 && errno == E2BIG) {
 			// Loop normally.
 		} else if (rc == (size_t) -1) {
-			return {ot::st::badly_encoded, strerror(errno)};
+			return {ot::st::badly_encoded, strerror(errno) + "."s};
 		} else if (rc != 0) {
 			return {ot::st::badly_encoded,
 				"Some characters could not be converted into the target encoding."};

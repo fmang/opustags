@@ -181,7 +181,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
  *       callers that don’t escape backslashes. Maybe add options to select a mode between simple,
  *       raw, and escaped.
  */
-void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
+ot::status ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
 {
 	static ot::encoding_converter from_utf8("UTF-8", "");
 	std::string local;
@@ -197,8 +197,8 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 			ot::status rc = from_utf8(utf8_comment, local);
 			comment = &local;
 			if (rc != ot::st::ok) {
-				bad_comments = true;
-				continue;
+				rc.message += " See --raw.";
+				return rc;
 			}
 		}
 
@@ -211,13 +211,11 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 		fwrite(comment->data(), 1, comment->size(), output);
 		putc('\n', output);
 	}
-	if (bad_comments)
-		fputs("warning: Some tags could not be displayed because of incompatible encoding. See --raw.\n", stderr);
 	if (has_newline)
-		fputs("warning: Some tags contain newline characters. "
-		      "These are not supported by --set-all.\n", stderr);
+		fputs("warning: Some tags contain unsupported newline characters.\n", stderr);
 	if (has_control)
 		fputs("warning: Some tags contain control characters.\n", stderr);
+	return st::ok;
 }
 
 ot::status ot::read_comments(FILE* input, std::list<std::string>& comments, bool raw)
@@ -307,18 +305,18 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 		        "No editor specified in environment variable VISUAL or EDITOR."};
 
 	// Building the temporary tags file.
+	ot::status rc;
 	std::string tags_path = base_path.value_or("tags") + ".XXXXXX.opustags";
 	int fd = mkstemps(const_cast<char*>(tags_path.data()), 9);
-	FILE* tags_file;
+	ot::file tags_file;
 	if (fd == -1 || (tags_file = fdopen(fd, "w")) == nullptr)
 		return {ot::st::standard_error,
 		        "Could not open '" + tags_path + "': " + strerror(errno)};
-	ot::print_comments(tags.comments, tags_file, raw);
-	if (fclose(tags_file) != 0)
-		return {ot::st::standard_error, tags_path + ": fclose error: "s + strerror(errno)};
+	if ((rc = ot::print_comments(tags.comments, tags_file.get(), raw)) != ot::st::ok)
+		return rc;
+	tags_file.reset();
 
 	// Spawn the editor, and watch the modification timestamps.
-	ot::status rc;
 	timespec before, after;
 	if ((rc = ot::get_file_timestamp(tags_path.c_str(), before)) != ot::st::ok)
 		return rc;
@@ -342,11 +340,11 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	tags_file = fopen(tags_path.c_str(), "re");
 	if (tags_file == nullptr)
 		return {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
-	if ((rc = ot::read_comments(tags_file, tags.comments, raw)) != ot::st::ok) {
+	if ((rc = ot::read_comments(tags_file.get(), tags.comments, raw)) != ot::st::ok) {
 		fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
 		return rc;
 	}
-	fclose(tags_file);
+	tags_file.reset();
 
 	// Remove the temporary tags file only on success, because unlike the
 	// partial Ogg file that is irrecoverable, the edited tags file
@@ -412,7 +410,8 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 				if (rc != ot::st::ok)
 					return rc;
 			} else {
-				ot::print_comments(tags.comments, stdout, opt.raw);
+				if ((rc = ot::print_comments(tags.comments, stdout, opt.raw)) != ot::st::ok)
+					return rc;
 				break;
 			}
 		} else {

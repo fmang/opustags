@@ -488,7 +488,7 @@ status parse_options(int argc, char** argv, options& opt, FILE* comments);
  *
  * The output generated is meant to be parseable by #ot::read_comments.
  */
-void print_comments(const std::list<std::string>& comments, FILE* output, bool raw);
+status print_comments(const std::list<std::string>& comments, FILE* output, bool raw);
 
 /**
  * Parse the comments outputted by #ot::print_comments.

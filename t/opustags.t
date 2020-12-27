@@ -162,7 +162,7 @@ is_deeply(opustags('out.opus', '-D', '-a', "X=foo\nbar\tquux"), [<<'END_OUT', <<
 X=foo
 bar	quux
 END_OUT
-warning: Some tags contain newline characters. These are not supported by --set-all.
+warning: Some tags contain unsupported newline characters.
 warning: Some tags contain control characters.
 END_ERR
 
@@ -256,15 +256,16 @@ unlink('muxed.ogg');
 ####################################################################################################
 # Locale
 
-my $locale = 'fr_FR.iso88591';
+my $locale = 'en_US.iso88591';
 my @all_locales = split(' ', `locale -a`);
 
 SKIP: {
-skip "locale $locale is not present", 4 unless (any { $_ eq $locale } @all_locales);
+skip "locale $locale is not present", 5 unless (any { $_ eq $locale } @all_locales);
 
 opustags(qw(gobble.opus -a TITLE=七面鳥 -a ARTIST=éàç -o out.opus -y));
 
 local $ENV{LC_ALL} = $locale;
+local $ENV{LANGUAGE} = '';
 
 is_deeply(opustags(qw(-S out.opus), {in => <<"END_IN", mode => ':raw'}), [<<"END_OUT", '', 0], 'set all in ISO-8859-1');
 T=\xef\xef\xf6
@@ -274,13 +275,16 @@ END_OUT
 
 is_deeply(opustags('-i', 'out.opus', "--add=I=\xf9\xce", {mode => ':raw'}), ['', '', 0], 'write tags in ISO-8859-1');
 
-is_deeply(opustags('out.opus', {mode => ':raw'}), [<<"END_OUT", <<'END_ERR', 0], 'read tags in ISO-8859-1');
+is_deeply(opustags('out.opus', {mode => ':raw'}), [<<"END_OUT", <<"END_ERR", 256], 'read tags in ISO-8859-1 with incompatible characters');
 encoder=Lavc58.18.100 libopus
-ARTIST=\xe9\xe0\xe7
+END_OUT
+out.opus: error: Invalid or incomplete multibyte or wide character. See --raw.
+END_ERR
+
+is_deeply(opustags(qw(out.opus -d TITLE -d ARTIST), {mode => ':raw'}), [<<"END_OUT", '', 0], 'read tags in ISO-8859-1');
+encoder=Lavc58.18.100 libopus
 I=\xf9\xce
 END_OUT
-warning: Some tags could not be displayed because of incompatible encoding. See --raw.
-END_ERR
 
 $ENV{LC_ALL} = '';
 
@@ -290,22 +294,20 @@ TITLE=七面鳥
 ARTIST=éàç
 I=ùÎ
 END_OUT
-}
 
+unlink('out.opus');
+}
 
 ####################################################################################################
 # Raw edition
 
-is_deeply(opustags(qw(-S out.opus -i --raw -a), "U=\xFE", {in => <<"END_IN", mode => ':raw'}), ['', '', 0], 'raw set-all with binary data');
+is_deeply(opustags(qw(-S gobble.opus -o out.opus --raw -a), "U=\xFE", {in => <<"END_IN", mode => ':raw'}), ['', '', 0], 'raw set-all with binary data');
 T=\xFF
 END_IN
-
-is_deeply(opustags(qw(out.opus)), [<<"END_OUT", <<'END_ERR', 0], 'default read with binary data');
-END_OUT
-warning: Some tags could not be displayed because of incompatible encoding. See --raw.
-END_ERR
 
 is_deeply(opustags(qw(out.opus --raw), { mode => ':raw' }), [<<"END_OUT", '', 0], 'raw read');
 T=\xFF
 U=\xFE
 END_OUT
+
+unlink('out.opus');
