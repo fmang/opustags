@@ -276,11 +276,10 @@ is_deeply(opustags('-i', 'out.opus', "--add=I=\xf9\xce", {mode => ':raw'}), ['',
 
 is_deeply(opustags('out.opus', {mode => ':raw'}), [<<"END_OUT", <<'END_ERR', 0], 'read tags in ISO-8859-1');
 encoder=Lavc58.18.100 libopus
-TITLE=
 ARTIST=\xe9\xe0\xe7
 I=\xf9\xce
 END_OUT
-warning: Some characters could not be converted to your system encoding and have been discarded. See --raw.
+warning: Some tags could not be displayed because of incompatible encoding. See --raw.
 END_ERR
 
 $ENV{LC_ALL} = '';
@@ -302,10 +301,8 @@ T=\xFF
 END_IN
 
 is_deeply(opustags(qw(out.opus)), [<<"END_OUT", <<'END_ERR', 0], 'default read with binary data');
-T=
-U=
 END_OUT
-warning: Some characters could not be converted to your system encoding and have been discarded. See --raw.
+warning: Some tags could not be displayed because of incompatible encoding. See --raw.
 END_ERR
 
 is_deeply(opustags(qw(out.opus --raw), { mode => ':raw' }), [<<"END_OUT", '', 0], 'raw read');

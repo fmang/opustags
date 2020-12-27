@@ -183,9 +183,8 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
 {
-	static ot::encoding_converter from_utf8("UTF-8", "//IGNORE");
+	static ot::encoding_converter from_utf8("UTF-8", "");
 	std::string local;
-	bool info_lost = false;
 	bool bad_comments = false;
 	bool has_newline = false;
 	bool has_control = false;
@@ -197,9 +196,7 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 		} else {
 			ot::status rc = from_utf8(utf8_comment, local);
 			comment = &local;
-			if (rc == ot::st::information_lost) {
-				info_lost = true;
-			} else if (rc != ot::st::ok) {
+			if (rc != ot::st::ok) {
 				bad_comments = true;
 				continue;
 			}
@@ -214,10 +211,8 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 		fwrite(comment->data(), 1, comment->size(), output);
 		putc('\n', output);
 	}
-	if (info_lost)
-		fputs("warning: Some characters could not be converted to your system encoding and have been discarded. See --raw.\n", stderr);
 	if (bad_comments)
-		fputs("warning: Some tags are not properly encoded and have not been displayed.\n", stderr);
+		fputs("warning: Some tags could not be displayed because of incompatible encoding. See --raw.\n", stderr);
 	if (has_newline)
 		fputs("warning: Some tags contain newline characters. "
 		      "These are not supported by --set-all.\n", stderr);

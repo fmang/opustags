@@ -65,7 +65,6 @@ enum class st {
 	cancel,
 	/* System */
 	badly_encoded,
-	information_lost,
 	child_process_failed,
 	/* Ogg */
 	bad_stream,
@@ -158,8 +157,7 @@ public:
 	~encoding_converter();
 	/**
 	 * Convert text using iconv. If the input sequence is invalid, return #st::badly_encoded and
-	 * abort the processing. If some character could not be converted perfectly, keep converting
-	 * the string and finally return #st::information_lost.
+	 * abort the processing, leaving out in an undefined state.
 	 */
 	status operator()(std::string_view in, std::string& out);
 private:

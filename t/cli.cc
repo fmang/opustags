@@ -153,13 +153,13 @@ void check_bad_arguments()
 	error_case({"opustags", "--edit", "x", "-i", "-D"}, "Cannot mix --edit with -adDsS.", "mixing -e and -D");
 	error_case({"opustags", "--edit", "x", "-i", "-S"}, "Cannot mix --edit with -adDsS.", "mixing -e and -S");
 	error_case({"opustags", "-d", "\xFF", "x"},
-	           "Could not encode argument into UTF-8: Some characters could not be converted into the target encoding.",
+	           "Could not encode argument into UTF-8: Invalid or incomplete multibyte or wide character",
 	           "-d with binary data");
 	error_case({"opustags", "-a", "X=\xFF", "x"},
-	           "Could not encode argument into UTF-8: Some characters could not be converted into the target encoding.",
+	           "Could not encode argument into UTF-8: Invalid or incomplete multibyte or wide character",
 	           "-a with binary data");
 	error_case({"opustags", "-s", "X=\xFF", "x"},
-	           "Could not encode argument into UTF-8: Some characters could not be converted into the target encoding.",
+	           "Could not encode argument into UTF-8: Invalid or incomplete multibyte or wide character",
 	           "-s with binary data");
 }
 

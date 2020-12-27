@@ -113,37 +113,26 @@ ot::status ot::encoding_converter::operator()(std::string_view in, std::string& 
 	size_t in_left = in.size();
 	constexpr size_t chunk_size = 1024;
 	char chunk[chunk_size];
-	bool lost_information = false;
 	for (;;) {
 		char *out_cursor = chunk;
 		size_t out_left = chunk_size;
 		size_t rc = iconv(cd, &in_cursor, &in_left, &out_cursor, &out_left);
-		out.append(chunk, out_cursor - chunk);
 
-		// With //IGNORE, iconv yields EILSEQ on bad conversion but still returns reasonable
-		// data. Note than EILSEQ is returned at the very end so it’s basically like a fatal
-		// error on the last chunk. When the output buffer is too small, it yields E2BIG and
-		// we need to loop. Any other error is fatal. A return code other than 0 or -1
-		// indicates a lossy transliteration.
-		if (rc == (size_t) -1 && errno == EILSEQ) {
-			lost_information = true;
-			break;
-		} else if (rc == (size_t) -1 && errno != E2BIG) {
+		if (rc == (size_t) -1 && errno == E2BIG) {
+			// Loop normally.
+		} else if (rc == (size_t) -1) {
+			return {ot::st::badly_encoded, strerror(errno)};
+		} else if (rc != 0) {
 			return {ot::st::badly_encoded,
-			        "Could not convert string '" + std::string(in) + "': " +
-			        strerror(errno)};
-		} else if (rc != 0 && rc != (size_t) -1) {
-			lost_information = true;
+				"Some characters could not be converted into the target encoding."};
 		}
 
+		out.append(chunk, out_cursor - chunk);
 		if (in_cursor == nullptr)
 			break;
 		else if (in_left == 0)
 			in_cursor = nullptr;
 	}
-	if (lost_information)
-		return {ot::st::information_lost,
-		        "Some characters could not be converted into the target encoding."};
 	return ot::st::ok;
 }
 

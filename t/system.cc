@@ -46,7 +46,7 @@ void check_converter()
 	is(out, ephemere_iso, "conversion from UTF-8 is correct");
 
 	rc = from_utf8("\xFF\xFF", out);
-	is(rc, ot::st::information_lost, "conversion from bad UTF-8 is lossy");
+	is(rc, ot::st::badly_encoded, "conversion from bad UTF-8 fails");
 }
 
 void check_shell_esape()
