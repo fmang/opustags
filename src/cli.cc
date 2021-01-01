@@ -185,7 +185,6 @@ ot::status ot::print_comments(const std::list<std::string>& comments, FILE* outp
 {
 	static ot::encoding_converter from_utf8("UTF-8", "");
 	std::string local;
-	bool bad_comments = false;
 	bool has_newline = false;
 	bool has_control = false;
 	for (const std::string& utf8_comment : comments) {

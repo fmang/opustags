@@ -1,6 +1,15 @@
 opustags changelog
 ==================
 
+1.6.0 - 2021-01-01
+------------------
+
+- UTF-8 conversion errors are now fatal.
+- Introduce --raw for disabling encoding conversions.
+- Improve platform compatibility.
+
+This also happens to be opustags’s 8-year anniversary!
+
 1.5.1 - 2020-11-21
 ------------------
 
