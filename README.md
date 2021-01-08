@@ -22,7 +22,7 @@ Requirements
 
 * a POSIX-compliant system,
 * a C++17 compiler,
-* CMake ≥ 3.9,
+* CMake ≥ 3.11,
 * libogg 1.3.3.
 
 The version numbers are indicative, and it's very likely opustags will build and work fine with
