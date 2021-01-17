@@ -482,18 +482,18 @@ options parse_options(int argc, char** argv, FILE* comments);
  * Print all the comments, separated by line breaks. Since a comment may contain line breaks, this
  * output is not completely reliable, but it fits most cases.
  *
- * The comments must be encoded in UTF-8, and are converted to the system locale when printed.
+ * The comments must be encoded in UTF-8, and are converted to the system locale when printed,
+ * unless raw is true.
  *
  * The output generated is meant to be parseable by #ot::read_comments.
  */
-status print_comments(const std::list<std::string>& comments, FILE* output, bool raw);
+void print_comments(const std::list<std::string>& comments, FILE* output, bool raw);
 
 /**
- * Parse the comments outputted by #ot::print_comments.
- *
- * The comments are converted from the system encoding to UTF-8, and returned as UTF-8.
+ * Parse the comments outputted by #ot::print_comments. Unless raw is true, the comments are
+ * converted from the system encoding to UTF-8, and returned as UTF-8.
  */
-status read_comments(FILE* input, std::list<std::string>& comments, bool raw);
+std::list<std::string> read_comments(FILE* input, bool raw);
 
 /**
  * Remove all comments matching the specified selector, which may either be a field name or a

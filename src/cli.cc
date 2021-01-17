@@ -165,10 +165,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
-		std::list<std::string> comments;
-		auto rc = read_comments(comments_input, comments, opt.raw);
-		if (rc != st::ok)
-			throw rc;
+		std::list<std::string> comments = read_comments(comments_input, opt.raw);
 		opt.to_add.splice(opt.to_add.begin(), std::move(comments));
 	}
 	return opt;
@@ -181,7 +178,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
  *       callers that don’t escape backslashes. Maybe add options to select a mode between simple,
  *       raw, and escaped.
  */
-ot::status ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
+void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
 {
 	static ot::encoding_converter from_utf8("UTF-8", "");
 	std::string local;
@@ -197,7 +194,7 @@ ot::status ot::print_comments(const std::list<std::string>& comments, FILE* outp
 			comment = &local;
 			if (rc != ot::st::ok) {
 				rc.message += " See --raw.";
-				return rc;
+				throw rc;
 			}
 		}
 
@@ -214,11 +211,11 @@ ot::status ot::print_comments(const std::list<std::string>& comments, FILE* outp
 		fputs("warning: Some tags contain unsupported newline characters.\n", stderr);
 	if (has_control)
 		fputs("warning: Some tags contain control characters.\n", stderr);
-	return st::ok;
 }
 
-ot::status ot::read_comments(FILE* input, std::list<std::string>& comments, bool raw)
+std::list<std::string> ot::read_comments(FILE* input, bool raw)
 {
+	std::list<std::string> comments;
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	comments.clear();
 	char* line = nullptr;
@@ -234,7 +231,7 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments, bool
 		if (memchr(line, '=', nread) == nullptr) {
 			ot::status rc = {ot::st::error, "Malformed tag: " + std::string(line, nread)};
 			free(line);
-			return rc;
+			throw rc;
 		}
 		if (raw) {
 			comments.emplace_back(line, nread);
@@ -245,12 +242,12 @@ ot::status ot::read_comments(FILE* input, std::list<std::string>& comments, bool
 				comments.emplace_back(std::move(utf8));
 			} else {
 				free(line);
-				return {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
+				throw ot::status {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
 			}
 		}
 	}
 	free(line);
-	return ot::st::ok;
+	return comments;
 }
 
 void ot::delete_comments(std::list<std::string>& comments, const std::string& selector)
@@ -277,7 +274,7 @@ void ot::delete_comments(std::list<std::string>& comments, const std::string& se
 }
 
 /** Apply the modifications requested by the user to the opustags packet. */
-static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
+static void edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
 	if (opt.delete_all) {
 		tags.comments.clear();
@@ -287,12 +284,10 @@ static ot::status edit_tags(ot::opus_tags& tags, const ot::options& opt)
 
 	for (const std::string& comment : opt.to_add)
 		tags.comments.emplace_back(comment);
-
-	return ot::st::ok;
 }
 
 /** Spawn VISUAL or EDITOR to edit the given tags. */
-static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path, bool raw)
+static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path, bool raw)
 {
 	const char* editor = nullptr;
 	if (getenv("TERM") != nullptr)
@@ -300,8 +295,8 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	if (editor == nullptr) // without a terminal, or if VISUAL is unset
 		editor = getenv("EDITOR");
 	if (editor == nullptr)
-		return {ot::st::error,
-		        "No editor specified in environment variable VISUAL or EDITOR."};
+		throw ot::status {ot::st::error,
+		                 "No editor specified in environment variable VISUAL or EDITOR."};
 
 	// Building the temporary tags file.
 	ot::status rc;
@@ -309,39 +304,40 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	int fd = mkstemps(const_cast<char*>(tags_path.data()), 9);
 	ot::file tags_file;
 	if (fd == -1 || (tags_file = fdopen(fd, "w")) == nullptr)
-		return {ot::st::standard_error,
-		        "Could not open '" + tags_path + "': " + strerror(errno)};
-	if ((rc = ot::print_comments(tags.comments, tags_file.get(), raw)) != ot::st::ok)
-		return rc;
+		throw ot::status {ot::st::standard_error,
+		                  "Could not open '" + tags_path + "': " + strerror(errno)};
+	ot::print_comments(tags.comments, tags_file.get(), raw);
 	tags_file.reset();
 
 	// Spawn the editor, and watch the modification timestamps.
 	timespec before, after;
 	if ((rc = ot::get_file_timestamp(tags_path.c_str(), before)) != ot::st::ok)
-		return rc;
+		throw rc;
 	ot::status editor_rc = ot::run_editor(editor, tags_path);
 	if ((rc = ot::get_file_timestamp(tags_path.c_str(), after)) != ot::st::ok)
-		return rc; // probably because the file was deleted
+		throw rc; // probably because the file was deleted
 	bool modified = (before.tv_sec != after.tv_sec || before.tv_nsec != after.tv_nsec);
 	if (editor_rc != ot::st::ok) {
 		if (modified)
 			fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
 		else
 			remove(tags_path.c_str());
-		return editor_rc;
+		throw editor_rc;
 	} else if (!modified) {
 		remove(tags_path.c_str());
 		fputs("Cancelling edition because the tags file was not modified.\n", stderr);
-		return ot::st::cancel;
+		throw ot::status {ot::st::cancel};
 	}
 
 	// Applying the new tags.
 	tags_file = fopen(tags_path.c_str(), "re");
 	if (tags_file == nullptr)
-		return {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
-	if ((rc = ot::read_comments(tags_file.get(), tags.comments, raw)) != ot::st::ok) {
+		throw ot::status {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
+	try {
+		tags.comments = ot::read_comments(tags_file.get(), raw);
+	} catch (const ot::status& rc) {
 		fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
-		return rc;
+		throw rc;
 	}
 	tags_file.reset();
 
@@ -349,8 +345,6 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
 	// partial Ogg file that is irrecoverable, the edited tags file
 	// contains user data, so let’s leave users a chance to recover it.
 	remove(tags_path.c_str());
-
-	return ot::st::ok;
 }
 
 /**
@@ -359,7 +353,7 @@ static ot::status edit_tags_interactively(ot::opus_tags& tags, const std::option
  *
  * The writer is optional. When writer is nullptr, opustags runs in read-only mode.
  */
-static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::options &opt)
+static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::options &opt)
 {
 	bool focused = false; /*< the stream on which we operate is defined */
 	int focused_serialno; /*< when focused, the serialno of the focused stream */
@@ -369,9 +363,9 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 		if (rc == ot::st::end_of_stream)
 			break;
 		else if (rc == ot::st::bad_stream && absolute_page_no == -1)
-			return {ot::st::bad_stream, "Input is not a valid Ogg file."};
+			throw ot::status {ot::st::bad_stream, "Input is not a valid Ogg file."};
 		else if (rc != ot::st::ok)
-			return rc;
+			throw rc;
 		++absolute_page_no;
 		auto serialno = ogg_page_serialno(&reader.page);
 		auto pageno = ogg_page_pageno(&reader.page);
@@ -380,47 +374,43 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 			focused_serialno = serialno;
 		} else if (serialno != focused_serialno) {
 			/** \todo Support mixed streams. */
-			return {ot::st::error, "Muxed streams are not supported yet."};
+			throw ot::status {ot::st::error, "Muxed streams are not supported yet."};
 		}
 		if (absolute_page_no == 0) { // Identification header
 			if (!ot::is_opus_stream(reader.page))
-				return {ot::st::error, "Not an Opus stream."};
+				throw ot::status {ot::st::error, "Not an Opus stream."};
 			if (writer) {
 				rc = writer->write_page(reader.page);
 				if (rc != ot::st::ok)
-					return rc;
+					throw rc;
 			}
 		} else if (absolute_page_no == 1) { // Comment header
 			ot::opus_tags tags;
 			rc = reader.process_header_packet(
 				[&tags](ogg_packet& p) { return ot::parse_tags(p, tags); });
 			if (rc != ot::st::ok)
-				return rc;
-			if ((rc = edit_tags(tags, opt)) != ot::st::ok)
-				return rc;
+				throw rc;
+			edit_tags(tags, opt);
 			if (writer) {
 				if (opt.edit_interactively) {
 					fflush(writer->file); // flush before calling the subprocess
-					if ((rc = edit_tags_interactively(tags, writer->path, opt.raw)) != ot::st::ok)
-						return rc;
+					edit_tags_interactively(tags, writer->path, opt.raw);
 				}
 				auto packet = ot::render_tags(tags);
 				rc = writer->write_header_packet(serialno, pageno, packet);
 				if (rc != ot::st::ok)
-					return rc;
+					throw rc;
 			} else {
-				if ((rc = ot::print_comments(tags.comments, stdout, opt.raw)) != ot::st::ok)
-					return rc;
+				ot::print_comments(tags.comments, stdout, opt.raw);
 				break;
 			}
 		} else {
 			if (writer && (rc = writer->write_page(reader.page)) != ot::st::ok)
-				return rc;
+				throw rc;
 		}
 	}
 	if (absolute_page_no < 1)
-		return {ot::st::error, "Expected at least 2 Ogg pages."};
-	return ot::st::ok;
+		throw ot::status {ot::st::error, "Expected at least 2 Ogg pages."};
 }
 
 static void run_single(const ot::options& opt, const std::string& path_in, const std::optional<std::string>& path_out)
@@ -435,9 +425,7 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 
 	/* Read-only mode. */
 	if (!path_out) {
-		ot::status rc = process(reader, nullptr, opt);
-		if (rc != ot::st::ok)
-			throw rc;
+		process(reader, nullptr, opt);
 		return;
 	}
 
@@ -496,10 +484,9 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 
 	ot::ogg_writer writer(output);
 	writer.path = path_out;
-	rc = process(reader, &writer, opt);
-	if (rc == ot::st::ok)
-		rc = temporary_output.commit();
+	process(reader, &writer, opt);
 
+	rc = temporary_output.commit();
 	if (rc != ot::st::ok)
 		throw rc;
 }

@@ -5,6 +5,16 @@
 
 using namespace std::literals::string_literals;
 
+static ot::status read_comments(FILE* input, std::list<std::string>& comments, bool raw)
+{
+	try {
+		comments = ot::read_comments(input, raw);
+	} catch (const ot::status& rc) {
+		return rc;
+	}
+	return ot::st::ok;
+}
+
 void check_read_comments()
 {
 	std::list<std::string> comments;
@@ -12,7 +22,7 @@ void check_read_comments()
 	{
 		std::string txt = "TITLE=a b c\n\nARTIST=X\nArtist=Y\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
-		rc = ot::read_comments(input.get(), comments, false);
+		rc = read_comments(input.get(), comments, false);
 		if (rc != ot::st::ok)
 			throw failure("could not read comments");
 		auto&& expected = {"TITLE=a b c", "ARTIST=X", "Artist=Y"};
@@ -22,14 +32,14 @@ void check_read_comments()
 	{
 		std::string txt = "CORRUPTED=\xFF\xFF\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
-		rc = ot::read_comments(input.get(), comments, false);
+		rc = read_comments(input.get(), comments, false);
 		if (rc != ot::st::badly_encoded)
 			throw failure("did not get the expected error reading corrupted data");
 	}
 	{
 		std::string txt = "RAW=\xFF\xFF\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
-		rc = ot::read_comments(input.get(), comments, true);
+		rc = read_comments(input.get(), comments, true);
 		if (rc != ot::st::ok)
 			throw failure("could not read comments");
 		if (comments.front() != "RAW=\xFF\xFF")
@@ -38,7 +48,7 @@ void check_read_comments()
 	{
 		std::string txt = "MALFORMED\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
-		rc = ot::read_comments(input.get(), comments, false);
+		rc = read_comments(input.get(), comments, false);
 		if (rc != ot::st::error)
 			throw failure("did not get the expected error reading malformed comments");
 	}
