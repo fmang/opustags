@@ -44,7 +44,7 @@ sub opustags {
 # Tests related to the overall opustags executable, like the help message.
 # No Opus file is manipulated here.
 
-is_deeply(opustags(), ['', <<EOF, 256], 'no options is a failure');
+is_deeply(opustags(), ['', <<EOF, 512], 'no options is a failure');
 error: No arguments specified. Use -h for help.
 EOF
 
@@ -80,7 +80,7 @@ EOF
 is_deeply(opustags('--help'), [$expected_help, '', 0], '--help displays the help message');
 is_deeply(opustags('-h'), [$expected_help, '', 0], '-h displays the help message too');
 
-is_deeply(opustags('--derp'), ['', <<"EOF", 256], 'unrecognized option shows an error');
+is_deeply(opustags('--derp'), ['', <<"EOF", 512], 'unrecognized option shows an error');
 error: Unrecognized option '--derp'.
 EOF
 
@@ -153,7 +153,7 @@ TITLE=gobble
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
 
-is_deeply(opustags(qw(-i out.opus -a fatal=yes -a FOO -a BAR)), ['', <<'EOF', 256], 'bad tag with --add');
+is_deeply(opustags(qw(-i out.opus -a fatal=yes -a FOO -a BAR)), ['', <<'EOF', 512], 'bad tag with --add');
 error: Comment does not contain an equal sign: FOO.
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
@@ -166,7 +166,7 @@ warning: Some tags contain unsupported newline characters.
 warning: Some tags contain control characters.
 END_ERR
 
-is_deeply(opustags(qw(-i out.opus -s fatal=yes -s FOO -s BAR)), ['', <<'EOF', 256], 'bad tag with --set');
+is_deeply(opustags(qw(-i out.opus -s fatal=yes -s FOO -s BAR)), ['', <<'EOF', 512], 'bad tag with --set');
 error: Comment does not contain an equal sign: FOO.
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');

@@ -96,7 +96,7 @@ enum class st {
 struct status {
 	status(st code = st::ok) : code(code) {}
 	template<class T> status(st code, T&& message) : code(code), message(message) {}
-	operator st() { return code; }
+	operator st() const { return code; }
 	st code;
 	std::string message;
 };

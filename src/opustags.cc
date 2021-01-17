@@ -19,10 +19,10 @@ int main(int argc, char** argv) {
 		setlocale(LC_ALL, "");
 		ot::options opt = ot::parse_options(argc, argv, stdin);
 		ot::run(opt);
-		return EXIT_SUCCESS;
+		return 0;
 	} catch (const ot::status& rc) {
 		if (!rc.message.empty())
 			fprintf(stderr, "error: %s\n", rc.message.c_str());
-		return EXIT_FAILURE;
+		return rc == ot::st::bad_arguments ? 2 : 1;
 	}
 }
