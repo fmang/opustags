@@ -357,14 +357,7 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 {
 	bool focused = false; /*< the stream on which we operate is defined */
 	int focused_serialno; /*< when focused, the serialno of the focused stream */
-	for (;;) {
-		ot::status rc = reader.next_page();
-		if (rc == ot::st::end_of_stream)
-			break;
-		else if (rc == ot::st::bad_stream && reader.absolute_page_no == (size_t) -1)
-			throw ot::status {ot::st::bad_stream, "Input is not a valid Ogg file."};
-		else if (rc != ot::st::ok)
-			throw rc;
+	while (reader.next_page()) {
 		auto serialno = ogg_page_serialno(&reader.page);
 		auto pageno = ogg_page_pageno(&reader.page);
 		if (!focused) {
@@ -377,17 +370,17 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 		if (reader.absolute_page_no == 0) { // Identification header
 			if (!ot::is_opus_stream(reader.page))
 				throw ot::status {ot::st::error, "Not an Opus stream."};
-			if (writer) {
-				rc = writer->write_page(reader.page);
-				if (rc != ot::st::ok)
-					throw rc;
-			}
+			if (writer)
+				writer->write_page(reader.page);
 		} else if (reader.absolute_page_no == 1) { // Comment header
 			ot::opus_tags tags;
-			rc = reader.process_header_packet(
-				[&tags](ogg_packet& p) { return ot::parse_tags(p, tags); });
-			if (rc != ot::st::ok)
-				throw rc;
+			reader.process_header_packet(
+				[&tags](ogg_packet& p) {
+					ot::status rc = ot::parse_tags(p, tags);
+					if (rc != ot::st::ok)
+						throw rc;
+				}
+			);
 			edit_tags(tags, opt);
 			if (writer) {
 				if (opt.edit_interactively) {
@@ -395,16 +388,13 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 					edit_tags_interactively(tags, writer->path, opt.raw);
 				}
 				auto packet = ot::render_tags(tags);
-				rc = writer->write_header_packet(serialno, pageno, packet);
-				if (rc != ot::st::ok)
-					throw rc;
+				writer->write_header_packet(serialno, pageno, packet);
 			} else {
 				ot::print_comments(tags.comments, stdout, opt.raw);
 				break;
 			}
-		} else {
-			if (writer && (rc = writer->write_page(reader.page)) != ot::st::ok)
-				throw rc;
+		} else if (writer) {
+			writer->write_page(reader.page);
 		}
 	}
 	if (reader.absolute_page_no < 1)

@@ -68,7 +68,6 @@ enum class st {
 	child_process_failed,
 	/* Ogg */
 	bad_stream,
-	end_of_stream,
 	libogg_error,
 	/* Opus */
 	bad_magic_number,
@@ -239,9 +238,9 @@ struct ogg_reader {
 	 * is made available in the #page field, is owned by the Ogg reader, and is valid until the
 	 * next call to #read_page.
 	 *
-	 * After the last page was read, return #status::end_of_stream.
+	 * Return true if a page was read, false on end of stream.
 	 */
-	status next_page();
+	bool next_page();
 	/**
 	 * Read the single packet contained in the last page read, assuming it's a header page, and
 	 * call the function f on it. This function has no side effect, and calling it twice on the
@@ -250,7 +249,7 @@ struct ogg_reader {
 	 * It is currently limited to packets that fit on a single page, and should be later
 	 * extended to support packets spanning multiple pages.
 	 */
-	status process_header_packet(const std::function<status(ogg_packet&)>& f);
+	void process_header_packet(const std::function<void(ogg_packet&)>& f);
 	/**
 	 * Current page from the sync state.
 	 *
@@ -298,12 +297,12 @@ struct ogg_writer {
 	 *
 	 * This is a basic I/O operation and does not even require libogg, or the stream.
 	 */
-	status write_page(const ogg_page& page);
+	void write_page(const ogg_page& page);
 	/**
 	 * Write a header packet and flush the page. Header packets are always placed alone on their
 	 * pages.
 	 */
-	status write_header_packet(int serialno, int pageno, ogg_packet& packet);
+	void write_header_packet(int serialno, int pageno, ogg_packet& packet);
 	/**
 	 * Output file. It should be opened in binary mode. We use it to write whole pages,
 	 * represented as a block of data and a length.

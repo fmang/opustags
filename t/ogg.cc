@@ -11,37 +11,27 @@ static void check_ref_ogg()
 
 	ot::ogg_reader reader(input.get());
 
-	ot::status rc = reader.next_page();
-	if (rc != ot::st::ok)
+	if (reader.next_page() != true)
 		throw failure("could not read the first page");
 	if (!ot::is_opus_stream(reader.page))
 		throw failure("failed to identify the stream as opus");
-	rc = reader.process_header_packet([](ogg_packet& p) {
+	reader.process_header_packet([](ogg_packet& p) {
 		if (p.bytes != 19)
 			throw failure("unexpected length for the first packet");
-		return ot::st::ok;
 	});
-	if (rc != ot::st::ok)
-		throw failure("could not read the first packet");
 
-	rc = reader.next_page();
-	if (rc != ot::st::ok)
+	if (reader.next_page() != true)
 		throw failure("could not read the second page");
-	rc = reader.process_header_packet([](ogg_packet& p) {
+	reader.process_header_packet([](ogg_packet& p) {
 		if (p.bytes != 62)
 			throw failure("unexpected length for the second packet");
-		return ot::st::ok;
 	});
-	if (rc != ot::st::ok)
-		throw failure("could not read the second packet");
 
 	while (!ogg_page_eos(&reader.page)) {
-		rc = reader.next_page();
-		if (rc != ot::st::ok)
+		if (reader.next_page() != true)
 			throw failure("failure reading a page");
 	}
-	rc = reader.next_page();
-	if (rc != ot::st::end_of_stream)
+	if (reader.next_page() != false)
 		throw failure("did not correctly detect the end of stream");
 }
 
@@ -67,7 +57,6 @@ static void check_memory_ogg()
 	ogg_packet second_packet = make_packet("Second");
 	std::vector<unsigned char> my_ogg(128);
 	size_t my_ogg_size;
-	ot::status rc;
 
 	{
 		ot::file output = fmemopen(my_ogg.data(), my_ogg.size(), "w");
@@ -75,11 +64,7 @@ static void check_memory_ogg()
 			throw failure("could not open the output stream");
 		ot::ogg_writer writer(output.get());
 		writer.write_header_packet(1234, 0, first_packet);
-		if (rc != ot::st::ok)
-			throw failure("could not write the first packet");
 		writer.write_header_packet(1234, 1, second_packet);
-		if (rc != ot::st::ok)
-			throw failure("could not write the second packet");
 		my_ogg_size = ftell(output.get());
 		if (my_ogg_size != 67)
 			throw failure("unexpected output size");
@@ -90,28 +75,19 @@ static void check_memory_ogg()
 		if (input == nullptr)
 			throw failure("could not open the input stream");
 		ot::ogg_reader reader(input.get());
-		rc = reader.next_page();
-		if (rc != ot::st::ok)
+		if (reader.next_page() != true)
 			throw failure("could not read the first page");
-		rc = reader.process_header_packet([&first_packet](ogg_packet &p) {
+		reader.process_header_packet([&first_packet](ogg_packet &p) {
 			if (!same_packet(p, first_packet))
 				throw failure("unexpected content in the first packet");
-			return ot::st::ok;
 		});
-		if (rc != ot::st::ok)
-			throw failure("could not read the first packet");
-		rc = reader.next_page();
-		if (rc != ot::st::ok)
+		if (reader.next_page() != true)
 			throw failure("could not read the second page");
-		rc = reader.process_header_packet([&second_packet](ogg_packet &p) {
+		reader.process_header_packet([&second_packet](ogg_packet &p) {
 			if (!same_packet(p, second_packet))
 				throw failure("unexpected content in the second packet");
-			return ot::st::ok;
 		});
-		if (rc != ot::st::ok)
-			throw failure("could not read the second packet");
-		rc = reader.next_page();
-		if (rc != ot::st::end_of_stream)
+		if (reader.next_page() != false)
 			throw failure("unexpected third page");
 	}
 }
@@ -121,9 +97,13 @@ void check_bad_stream()
 	auto err_msg = "did not detect the stream is not an ogg stream";
 	ot::file input = fmemopen((void*) err_msg, 20, "r");
 	ot::ogg_reader reader(input.get());
-	ot::status rc = reader.next_page();
-	if (rc != ot::st::bad_stream)
-		throw failure(err_msg);
+	try {
+		reader.next_page();
+		throw failure("did not raise an error");
+	} catch (const ot::status& rc) {
+		if (rc != ot::st::bad_stream)
+			throw failure(err_msg);
+	}
 }
 
 void check_identification()
