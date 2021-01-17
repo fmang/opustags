@@ -30,6 +30,8 @@ static void run(F test, const char *name)
 		ok = true;
 	} catch (failure& e) {
 		std::cerr << "# fail: " << e.what() << "\n";
+	} catch (const ot::status &rc) {
+		std::cerr << "# unexpected error: " << rc.message << "\n";
 	}
 	std::cout << (ok ? "ok" : "not ok") << " - " << name << "\n";
 }

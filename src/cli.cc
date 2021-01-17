@@ -374,13 +374,7 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 				writer->write_page(reader.page);
 		} else if (reader.absolute_page_no == 1) { // Comment header
 			ot::opus_tags tags;
-			reader.process_header_packet(
-				[&tags](ogg_packet& p) {
-					ot::status rc = ot::parse_tags(p, tags);
-					if (rc != ot::st::ok)
-						throw rc;
-				}
-			);
+			reader.process_header_packet([&tags](ogg_packet& p) { tags = ot::parse_tags(p); });
 			edit_tags(tags, opt);
 			if (writer) {
 				if (opt.edit_interactively) {

@@ -376,10 +376,8 @@ struct opus_tags {
 
 /**
  * Read the given OpusTags packet and extract its content into an opus_tags object.
- *
- * On error, the tags object is left unchanged.
  */
-status parse_tags(const ogg_packet& packet, opus_tags& tags);
+opus_tags parse_tags(const ogg_packet& packet);
 
 /**
  * Serialize an #opus_tags object into an OpusTags Ogg packet.

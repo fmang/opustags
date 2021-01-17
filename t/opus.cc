@@ -14,13 +14,10 @@ static const char standard_OpusTags[] =
 
 static void parse_standard()
 {
-	ot::opus_tags tags;
 	ogg_packet op;
 	op.bytes = sizeof(standard_OpusTags) - 1;
 	op.packet = (unsigned char*) standard_OpusTags;
-	auto rc = ot::parse_tags(op, tags);
-	if (rc != ot::st::ok)
-		throw failure("ot::parse_tags did not return ok");
+	ot::opus_tags tags = ot::parse_tags(op);
 	if (tags.vendor != "opustags test packet")
 		throw failure("bad vendor string");
 	if (tags.comments.size() != 2)
@@ -33,6 +30,16 @@ static void parse_standard()
 		throw failure("bad artist");
 	if (tags.extra_data.size() != 0)
 		throw failure("found mysterious padding data");
+}
+
+static ot::status try_parse_tags(const ogg_packet& packet)
+{
+	try {
+		ot::parse_tags(packet);
+		return ot::st::ok;
+	} catch (const ot::status& rc) {
+		return rc;
+	}
 }
 
 /**
@@ -59,43 +66,40 @@ static void parse_corrupted()
 	char* end = packet + size;
 
 	op.bytes = 7;
-	if (ot::parse_tags(op, tags) != ot::st::cut_magic_number)
+	if (try_parse_tags(op) != ot::st::cut_magic_number)
 		throw failure("did not detect the overflowing magic number");
 	op.bytes = 11;
-	if (ot::parse_tags(op, tags) != ot::st::cut_vendor_length)
+	if (try_parse_tags(op) != ot::st::cut_vendor_length)
 		throw failure("did not detect the overflowing vendor string length");
 	op.bytes = size;
 
 	header_data[0] = 'o';
-	if (ot::parse_tags(op, tags) != ot::st::bad_magic_number)
+	if (try_parse_tags(op) != ot::st::bad_magic_number)
 		throw failure("did not detect the bad magic number");
 	header_data[0] = 'O';
 
 	*vendor_length = end - vendor_string + 1;
-	if (ot::parse_tags(op, tags) != ot::st::cut_vendor_data)
+	if (try_parse_tags(op) != ot::st::cut_vendor_data)
 		throw failure("did not detect the overflowing vendor string");
 	*vendor_length = end - vendor_string - 3;
-	if (ot::parse_tags(op, tags) != ot::st::cut_comment_count)
+	if (try_parse_tags(op) != ot::st::cut_comment_count)
 		throw failure("did not detect the overflowing comment count");
 	*vendor_length = comment_count - vendor_string;
 
 	++*comment_count;
-	if (ot::parse_tags(op, tags) != ot::st::cut_comment_length)
+	if (try_parse_tags(op) != ot::st::cut_comment_length)
 		throw failure("did not detect the overflowing comment length");
 	*first_comment_length = end - first_comment_data + 1;
-	if (ot::parse_tags(op, tags) != ot::st::cut_comment_data)
+	if (try_parse_tags(op) != ot::st::cut_comment_data)
 		throw failure("did not detect the overflowing comment data");
 }
 
 static void recode_standard()
 {
-	ot::opus_tags tags;
 	ogg_packet op;
 	op.bytes = sizeof(standard_OpusTags) - 1;
 	op.packet = (unsigned char*) standard_OpusTags;
-	auto rc = ot::parse_tags(op, tags);
-	if (rc != ot::st::ok)
-		throw failure("ot::parse_tags did not return ok");
+	ot::opus_tags tags = ot::parse_tags(op);
 	auto packet = ot::render_tags(tags);
 	if (packet.b_o_s != 0)
 		throw failure("b_o_s should not be set");
@@ -113,7 +117,6 @@ static void recode_standard()
 
 static void recode_padding()
 {
-	ot::opus_tags tags;
 	std::string padded_OpusTags(standard_OpusTags, sizeof(standard_OpusTags));
 	// ^ note: padded_OpusTags ends with a null byte here
 	padded_OpusTags += "hello";
@@ -121,9 +124,7 @@ static void recode_padding()
 	op.bytes = padded_OpusTags.size();
 	op.packet = (unsigned char*) padded_OpusTags.data();
 
-	auto rc = ot::parse_tags(op, tags);
-	if (rc != ot::st::ok)
-		throw failure("ot::parse_tags did not return ok");
+	ot::opus_tags tags = ot::parse_tags(op);
 	if (tags.extra_data != "\0hello"s)
 		throw failure("corrupted extra data");
 	// recode the packet and ensure it's exactly the same
