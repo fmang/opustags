@@ -58,8 +58,9 @@ static struct option getopt_options[] = {
 	{NULL, 0, 0, 0}
 };
 
-ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comments_input)
+ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 {
+	options opt;
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	std::string utf8;
 	const char* equal;
@@ -67,7 +68,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 	bool set_all = false;
 	opt = {};
 	if (argc == 1)
-		return {st::bad_arguments, "No arguments specified. Use -h for help."};
+		throw status {st::bad_arguments, "No arguments specified. Use -h for help."};
 	int c;
 	optind = 0;
 	while ((c = getopt_long(argc, argv, ":ho:iyd:a:s:DSe", getopt_options, NULL)) != -1) {
@@ -77,7 +78,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			break;
 		case 'o':
 			if (opt.path_out)
-				return {st::bad_arguments, "Cannot specify --output more than once."};
+				throw status {st::bad_arguments, "Cannot specify --output more than once."};
 			opt.path_out = optarg;
 			break;
 		case 'i':
@@ -94,7 +95,7 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 		case 's':
 			equal = strchr(optarg, '=');
 			if (equal == nullptr)
-				return {st::bad_arguments, "Comment does not contain an equal sign: "s + optarg + "."};
+				throw status {st::bad_arguments, "Comment does not contain an equal sign: "s + optarg + "."};
 			if (c == 's')
 				opt.to_delete.emplace_back(optarg, equal - optarg);
 			opt.to_add.emplace_back(optarg);
@@ -113,15 +114,14 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			opt.raw = true;
 			break;
 		case ':':
-			return {st::bad_arguments,
-			        "Missing value for option '"s + argv[optind - 1] + "'."};
+			throw status {st::bad_arguments, "Missing value for option '"s + argv[optind - 1] + "'."};
 		default:
-			return {st::bad_arguments, "Unrecognized option '" +
-			        (optopt ? "-"s + static_cast<char>(optopt) : argv[optind - 1]) + "'."};
+			throw status {st::bad_arguments, "Unrecognized option '" +
+			              (optopt ? "-"s + static_cast<char>(optopt) : argv[optind - 1]) + "'."};
 		}
 	}
 	if (opt.print_help)
-		return st::ok;
+		return opt;
 
 	// All non-option arguments are input files.
 	bool stdin_as_input = false;
@@ -136,42 +136,42 @@ ot::status ot::parse_options(int argc, char** argv, ot::options& opt, FILE* comm
 			for (std::string& arg : *args) {
 				rc = to_utf8(arg, utf8);
 				if (rc != ot::st::ok)
-					return {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
+					throw status {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
 				arg = std::move(utf8);
 			}
 		}
 	}
 
 	if (opt.in_place && opt.path_out)
-		return {st::bad_arguments, "Cannot combine --in-place and --output."};
+		throw status {st::bad_arguments, "Cannot combine --in-place and --output."};
 
 	if (opt.in_place && stdin_as_input)
-		return {st::bad_arguments, "Cannot modify standard input in place."};
+		throw status {st::bad_arguments, "Cannot modify standard input in place."};
 
 	if ((!opt.in_place || opt.edit_interactively) && opt.paths_in.size() != 1)
-		return {st::bad_arguments, "Exactly one input file must be specified."};
+		throw status {st::bad_arguments, "Exactly one input file must be specified."};
 
 	if (set_all && stdin_as_input)
-		return {st::bad_arguments, "Cannot use standard input as input file when --set-all is specified."};
+		throw status {st::bad_arguments, "Cannot use standard input as input file when --set-all is specified."};
 
 	if (opt.edit_interactively && (stdin_as_input || opt.path_out == "-"))
-		return {st::bad_arguments, "Cannot edit interactively when standard input or standard output are already used."};
+		throw status {st::bad_arguments, "Cannot edit interactively when standard input or standard output are already used."};
 
 	if (opt.edit_interactively && !opt.path_out.has_value() && !opt.in_place)
-		return {st::bad_arguments, "Cannot edit interactively when no output is specified."};
+		throw status {st::bad_arguments, "Cannot edit interactively when no output is specified."};
 
 	if (opt.edit_interactively && (opt.delete_all || !opt.to_add.empty() || !opt.to_delete.empty()))
-		return {st::bad_arguments, "Cannot mix --edit with -adDsS."};
+		throw status {st::bad_arguments, "Cannot mix --edit with -adDsS."};
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
 		std::list<std::string> comments;
 		auto rc = read_comments(comments_input, comments, opt.raw);
 		if (rc != st::ok)
-			return rc;
+			throw rc;
 		opt.to_add.splice(opt.to_add.begin(), std::move(comments));
 	}
-	return st::ok;
+	return opt;
 }
 
 /**
@@ -423,19 +423,23 @@ static ot::status process(ot::ogg_reader& reader, ot::ogg_writer* writer, const 
 	return ot::st::ok;
 }
 
-static ot::status run_single(const ot::options& opt, const std::string& path_in, const std::optional<std::string>& path_out)
+static void run_single(const ot::options& opt, const std::string& path_in, const std::optional<std::string>& path_out)
 {
 	ot::file input;
 	if (path_in == "-")
 		input = stdin;
 	else if ((input = fopen(path_in.c_str(), "re")) == nullptr)
-		return {ot::st::standard_error,
-		        "Could not open '" + path_in + "' for reading: " + strerror(errno)};
+		throw ot::status {ot::st::standard_error,
+		                  "Could not open '" + path_in + "' for reading: " + strerror(errno)};
 	ot::ogg_reader reader(input.get());
 
 	/* Read-only mode. */
-	if (!path_out)
-		return process(reader, nullptr, opt);
+	if (!path_out) {
+		ot::status rc = process(reader, nullptr, opt);
+		if (rc != ot::st::ok)
+			throw rc;
+		return;
+	}
 
 	/* Read-write mode.
 	 *
@@ -488,7 +492,7 @@ static ot::status run_single(const ot::options& opt, const std::string& path_in,
 		      "Could not identify '" + path_in + "': " + strerror(errno)};
 	}
 	if (rc != ot::st::ok)
-		return rc;
+		throw rc;
 
 	ot::ogg_writer writer(output);
 	writer.path = path_out;
@@ -496,24 +500,27 @@ static ot::status run_single(const ot::options& opt, const std::string& path_in,
 	if (rc == ot::st::ok)
 		rc = temporary_output.commit();
 
-	return rc;
+	if (rc != ot::st::ok)
+		throw rc;
 }
 
-ot::status ot::run(const ot::options& opt)
+void ot::run(const ot::options& opt)
 {
 	if (opt.print_help) {
 		fputs(help_message, stdout);
-		return st::ok;
+		return;
 	}
 
 	ot::status global_rc = st::ok;
 	for (const auto& path_in : opt.paths_in) {
-		ot::status rc = run_single(opt, path_in, opt.in_place ? path_in : opt.path_out);
-		if (rc != st::ok) {
+		try {
+			run_single(opt, path_in, opt.in_place ? path_in : opt.path_out);
+		} catch (const ot::status& rc) {
 			global_rc = st::error;
 			if (!rc.message.empty())
 				fprintf(stderr, "%s: error: %s\n", path_in.c_str(), rc.message.c_str());
 		}
 	}
-	return global_rc;
+	if (global_rc != st::ok)
+		throw global_rc;
 }

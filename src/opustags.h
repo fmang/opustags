@@ -475,10 +475,8 @@ struct options {
 /**
  * Parse the command-line arguments. Does not perform I/O related validations, but checks the
  * consistency of its arguments. Comments are read if necessary from the given stream.
- *
- * On error, the state of the options structure is unspecified.
  */
-status parse_options(int argc, char** argv, options& opt, FILE* comments);
+options parse_options(int argc, char** argv, FILE* comments);
 
 /**
  * Print all the comments, separated by line breaks. Since a comment may contain line breaks, this
@@ -509,7 +507,7 @@ void delete_comments(std::list<std::string>& comments, const std::string& select
  * Main entry point to the opustags program, and pretty much the same as calling opustags from the
  * command-line.
  */
-status run(const options& opt);
+void run(const options& opt);
 
 /** \} */
 

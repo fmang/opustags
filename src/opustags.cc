@@ -15,13 +15,14 @@
  * Does practically nothing but call the cli module.
  */
 int main(int argc, char** argv) {
-	setlocale(LC_ALL, "");
-	ot::options opt;
-	ot::status rc = ot::parse_options(argc, argv, opt, stdin);
-	if (rc == ot::st::ok)
-		rc = ot::run(opt);
-	else if (!rc.message.empty())
-		fprintf(stderr, "error: %s\n", rc.message.c_str());
-
-	return rc == ot::st::ok ? EXIT_SUCCESS : EXIT_FAILURE;
+	try {
+		setlocale(LC_ALL, "");
+		ot::options opt = ot::parse_options(argc, argv, stdin);
+		ot::run(opt);
+		return EXIT_SUCCESS;
+	} catch (const ot::status& rc) {
+		if (!rc.message.empty())
+			fprintf(stderr, "error: %s\n", rc.message.c_str());
+		return EXIT_FAILURE;
+	}
 }

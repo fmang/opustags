@@ -54,7 +54,12 @@ static ot::status parse_options(const std::vector<const char*>& args, ot::option
 	char* argv[argc];
 	for (int i = 0; i < argc; ++i)
 		argv[i] = strdup(args[i]);
-	ot::status rc = ot::parse_options(argc, argv, opt, comments);
+	ot::status rc = ot::st::ok;
+	try {
+		opt = ot::parse_options(argc, argv, comments);
+	} catch (const ot::status& e) {
+		rc = e;
+	}
 	for (int i = 0; i < argc; ++i)
 		free(argv[i]);
 	return rc;
