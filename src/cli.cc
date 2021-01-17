@@ -357,16 +357,14 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 {
 	bool focused = false; /*< the stream on which we operate is defined */
 	int focused_serialno; /*< when focused, the serialno of the focused stream */
-	int absolute_page_no = -1; /*< page number in the physical stream, not logical */
 	for (;;) {
 		ot::status rc = reader.next_page();
 		if (rc == ot::st::end_of_stream)
 			break;
-		else if (rc == ot::st::bad_stream && absolute_page_no == -1)
+		else if (rc == ot::st::bad_stream && reader.absolute_page_no == (size_t) -1)
 			throw ot::status {ot::st::bad_stream, "Input is not a valid Ogg file."};
 		else if (rc != ot::st::ok)
 			throw rc;
-		++absolute_page_no;
 		auto serialno = ogg_page_serialno(&reader.page);
 		auto pageno = ogg_page_pageno(&reader.page);
 		if (!focused) {
@@ -376,7 +374,7 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 			/** \todo Support mixed streams. */
 			throw ot::status {ot::st::error, "Muxed streams are not supported yet."};
 		}
-		if (absolute_page_no == 0) { // Identification header
+		if (reader.absolute_page_no == 0) { // Identification header
 			if (!ot::is_opus_stream(reader.page))
 				throw ot::status {ot::st::error, "Not an Opus stream."};
 			if (writer) {
@@ -384,7 +382,7 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 				if (rc != ot::st::ok)
 					throw rc;
 			}
-		} else if (absolute_page_no == 1) { // Comment header
+		} else if (reader.absolute_page_no == 1) { // Comment header
 			ot::opus_tags tags;
 			rc = reader.process_header_packet(
 				[&tags](ogg_packet& p) { return ot::parse_tags(p, tags); });
@@ -409,7 +407,7 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 				throw rc;
 		}
 	}
-	if (absolute_page_no < 1)
+	if (reader.absolute_page_no < 1)
 		throw ot::status {ot::st::error, "Expected at least 2 Ogg pages."};
 }
 

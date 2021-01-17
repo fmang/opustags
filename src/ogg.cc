@@ -46,6 +46,7 @@ ot::status ot::ogg_reader::next_page()
 		if (ogg_sync_wrote(&sync, len) != 0)
 			return {st::libogg_error, "ogg_sync_wrote failed."};
 	}
+	++absolute_page_no;
 	return st::ok;
 }
 
