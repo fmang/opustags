@@ -338,7 +338,7 @@ static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std
 		tags.comments = ot::read_comments(tags_file.get(), raw);
 	} catch (const ot::status& rc) {
 		fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
-		throw rc;
+		throw;
 	}
 	tags_file.reset();
 

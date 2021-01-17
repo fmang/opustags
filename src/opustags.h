@@ -45,10 +45,6 @@ namespace ot {
  * Possible return status code, ranging from errors to special statuses. They are usually
  * accompanied with a message with the #status structure.
  *
- * Functions that return non-ok status codes to signal special conditions like #end_of_stream should
- * have it explictly mentionned in their documentation. By default, a non-ok status should be
- * handled like an error.
- *
  * Error codes do not need to be ultra specific, and are mainly used to report special conditions to
  * the caller function. Ultimately, only the error message in the #status is shown to the user.
  *
@@ -83,14 +79,10 @@ enum class st {
 
 /**
  * Wraps a status code with an optional message. It is implictly converted to and from a
- * #status_code.
+ * #status_code. It may be thrown on error by any of the ot:: functions.
  *
  * All the statuses except #st::ok should be accompanied with a relevant error message, in case it
  * propagates back to the main function and is shown to the user.
- *
- * \todo Instead of being returned, it could be thrown. Most of the error handling code just let the
- *       status bubble. When we're confident about RAII, we're good to go. When we migrate, let's
- *       start from main and adapt the functions top-down.
  */
 struct status {
 	status(st code = st::ok) : code(code) {}
@@ -213,12 +205,8 @@ bool is_opus_stream(const ogg_page& identification_header);
 /**
  * Ogg reader, combining a FILE input, an ogg_sync_state reading the pages.
  *
- * Call #read_page repeatedly until #status::end_of_stream to consume the stream, and use #page to
- * check its content.
- *
- * \todo This class could be made more intuitive if it acted like an iterator, to be used like
- *       `for (ogg_page& page : ogg_reader(input))`, but the prerequisite for this is the ability to
- *       throw an exception on error.
+ * Call #read_page repeatedly until it returns false to consume the stream, and use #page to check
+ * its content.
  */
 struct ogg_reader {
 	/**
@@ -234,9 +222,8 @@ struct ogg_reader {
 	 */
 	~ogg_reader() { ogg_sync_clear(&sync); }
 	/**
-	 * Read the next page from the input file. The result, provided the status is #status::ok,
-	 * is made available in the #page field, is owned by the Ogg reader, and is valid until the
-	 * next call to #read_page.
+	 * Read the next page from the input file. The result is made available in the #page field,
+	 * is owned by the Ogg reader, and is valid until the next call to #read_page.
 	 *
 	 * Return true if a page was read, false on end of stream.
 	 */
