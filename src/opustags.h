@@ -128,9 +128,9 @@ public:
 	 * temporary file is created in the same directory as its destination in order to make the
 	 * final move operation instant.
 	 */
-	ot::status open(const char* destination);
+	void open(const char* destination);
 	/** Close then move the partial file to its final location. */
-	ot::status commit();
+	void commit();
 	/** Delete the temporary file. */
 	void abort();
 	/** Get the underlying FILE* handle. */
@@ -158,7 +158,7 @@ public:
 	 * Convert text using iconv. If the input sequence is invalid, return #st::badly_encoded and
 	 * abort the processing, leaving out in an undefined state.
 	 */
-	status operator()(std::string_view in, std::string& out);
+	std::string operator()(std::string_view in);
 private:
 	iconv_t cd; /**< conversion descriptor */
 };
@@ -173,13 +173,13 @@ std::string shell_escape(std::string_view word);
  * editor is passed unescaped to the shell, and may contain CLI options.
  * path is the name of the file to edit, which will be passed as the last argument to editor.
  */
-ot::status run_editor(std::string_view editor, std::string_view path);
+void run_editor(std::string_view editor, std::string_view path);
 
 /**
  * Return the specified path’s mtime, i.e. the last data modification
  * timestamp.
  */
-ot::status get_file_timestamp(const char* path, timespec& mtime);
+timespec get_file_timestamp(const char* path);
 
 /** \} */
 

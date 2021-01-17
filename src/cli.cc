@@ -62,7 +62,6 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 {
 	options opt;
 	static ot::encoding_converter to_utf8("", "UTF-8");
-	std::string utf8;
 	const char* equal;
 	ot::status rc;
 	bool set_all = false;
@@ -133,11 +132,11 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	// Convert arguments to UTF-8.
 	if (!opt.raw) {
 		for (std::list<std::string>* args : { &opt.to_add, &opt.to_delete }) {
-			for (std::string& arg : *args) {
-				rc = to_utf8(arg, utf8);
-				if (rc != ot::st::ok)
-					throw status {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
-				arg = std::move(utf8);
+			try {
+				for (std::string& arg : *args)
+					arg = to_utf8(arg);
+			} catch (const ot::status& rc) {
+				throw status {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
 			}
 		}
 	}
@@ -190,11 +189,12 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 		if (raw) {
 			comment = &utf8_comment;
 		} else {
-			ot::status rc = from_utf8(utf8_comment, local);
-			comment = &local;
-			if (rc != ot::st::ok) {
+			try {
+				local = from_utf8(utf8_comment);
+				comment = &local;
+			} catch (ot::status& rc) {
 				rc.message += " See --raw.";
-				throw rc;
+				throw;
 			}
 		}
 
@@ -236,11 +236,9 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 		if (raw) {
 			comments.emplace_back(line, nread);
 		} else {
-			std::string utf8;
-			ot::status rc = to_utf8(std::string_view(line, nread), utf8);
-			if (rc == ot::st::ok) {
-				comments.emplace_back(std::move(utf8));
-			} else {
+			try {
+				comments.emplace_back(to_utf8(std::string_view(line, nread)));
+			} catch (const ot::status& rc) {
 				free(line);
 				throw ot::status {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
 			}
@@ -310,12 +308,15 @@ static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std
 	tags_file.reset();
 
 	// Spawn the editor, and watch the modification timestamps.
-	timespec before, after;
-	if ((rc = ot::get_file_timestamp(tags_path.c_str(), before)) != ot::st::ok)
-		throw rc;
-	ot::status editor_rc = ot::run_editor(editor, tags_path);
-	if ((rc = ot::get_file_timestamp(tags_path.c_str(), after)) != ot::st::ok)
-		throw rc; // probably because the file was deleted
+	timespec before = ot::get_file_timestamp(tags_path.c_str());
+	ot::status editor_rc;
+	try {
+		ot::run_editor(editor, tags_path);
+		editor_rc = ot::st::ok;
+	} catch (const ot::status& rc) {
+		editor_rc = rc;
+	}
+	timespec after = ot::get_file_timestamp(tags_path.c_str());
 	bool modified = (before.tv_sec != after.tv_sec || before.tv_nsec != after.tv_nsec);
 	if (editor_rc != ot::st::ok) {
 		if (modified)
@@ -434,7 +435,6 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 	ot::partial_file temporary_output;
 	ot::file final_output;
 
-	ot::status rc = ot::st::ok;
 	struct stat output_info;
 	if (path_out == "-") {
 		output = stdout;
@@ -443,34 +443,26 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 		if (!S_ISREG(output_info.st_mode)) {
 			/* Special files are opened for writing directly. */
 			if ((final_output = fopen(path_out->c_str(), "we")) == nullptr)
-				rc = {ot::st::standard_error,
-				      "Could not open '" + path_out.value() + "' for writing: " +
-				      strerror(errno)};
+				throw ot::status {ot::st::standard_error,
+				                  "Could not open '" + path_out.value() + "' for writing: " + strerror(errno)};
 			output = final_output.get();
 		} else if (opt.overwrite) {
-			rc = temporary_output.open(path_out->c_str());
+			temporary_output.open(path_out->c_str());
 			output = temporary_output.get();
 		} else {
-			rc = {ot::st::error,
-			      "'" + path_out.value() + "' already exists. Use -y to overwrite."};
+			throw ot::status {ot::st::error, "'" + path_out.value() + "' already exists. Use -y to overwrite."};
 		}
 	} else if (errno == ENOENT) {
-		rc = temporary_output.open(path_out->c_str());
+		temporary_output.open(path_out->c_str());
 		output = temporary_output.get();
 	} else {
-		rc = {ot::st::error,
-		      "Could not identify '" + path_in + "': " + strerror(errno)};
+		throw ot::status {ot::st::error, "Could not identify '" + path_in + "': " + strerror(errno)};
 	}
-	if (rc != ot::st::ok)
-		throw rc;
 
 	ot::ogg_writer writer(output);
 	writer.path = path_out;
 	process(reader, &writer, opt);
-
-	rc = temporary_output.commit();
-	if (rc != ot::st::ok)
-		throw rc;
+	temporary_output.commit();
 }
 
 void ot::run(const ot::options& opt)

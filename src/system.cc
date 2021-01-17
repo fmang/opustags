@@ -20,22 +20,20 @@
 
 using namespace std::string_literals;
 
-ot::status ot::partial_file::open(const char* destination)
+void ot::partial_file::open(const char* destination)
 {
-	abort();
 	final_name = destination;
 	temporary_name = final_name + ".XXXXXX.part";
 	int fd = mkstemps(const_cast<char*>(temporary_name.data()), 5);
 	if (fd == -1)
-		return {st::standard_error,
-		        "Could not create a partial file for '" + final_name + "': " +
-		        strerror(errno)};
+		throw status {st::standard_error,
+		              "Could not create a partial file for '" + final_name + "': " +
+		              strerror(errno)};
 	file = fdopen(fd, "w");
 	if (file == nullptr)
-		return {st::standard_error,
-		        "Could not get the partial file handle to '" + temporary_name + "': " +
-		        strerror(errno)};
-	return st::ok;
+		throw status {st::standard_error,
+		              "Could not get the partial file handle to '" + temporary_name + "': " +
+		              strerror(errno)};
 }
 
 static mode_t get_umask()
@@ -71,17 +69,16 @@ static void copy_permissions(const char* source, const char* dest)
 		fprintf(stderr, "warning: Could not set mode of %s: %s\n", dest, strerror(errno));
 }
 
-ot::status ot::partial_file::commit()
+void ot::partial_file::commit()
 {
 	if (file == nullptr)
-		return st::ok;
+		return;
 	file.reset();
 	copy_permissions(final_name.c_str(), temporary_name.c_str());
 	if (rename(temporary_name.c_str(), final_name.c_str()) == -1)
-		return {st::standard_error,
-		        "Could not move the result file '" + temporary_name + "' to '" +
-		        final_name + "': " + strerror(errno) + "."};
-	return st::ok;
+		throw status {st::standard_error,
+		              "Could not move the result file '" + temporary_name + "' to '" +
+		              final_name + "': " + strerror(errno) + "."};
 }
 
 void ot::partial_file::abort()
@@ -104,10 +101,10 @@ ot::encoding_converter::~encoding_converter()
 	iconv_close(cd);
 }
 
-ot::status ot::encoding_converter::operator()(std::string_view in, std::string& out)
+std::string ot::encoding_converter::operator()(std::string_view in)
 {
 	iconv(cd, nullptr, nullptr, nullptr, nullptr);
-	out.clear();
+	std::string out;
 	out.reserve(in.size());
 	char* in_cursor = const_cast<char*>(in.data());
 	size_t in_left = in.size();
@@ -121,10 +118,10 @@ ot::status ot::encoding_converter::operator()(std::string_view in, std::string& 
 		if (rc == (size_t) -1 && errno == E2BIG) {
 			// Loop normally.
 		} else if (rc == (size_t) -1) {
-			return {ot::st::badly_encoded, strerror(errno) + "."s};
+			throw status {ot::st::badly_encoded, strerror(errno) + "."s};
 		} else if (rc != 0) {
-			return {ot::st::badly_encoded,
-				"Some characters could not be converted into the target encoding."};
+			throw status {ot::st::badly_encoded,
+			              "Some characters could not be converted into the target encoding."};
 		}
 
 		out.append(chunk, out_cursor - chunk);
@@ -133,7 +130,7 @@ ot::status ot::encoding_converter::operator()(std::string_view in, std::string& 
 		else if (in_left == 0)
 			in_cursor = nullptr;
 	}
-	return ot::st::ok;
+	return out;
 }
 
 std::string ot::shell_escape(std::string_view word)
@@ -156,28 +153,27 @@ std::string ot::shell_escape(std::string_view word)
 	return escaped_word;
 }
 
-ot::status ot::run_editor(std::string_view editor, std::string_view path)
+void ot::run_editor(std::string_view editor, std::string_view path)
 {
 	std::string command = std::string(editor) + " " + shell_escape(path);
 	int status = system(command.c_str());
 
 	if (status == -1)
-		return {st::standard_error, "waitpid error: "s + strerror(errno)};
+		throw ot::status {st::standard_error, "waitpid error: "s + strerror(errno)};
 	else if (!WIFEXITED(status))
-		return {st::child_process_failed,
-		        "Child process did not terminate normally: "s + strerror(errno)};
+		throw ot::status {st::child_process_failed,
+		                 "Child process did not terminate normally: "s + strerror(errno)};
 	else if (WEXITSTATUS(status) != 0)
-		return {st::child_process_failed,
-		        "Child process exited with " + std::to_string(WEXITSTATUS(status))};
-
-	return st::ok;
+		throw ot::status {st::child_process_failed,
+		                  "Child process exited with " + std::to_string(WEXITSTATUS(status))};
 }
 
-ot::status ot::get_file_timestamp(const char* path, timespec& mtime)
+timespec ot::get_file_timestamp(const char* path)
 {
+	timespec mtime;
 	struct stat st;
 	if (stat(path, &st) == -1)
-		return {st::standard_error, path + ": stat error: "s + strerror(errno)};
+		throw status {st::standard_error, path + ": stat error: "s + strerror(errno)};
 #if defined(HAVE_STAT_ST_MTIM)
 	mtime = st.st_mtim;
 #elif defined(HAVE_STAT_ST_MTIMESPEC)
@@ -186,5 +182,5 @@ ot::status ot::get_file_timestamp(const char* path, timespec& mtime)
 	mtime.tv_sec = st.st_mtime;
 	mtime.tv_nsec = st.st_mtimensec;
 #endif
-	return st::ok;
+	return mtime;
 }
