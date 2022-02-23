@@ -15,6 +15,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <assert.h>
+#include <cctype>		// for std::iscntrl
 
 using namespace std::literals::string_literals;
 
@@ -171,11 +173,13 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 }
 
 /**
- * \todo Find a way to support new lines such that they can be read back by #read_comment without
- *       ambiguity. We could add a raw mode and separate comments with a \0, or escape control
- *       characters with a backslash, but we should also preserve compatibiltity with potential
- *       callers that don’t escape backslashes. Maybe add options to select a mode between simple,
- *       raw, and escaped.
+ * Print comments in a human readable format that can also be read
+ * back in by #read_comment.
+ *
+ * To disambiguate between a newline embedded in a comment and a
+ * newline representing the start of the next tag, continuation lines
+ * always have a single TAB (^I) character added to the beginning.
+ * 
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
 {
@@ -184,31 +188,61 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 	bool has_newline = false;
 	bool has_control = false;
 	for (const std::string& utf8_comment : comments) {
-		const std::string* comment;
+		const std::string* commentp;
 		// Convert the comment from UTF-8 to the system encoding if relevant.
 		if (raw) {
-			comment = &utf8_comment;
+			commentp = &utf8_comment;
 		} else {
 			try {
 				local = from_utf8(utf8_comment);
-				comment = &local;
+				commentp = &local;
 			} catch (ot::status& rc) {
 				rc.message += " See --raw.";
 				throw;
 			}
 		}
 
-		for (unsigned char c : *comment) {
-			if (c == '\n')
-				has_newline = true;
-			else if (c < 0x20)
+		// Check for embedded newlines so we can insert TAB afterward
+		std::string comment = *commentp;
+		unsigned int newline_count = 0;
+		for (int t = 0; t < comment.length(); t++) {
+			if (comment[t]  == '\n') {
+				newline_count++;
+			}
+			else if (std::iscntrl(comment[t])) {
 				has_control = true;
+			}
 		}
-		fwrite(comment->data(), 1, comment->size(), output);
+
+		
+		// Copy byte by byte into a new string with TAB added after each newline
+		std::string tabbed_comment;
+		if (newline_count) {
+			tabbed_comment.resize(comment.length() + newline_count);
+			tabbed_comment.reserve( tabbed_comment.size() );
+		  int tabs_done = 0;
+		  for (int t = 0; t < comment.length(); t++) {
+			  tabbed_comment[t + tabs_done] = comment[t];
+			  if (comment[t] == '\n') {
+				  tabs_done++;
+				  tabbed_comment[t+tabs_done] = '\t';
+			  }
+		  }
+
+		  // Assertion: Inserted as many tabs as newlines were found.
+		  assert(newline_count == tabs_done);
+		  // Assertion: Length of new string is exactly as allocated.
+		  assert(tabbed_comment.length() == comment.length() + newline_count);
+
+		  fwrite(tabbed_comment.data(), 1, tabbed_comment.size(), output);
+		}
+		else {
+			fwrite(comment.data(), 1, comment.size(), output);
+		}
+
 		putc('\n', output);
 	}
-	if (has_newline)
-		fputs("warning: Some tags contain unsupported newline characters.\n", stderr);
+
 	if (has_control)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
