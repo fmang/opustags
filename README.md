@@ -8,6 +8,9 @@ then edit them again to their previous values, you should get a bit-perfect copy
 file. No under-the-cover operation like writing "edited with opustags" or timestamp tagging will
 ever be performed.
 
+opustags is tag-agnostic: you can write arbitrary key-value tags, and none of them will be treated
+specially. After all, common tags like TITLE or ARTIST are nothing more than conventions.
+
 It currently has the following limitations:
 
 - The total size of all tags cannot exceed 64 kB, the maximum size of one Ogg page.
