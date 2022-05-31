@@ -491,7 +491,7 @@ std::list<std::string> read_comments(FILE* input, bool raw);
  *
  * The strings are all UTF-8.
  */
-void delete_comments(std::list<std::string>& comments, const std::string& selector);
+int delete_comments(std::list<std::string>& comments, const std::string& selector);
 
 /**
  * Main entry point to the opustags program, and pretty much the same as calling opustags from the

@@ -248,8 +248,9 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 	return comments;
 }
 
-void ot::delete_comments(std::list<std::string>& comments, const std::string& selector)
+int ot::delete_comments(std::list<std::string>& comments, const std::string& selector)
 {
+	int total_len = 0;
 	auto name = selector.data();
 	auto equal = selector.find('=');
 	auto value = (equal == std::string::npos ? nullptr : name + equal + 1);
@@ -266,22 +267,47 @@ void ot::delete_comments(std::list<std::string>& comments, const std::string& se
 		bool value_match = value == nullptr ||
 		                   (current->size() == selector.size() &&
 		                    memcmp(current->data() + equal + 1, value, value_len) == 0);
+		total_len += sizeof(uint32_t) + current->size();
 		if (value_match)
 			comments.erase(current);
 	}
+	return total_len;
 }
 
 /** Apply the modifications requested by the user to the opustags packet. */
 static void edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
+	int deleted_size = 0;
 	if (opt.delete_all) {
+		for (const std::string& comment : tags.comments) {
+			deleted_size += sizeof(uint32_t) + comment.size();
+		}
 		tags.comments.clear();
 	} else for (const std::string& name : opt.to_delete) {
-		ot::delete_comments(tags.comments, name.c_str());
+		deleted_size += ot::delete_comments(tags.comments, name.c_str());
 	}
 
-	for (const std::string& comment : opt.to_add)
+	int added_size = 0;
+	for (const std::string& comment : opt.to_add) {
 		tags.comments.emplace_back(comment);
+		added_size += sizeof(uint32_t) + comment.size();
+	}
+
+	int extra_diff_size = added_size - deleted_size;
+	if (extra_diff_size > 0) {
+		if (extra_diff_size < tags.extra_data.size()) {
+			tags.extra_data.erase(tags.extra_data.size()-extra_diff_size);
+		} else {
+			tags.extra_data.clear();
+		}
+	} else if (extra_diff_size < 0) {
+		extra_diff_size *= -1;
+		if (!tags.extra_data.empty()) {
+			tags.extra_data.append(extra_diff_size, tags.extra_data.back());
+		} else {
+			tags.extra_data = std::string(extra_diff_size, '\0');
+		}
+	}
 }
 
 /** Spawn VISUAL or EDITOR to edit the given tags. */
