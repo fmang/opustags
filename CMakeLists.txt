@@ -46,9 +46,13 @@ target_link_libraries(ot PUBLIC ${OGG_LIBRARIES} ${Iconv_LIBRARIES})
 add_executable(opustags src/opustags.cc)
 target_link_libraries(opustags ot)
 
+add_executable(opuspic2tag src/opuspic2tag.cc src/picture.cc)
+target_link_libraries(opuspic2tag PUBLIC ${OGG_LIBRARIES})
+
 include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
 configure_file(opustags.1 . @ONLY)
+configure_file(opuspic2tag.1 . @ONLY)
 install(FILES "${CMAKE_BINARY_DIR}/opustags.1" DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
 
 add_subdirectory(t)
