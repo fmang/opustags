@@ -139,12 +139,29 @@ void check_identification()
 		throw failure("was not the beginning of a stream");
 }
 
+void check_renumber_page()
+{
+	ot::file input = fopen("gobble.opus", "r");
+	if (input == nullptr)
+		throw failure("could not open gobble.opus");
+
+	ot::ogg_reader reader(input.get());
+	if (reader.next_page() != true)
+		throw failure("could not read the first page");
+
+	long new_pageno = 1234;
+	ot::renumber_page(reader.page, new_pageno);
+	if (ogg_page_pageno(&reader.page) != new_pageno)
+		throw failure("renumbering failed");
+}
+
 int main(int argc, char **argv)
 {
-	std::cout << "1..4\n";
+	std::cout << "1..5\n";
 	run(check_ref_ogg, "check a reference ogg stream");
 	run(check_memory_ogg, "build and check a fresh stream");
 	run(check_bad_stream, "read a non-ogg stream");
 	run(check_identification, "stream identification");
+	run(check_renumber_page, "page renumbering");
 	return 0;
 }

@@ -358,6 +358,13 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 {
 	bool focused = false; /*< the stream on which we operate is defined */
 	int focused_serialno; /*< when focused, the serialno of the focused stream */
+
+	/** When the number of pages the OpusTags packet takes differs from the input stream to the
+	 *  output stream, we need to renumber all the succeeding pages. If the input stream
+	 *  contains gaps, the offset will naively reproduce the gaps: page numbers 0 (1) 2 4 will
+	 *  become 0 (1 2) 3 5, where (…) is the OpusTags packet, and not 0 (1 2) 3 4. */
+	int pageno_offset = 0;
+
 	while (reader.next_page()) {
 		auto serialno = ogg_page_serialno(&reader.page);
 		auto pageno = ogg_page_pageno(&reader.page);
@@ -384,11 +391,13 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 				}
 				auto packet = ot::render_tags(tags);
 				writer->write_header_packet(serialno, pageno, packet);
+				pageno_offset = writer->next_page_no - 1 - reader.absolute_page_no;
 			} else {
 				ot::print_comments(tags.comments, stdout, opt.raw);
 				break;
 			}
 		} else if (writer) {
+			ot::renumber_page(reader.page, pageno + pageno_offset);
 			writer->write_page(reader.page);
 		}
 	}

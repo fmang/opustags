@@ -25,20 +25,6 @@
 
 #include <string.h>
 
-#ifdef HAVE_ENDIAN_H
-#  include <endian.h>
-#endif
-
-#ifdef HAVE_SYS_ENDIAN_H
-#  include <sys/endian.h>
-#endif
-
-#ifdef __APPLE__
-#include <libkern/OSByteOrder.h>
-#define htole32(x) OSSwapHostToLittleInt32(x)
-#define le32toh(x) OSSwapLittleToHostInt32(x)
-#endif
-
 ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 {
 	if (packet.bytes < 0)

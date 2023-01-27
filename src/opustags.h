@@ -39,6 +39,20 @@
 #include <string_view>
 #include <vector>
 
+#ifdef HAVE_ENDIAN_H
+#  include <endian.h>
+#endif
+
+#ifdef HAVE_SYS_ENDIAN_H
+#  include <sys/endian.h>
+#endif
+
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#define htole32(x) OSSwapHostToLittleInt32(x)
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+#endif
+
 namespace ot {
 
 /**
@@ -299,6 +313,11 @@ struct ogg_writer {
 	 * Path to the output file.
 	 */
 	std::optional<std::string> path;
+	/**
+	 * Custom counter for the sequential page number to be written. It allows us to detect
+	 * ogg_page_pageno mismatches and renumber the pages if needed.
+	 */
+	long next_page_no = 0;
 };
 
 /**
@@ -317,6 +336,9 @@ private:
 	/** Owning reference to the data. Use the packet field from ogg_packet instead. */
 	std::unique_ptr<unsigned char[]> data;
 };
+
+/** Update the Ogg pageno field in the given page. The CRC is recomputed if needed. */
+void renumber_page(ogg_page& page, long new_pageno);
 
 /** \} */
 

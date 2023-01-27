@@ -86,6 +86,12 @@ void ot::ogg_writer::write_page(const ogg_page& page)
 {
 	if (page.header_len < 0 || page.body_len < 0)
 		throw status {st::int_overflow, "Overflowing page length"};
+
+	long pageno = ogg_page_pageno(&page);
+	if (pageno != next_page_no)
+		fprintf(stderr, "Output page number mismatch: expected %ld, got %ld.\n", next_page_no, pageno);
+	next_page_no = pageno + 1;
+
 	auto header_len = static_cast<size_t>(page.header_len);
 	auto body_len = static_cast<size_t>(page.body_len);
 	if (fwrite(page.header, 1, header_len, file) < header_len)
@@ -115,4 +121,17 @@ void ot::ogg_writer::write_header_packet(int serialno, int pageno, ogg_packet& p
 
 	if (ogg_stream_check(&stream) != 0)
 		throw status {st::libogg_error, "ogg_stream_check failed"};
+}
+
+void ot::renumber_page(ogg_page& page, long new_pageno)
+{
+	// Quick optimization: don’t bother recomputing the CRC if the pageno did not change.
+	long old_pageno = ogg_page_pageno(&page);
+	if (old_pageno == new_pageno)
+		return;
+
+	/** The pageno field is located at bytes 18 to 21 (0-indexed, little-endian). */
+	uint32_t le_pageno = htole32(new_pageno);
+	memcpy(&page.header[18], &le_pageno, 4);
+	ogg_page_checksum_set(&page);
 }
