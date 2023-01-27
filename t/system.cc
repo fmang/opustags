@@ -38,7 +38,7 @@ void check_converter()
 {
 	const char* ephemere_iso = "\xc9\x70\x68\xe9\x6d\xe8\x72\x65";
 	ot::encoding_converter to_utf8("ISO_8859-1", "UTF-8");
-	ot::encoding_converter from_utf8("UTF-8", "ISO_8859-1//IGNORE");
+	ot::encoding_converter from_utf8("UTF-8", "ISO_8859-1");
 
 	is(to_utf8(ephemere_iso), "Éphémère", "conversion to UTF-8 is correct");
 	is(from_utf8("Éphémère"), ephemere_iso, "conversion from UTF-8 is correct");
