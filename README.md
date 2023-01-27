@@ -24,7 +24,7 @@ Requirements
 ------------
 
 * a POSIX-compliant system,
-* a C++17 compiler,
+* a C++20 compiler,
 * CMake ≥ 3.11,
 * libogg 1.3.3.
 

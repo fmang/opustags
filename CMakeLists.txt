@@ -6,7 +6,7 @@ project(
 	LANGUAGES CXX
 )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # opustags is mainly developed with glibc, which introduces a few
