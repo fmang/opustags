@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 50;
+use Test::More tests => 54;
 
 use Digest::MD5;
 use File::Basename;
@@ -310,4 +310,14 @@ T=\xFF
 U=\xFE
 END_OUT
 
+unlink('out.opus');
+
+####################################################################################################
+# Multiple-page tags
+
+my $big_tags = "DATA=x\n" x 15000; # > 90K, which is over the max page size of 64KiB.
+is_deeply(opustags(qw(-S gobble.opus -o out.opus), {in => $big_tags}), ['', '', 0], 'write multi-page header');
+is_deeply(opustags('out.opus'), [$big_tags, '', 0], 'read multi-page header');
+is_deeply(opustags(qw(out.opus -i -D -a), 'encoder=Lavc58.18.100 libopus'), ['', '', 0], 'shrink the header');
+is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the result is identical to the original file');
 unlink('out.opus');

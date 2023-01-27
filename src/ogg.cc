@@ -57,19 +57,28 @@ void ot::ogg_reader::process_header_packet(const std::function<void(ogg_packet&)
 {
 	if (ogg_page_continued(&page))
 		throw status {ot::st::error, "Unexpected continued header page."};
-	ogg_logical_stream stream(ogg_page_serialno(&page));
-	stream.pageno = ogg_page_pageno(&page);
-	if (ogg_stream_pagein(&stream, &page) != 0)
-		throw status {st::libogg_error, "ogg_stream_pagein failed."};
 
 	ogg_packet packet;
-	int rc = ogg_stream_packetout(&stream, &packet);
-	if (ogg_stream_check(&stream) != 0 || rc == -1)
-		throw status {ot::st::libogg_error, "ogg_stream_packetout failed."};
-	else if (rc == 0)
-		throw status {ot::st::error,
-		              "Reading header packets spanning multiple pages are not yet supported. "
-		              "Please file an issue to make your wish known."};
+	ogg_logical_stream stream(ogg_page_serialno(&page));
+	stream.pageno = ogg_page_pageno(&page);
+
+	for (;;) {
+		if (ogg_stream_pagein(&stream, &page) != 0)
+			throw status {st::libogg_error, "ogg_stream_pagein failed."};
+
+		int rc = ogg_stream_packetout(&stream, &packet);
+		if (ogg_stream_check(&stream) != 0 || rc == -1) {
+			throw status {ot::st::libogg_error, "ogg_stream_packetout failed."};
+		} else if (rc == 0) {
+			// Not enough data: read the next page.
+			if (!next_page())
+				throw status {ot::st::error, "Unterminated header packet."};
+			continue;
+		} else {
+			// The packet was successfully read.
+			break;
+		}
+	}
 
 	f(packet);
 
@@ -109,15 +118,8 @@ void ot::ogg_writer::write_header_packet(int serialno, int pageno, ogg_packet& p
 		throw status {ot::st::libogg_error, "ogg_stream_packetin failed"};
 
 	ogg_page page;
-	if (ogg_stream_flush(&stream, &page) != 0)
+	while (ogg_stream_flush(&stream, &page) != 0)
 		write_page(page);
-	else
-		throw status {ot::st::libogg_error, "ogg_stream_flush failed"};
-
-	if (ogg_stream_flush(&stream, &page) != 0)
-		throw status {ot::st::error,
-		              "Writing header packets spanning multiple pages are not yet supported. "
-		              "Please file an issue to make your wish known."};
 
 	if (ogg_stream_check(&stream) != 0)
 		throw status {st::libogg_error, "ogg_stream_check failed"};
