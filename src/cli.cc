@@ -15,8 +15,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <assert.h>
-#include <cctype>		// for std::iscntrl
 
 using namespace std::literals::string_literals;
 
@@ -172,77 +170,66 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	return opt;
 }
 
+/** Format a UTF-8 string by adding tabulations (\t) after line feeds (\n) to mark continuation for
+ *  multiline values. */
+static std::string format_value(const std::string& source)
+{
+	auto newline_count = std::count(source.begin(), source.end(), '\n');
+
+	// General case: the value fits on a single line. Use std::string’s copy constructor for the
+	// most efficient copy we could hope for.
+	if (newline_count == 0)
+		return source;
+
+	std::string formatted;
+	formatted.reserve(source.size() + newline_count);
+	for (auto c : source) {
+		formatted.push_back(c);
+		if (c == '\n')
+			formatted.push_back('\t');
+	}
+	return formatted;
+}
+
 /**
- * Print comments in a human readable format that can also be read
- * back in by #read_comment.
+ * Print comments in a human readable format that can also be read back in by #read_comment.
  *
- * To disambiguate between a newline embedded in a comment and a
- * newline representing the start of the next tag, continuation lines
- * always have a single TAB (^I) character added to the beginning.
- * 
+ * To disambiguate between a newline embedded in a comment and a newline representing the start of
+ * the next tag, continuation lines always have a single TAB (^I) character added to the beginning.
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
 {
 	static ot::encoding_converter from_utf8("UTF-8", "");
 	std::string local;
-	bool has_newline = false;
 	bool has_control = false;
-	for (const std::string& utf8_comment : comments) {
-		const std::string* commentp;
+	for (const std::string& source_comment : comments) {
+		if (!has_control) { // Don’t bother analyzing comments if the flag is already up.
+			for (unsigned char c : source_comment) {
+				if (c < 0x20 && c != '\n') {
+					has_control = true;
+					break;
+				}
+			}
+		}
+
+		std::string utf8_comment = format_value(source_comment);
+		const std::string* comment;
 		// Convert the comment from UTF-8 to the system encoding if relevant.
 		if (raw) {
-			commentp = &utf8_comment;
+			comment = &utf8_comment;
 		} else {
 			try {
 				local = from_utf8(utf8_comment);
-				commentp = &local;
+				comment = &local;
 			} catch (ot::status& rc) {
 				rc.message += " See --raw.";
 				throw;
 			}
 		}
 
-		// Check for embedded newlines so we can insert TAB afterward
-		std::string comment = *commentp;
-		unsigned int newline_count = 0;
-		for (int t = 0; t < comment.length(); t++) {
-			if (comment[t]  == '\n') {
-				newline_count++;
-			}
-			else if (std::iscntrl(comment[t])) {
-				has_control = true;
-			}
-		}
-
-		
-		// Copy byte by byte into a new string with TAB added after each newline
-		std::string tabbed_comment;
-		if (newline_count) {
-			tabbed_comment.resize(comment.length() + newline_count);
-			tabbed_comment.reserve( tabbed_comment.size() );
-		  int tabs_done = 0;
-		  for (int t = 0; t < comment.length(); t++) {
-			  tabbed_comment[t + tabs_done] = comment[t];
-			  if (comment[t] == '\n') {
-				  tabs_done++;
-				  tabbed_comment[t+tabs_done] = '\t';
-			  }
-		  }
-
-		  // Assertion: Inserted as many tabs as newlines were found.
-		  assert(newline_count == tabs_done);
-		  // Assertion: Length of new string is exactly as allocated.
-		  assert(tabbed_comment.length() == comment.length() + newline_count);
-
-		  fwrite(tabbed_comment.data(), 1, tabbed_comment.size(), output);
-		}
-		else {
-			fwrite(comment.data(), 1, comment.size(), output);
-		}
-
+		fwrite(comment->data(), 1, comment->size(), output);
 		putc('\n', output);
 	}
-
 	if (has_control)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }

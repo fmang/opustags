@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 54;
+use Test::More tests => 55;
 
 use Digest::MD5;
 use File::Basename;
@@ -158,13 +158,17 @@ error: Comment does not contain an equal sign: FOO.
 EOF
 is(md5('out.opus'), '66780307a6081523dc9040f3c47b0448', 'the file did not change');
 
-is_deeply(opustags('out.opus', '-D', '-a', "X=foo\nbar\tquux"), [<<'END_OUT', <<'END_ERR', 0], 'control characters');
-X=foo
-bar	quux
+is_deeply(opustags('out.opus', '-D', '-a', "X=foobar\tquux"), [<<'END_OUT', <<'END_ERR', 0], 'control characters');
+X=foobar	quux
 END_OUT
-warning: Some tags contain unsupported newline characters.
 warning: Some tags contain control characters.
 END_ERR
+
+is_deeply(opustags('out.opus', '-D', '-a', "X=foo\n\nbar"), [<<'END_OUT', '', 0], 'newline characters');
+X=foo
+	
+	bar
+END_OUT
 
 is_deeply(opustags(qw(-i out.opus -s fatal=yes -s FOO -s BAR)), ['', <<'EOF', 512], 'bad tag with --set');
 error: Comment does not contain an equal sign: FOO.
