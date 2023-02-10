@@ -242,6 +242,7 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 	char* source_line = nullptr;
 	size_t buflen = 0;
 	ssize_t nread;
+	std::string* previous_comment = nullptr;
 	while ((nread = getline(&source_line, &buflen, input)) != -1) {
 		if (nread > 0 && source_line[nread - 1] == '\n')
 			--nread; // Chomp.
@@ -260,14 +261,26 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 
 		if (line.empty()) {
 			// Ignore empty lines.
-		} else if (line.front() == '#') {
+			previous_comment = nullptr;
+		} else if (line[0] == '#') {
 			// Ignore comments.
+			previous_comment = nullptr;
+		} else if (line[0] == '\t') {
+			// Continuation line: append the current line to the previous tag.
+			if (previous_comment == nullptr) {
+				ot::status rc = {ot::st::error, "Unexpected continuation line: " + std::string(source_line, nread)};
+				free(source_line);
+				throw rc;
+			} else {
+				line[0] = '\n';
+				previous_comment->append(line);
+			}
 		} else if (line.find('=') == std::string::npos) {
 			ot::status rc = {ot::st::error, "Malformed tag: " + std::string(source_line, nread)};
 			free(source_line);
 			throw rc;
 		} else {
-			comments.push_back(std::move(line));
+			previous_comment = &comments.emplace_back(std::move(line));
 		}
 	}
 	free(source_line);

@@ -46,11 +46,27 @@ void check_read_comments()
 			throw failure("parsed user comments did not match expectations");
 	}
 	{
+		std::string txt = "MULTILINE=First\n\tSecond\n"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		rc = read_comments(input.get(), comments, true);
+		if (rc != ot::st::ok)
+			throw failure("could not read comments");
+		if (comments.front() != "MULTILINE=First\nSecond")
+			throw failure("parsed user comments did not match expectations");
+	}
+	{
 		std::string txt = "MALFORMED\n"s;
 		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
 		rc = read_comments(input.get(), comments, false);
 		if (rc != ot::st::error)
 			throw failure("did not get the expected error reading malformed comments");
+	}
+	{
+		std::string txt = "\tBad"s;
+		ot::file input = fmemopen((char*) txt.data(), txt.size(), "r");
+		rc = read_comments(input.get(), comments, true);
+		if (rc != ot::st::error)
+			throw failure("did not get the expected error reading bad continuation line");
 	}
 }
 
