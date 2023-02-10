@@ -239,33 +239,38 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 	std::list<std::string> comments;
 	static ot::encoding_converter to_utf8("", "UTF-8");
 	comments.clear();
-	char* line = nullptr;
+	char* source_line = nullptr;
 	size_t buflen = 0;
 	ssize_t nread;
-	while ((nread = getline(&line, &buflen, input)) != -1) {
-		if (nread > 0 && line[nread - 1] == '\n')
-			--nread;
-		if (nread == 0)
-			continue;
-		if (line[0] == '#') // comment
-			continue;
-		if (memchr(line, '=', nread) == nullptr) {
-			ot::status rc = {ot::st::error, "Malformed tag: " + std::string(line, nread)};
-			free(line);
-			throw rc;
-		}
+	while ((nread = getline(&source_line, &buflen, input)) != -1) {
+		if (nread > 0 && source_line[nread - 1] == '\n')
+			--nread; // Chomp.
+
+		std::string line;
 		if (raw) {
-			comments.emplace_back(line, nread);
+			line = std::string(source_line, nread);
 		} else {
 			try {
-				comments.emplace_back(to_utf8(std::string_view(line, nread)));
+				line = to_utf8(std::string_view(source_line, nread));
 			} catch (const ot::status& rc) {
-				free(line);
+				free(source_line);
 				throw ot::status {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
 			}
 		}
+
+		if (line.empty()) {
+			// Ignore empty lines.
+		} else if (line.front() == '#') {
+			// Ignore comments.
+		} else if (line.find('=') == std::string::npos) {
+			ot::status rc = {ot::st::error, "Malformed tag: " + std::string(source_line, nread)};
+			free(source_line);
+			throw rc;
+		} else {
+			comments.push_back(std::move(line));
+		}
 	}
-	free(line);
+	free(source_line);
 	return comments;
 }
 
