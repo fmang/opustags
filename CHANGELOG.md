@@ -1,6 +1,12 @@
 opustags changelog
 ==================
 
+1.7.0 - 2023-02-13
+------------------
+
+- Support arbitrary large OpusTags headers.
+- Handle multiline tags by prefixing their continuation lines with tabs.
+
 1.6.0 - 2021-01-01
 ------------------
 

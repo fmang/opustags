@@ -1,4 +1,4 @@
-.TH opustags 1 "December 2018" "@PROJECT_NAME@ @PROJECT_VERSION@"
+.TH opustags 1 "February 2023" "@PROJECT_NAME@ @PROJECT_VERSION@"
 .SH NAME
 opustags \- Ogg Opus tag editor
 .SH SYNOPSIS
@@ -23,7 +23,7 @@ opustags \- Ogg Opus tag editor
 It basically has two modes: read-only, and read-write for tag editing.
 .PP
 In read-only mode, only the beginning of \fIINPUT\fP is read, and the tags are
-printed on standard output.
+printed on standard output. Lines prefixed by tabs are continuation of the previous tag.
 \fIINPUT\fP can either be the name of a file or \fB-\fP to read from standard input.
 You can use the options below to edit the tags before printing them.
 This could be useful to preview some changes before writing them.
@@ -97,7 +97,9 @@ Delete all the previously existing tags.
 Sets the tags from scratch.
 All the original tags are deleted and new ones are read from standard input.
 Each line must specify a \fIFIELD=VALUE\fP pair and be separated with line feeds.
-Blank lines and lines starting with \fI#\fP are ignored.
+Empty lines and lines starting with \fI#\fP are ignored.
+Multiline tags must have their continuation lines prefixed by a single tab (in other words, every
+\fI\\n\fP must be replaced by \fI\\n\\t\fP).
 .TP
 .B \-e, \-\-edit
 Edit tags interactively by spawning the program specified by the EDITOR
@@ -136,13 +138,9 @@ Edit tags interactively in Vim:
 .PP
 \fBopustags\fP currently has the following limitations:
 .IP \[bu]
-The total size of all tags cannot exceed 64 kB, the maximum size of one Ogg page.
-.IP \[bu]
 Multiplexed streams are not supported.
 .IP \[bu]
-Newlines inside tags are not supported by `--set-all`.
-.IP \[bu]
-Newlines and control characters are not escaped when printing tags.
+Control characters inside tags are printed raw rather than being escaped.
 .PP
 Internally, the OpusTags packet in an Ogg Opus file may contain extra arbitrary binary data after
 the comments.  This block of data is currently not editable, but is always preserved. The same
@@ -151,6 +149,6 @@ applies for the vendor string.
 If you need a feature not currently supported, feel free to open an issue or send an email with your
 use case.
 .SH AUTHOR
-Frédéric Mangano-Tarumi <fmang+opustags@mg0.fr>
+Frédéric Mangano <fmang+opustags@mg0.fr>
 .PP
 Report bugs at <https://github.com/fmang/opustags/issues>
