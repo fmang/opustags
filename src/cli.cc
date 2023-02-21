@@ -504,7 +504,7 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 		temporary_output.open(path_out->c_str());
 		output = temporary_output.get();
 	} else {
-		throw ot::status {ot::st::error, "Could not identify '" + path_in + "': " + strerror(errno)};
+		throw ot::status {ot::st::error, "Could not identify '" + path_out.value() + "': " + strerror(errno)};
 	}
 
 	ot::ogg_writer writer(output);
