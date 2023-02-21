@@ -36,6 +36,7 @@ Options:
   -s, --set FIELD=VALUE         replace a comment
   -S, --set-all                 import comments from standard input
   -e, --edit                    edit tags interactively in VISUAL/EDITOR
+  --output-cover FILE           extract and save the cover art, if any
   --raw                         disable encoding conversion
 
 See the man page for extensive documentation.
@@ -52,6 +53,7 @@ static struct option getopt_options[] = {
 	{"delete-all", no_argument, 0, 'D'},
 	{"set-all", no_argument, 0, 'S'},
 	{"edit", no_argument, 0, 'e'},
+	{"output-cover", required_argument, 0, 'c'},
 	{"raw", no_argument, 0, 'r'},
 	{NULL, 0, 0, 0}
 };
@@ -107,6 +109,11 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 		case 'e':
 			opt.edit_interactively = true;
 			break;
+		case 'c':
+			if (opt.cover_out)
+				throw status {st::bad_arguments, "Cannot specify --output-cover more than once."};
+			opt.cover_out = optarg;
+			break;
 		case 'r':
 			opt.raw = true;
 			break;
@@ -159,6 +166,12 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 
 	if (opt.edit_interactively && (opt.delete_all || !opt.to_add.empty() || !opt.to_delete.empty()))
 		throw status {st::bad_arguments, "Cannot mix --edit with -adDsS."};
+
+	if (opt.cover_out == "-" && opt.path_out == "-")
+		throw status {st::bad_arguments, "Cannot specify standard output for both --output and --output-cover."};
+
+	if (opt.cover_out && opt.paths_in.size() > 1)
+		throw status {st::bad_arguments, "Cannot use --output-cover with multiple input files."};
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
@@ -385,6 +398,35 @@ static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std
 	remove(tags_path.c_str());
 }
 
+static void output_cover(const ot::opus_tags& tags, const ot::options &opt)
+{
+	std::optional<ot::picture> cover = extract_cover(tags);
+	if (!cover) {
+		fputs("warning: no cover found.\n", stderr);
+		return;
+	}
+
+	ot::file output;
+	if (opt.cover_out == "-") {
+		output = stdout;
+	} else {
+		struct stat output_info;
+		if (stat(opt.cover_out->c_str(), &output_info) == 0) {
+			if (S_ISREG(output_info.st_mode) && !opt.overwrite)
+				throw ot::status {ot::st::error, "'" + opt.cover_out.value() + "' already exists. Use -y to overwrite."};
+		} else if (errno != ENOENT) {
+			throw ot::status {ot::st::error, "Could not identify '" + opt.cover_out.value() + "': " + strerror(errno)};
+		}
+
+		output = fopen(opt.cover_out->c_str(), "w");
+		if (output == nullptr)
+			throw ot::status {ot::st::standard_error, "Could not open '" + opt.cover_out.value() + "' for writing: " + strerror(errno)};
+	}
+
+	if (fwrite(cover->picture_data.data(), 1, cover->picture_data.size(), output.get()) < cover->picture_data.size())
+		throw ot::status {ot::st::standard_error, "fwrite error: "s + strerror(errno)};
+}
+
 /**
  * Main loop of opustags. Read the packets from the reader, and forwards them to the writer.
  * Transform the OpusTags packet on the fly.
@@ -420,6 +462,8 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 		} else if (reader.absolute_page_no == 1) { // Comment header
 			ot::opus_tags tags;
 			reader.process_header_packet([&tags](ogg_packet& p) { tags = ot::parse_tags(p); });
+			if (opt.cover_out)
+				output_cover(tags, opt);
 			edit_tags(tags, opt);
 			if (writer) {
 				if (opt.edit_interactively) {
@@ -430,7 +474,8 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 				writer->write_header_packet(serialno, pageno, packet);
 				pageno_offset = writer->next_page_no - 1 - reader.absolute_page_no;
 			} else {
-				ot::print_comments(tags.comments, stdout, opt.raw);
+				if (opt.cover_out != "-")
+					ot::print_comments(tags.comments, stdout, opt.raw);
 				break;
 			}
 		} else if (writer) {

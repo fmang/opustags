@@ -505,6 +505,14 @@ struct options {
 	 */
 	std::list<std::string> to_add;
 	/**
+	 * If set, the input file’s cover art is exported to the specified file. - for stdout. Does
+	 * not overwrite the file if it already exists unless -y is specified. Does nothing if the
+	 * input file does not contain a cover art.
+	 *
+	 * Option: --output-cover
+	 */
+	std::optional<std::string> cover_out;
+	/**
 	 * Disable encoding conversions. OpusTags are specified to always be encoded as UTF-8, but
 	 * if for some reason a specific file contains binary tags that someone would like to
 	 * extract and set as-is, encoding conversion would get in the way.

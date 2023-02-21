@@ -180,6 +180,12 @@ void check_bad_arguments()
 	error_case({"opustags", "--edit", "x", "-i", "-d", "X"}, "Cannot mix --edit with -adDsS.", "mixing -e and -d");
 	error_case({"opustags", "--edit", "x", "-i", "-D"}, "Cannot mix --edit with -adDsS.", "mixing -e and -D");
 	error_case({"opustags", "--edit", "x", "-i", "-S"}, "Cannot mix --edit with -adDsS.", "mixing -e and -S");
+	error_case({"opustags", "--output-cover", "x", "--output-cover", "y"},
+	           "Cannot specify --output-cover more than once.", "multiple --output-cover");
+	error_case({"opustags", "x", "-o", "-", "--output-cover", "-"},
+	            "Cannot specify standard output for both --output and --output-cover.", "-o and --output-cover conflict");
+	error_case({"opustags", "-i", "x", "y", "--output-cover", "z"},
+	            "Cannot use --output-cover with multiple input files.", "--output-cover with multiple input");
 	error_case({"opustags", "-d", "\xFF", "x"},
 	           "Could not encode argument into UTF-8:",
 	           "-d with binary data");
