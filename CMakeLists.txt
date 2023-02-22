@@ -36,6 +36,7 @@ include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS} ${Iconv
 add_library(
 	ot
 	STATIC
+	src/base64.cc
 	src/cli.cc
 	src/ogg.cc
 	src/opus.cc

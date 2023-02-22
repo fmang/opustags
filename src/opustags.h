@@ -187,6 +187,9 @@ void run_editor(std::string_view editor, std::string_view path);
  */
 timespec get_file_timestamp(const char* path);
 
+std::string encode_base64(std::string_view src);
+std::string decode_base64(std::string_view src);
+
 /** \} */
 
 /***********************************************************************************************//**
