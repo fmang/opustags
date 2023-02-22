@@ -3,8 +3,6 @@
 
 #include <string.h>
 
-using namespace std::literals::string_literals;
-
 static ot::status read_comments(FILE* input, std::list<std::string>& comments, bool raw)
 {
 	try {

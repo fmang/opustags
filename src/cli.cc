@@ -16,8 +16,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-using namespace std::literals::string_literals;
-
 static const char help_message[] =
 PROJECT_NAME " version " PROJECT_VERSION
 R"raw(

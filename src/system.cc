@@ -18,8 +18,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-using namespace std::string_literals;
-
 void ot::partial_file::open(const char* destination)
 {
 	final_name = destination;

@@ -13,8 +13,6 @@
 #include <errno.h>
 #include <string.h>
 
-using namespace std::literals::string_literals;
-
 bool ot::is_opus_stream(const ogg_page& identification_header)
 {
 	if (ogg_page_bos(&identification_header) == 0)

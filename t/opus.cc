@@ -3,8 +3,6 @@
 
 #include <string.h>
 
-using namespace std::literals::string_literals;
-
 static const char standard_OpusTags[] =
 	"OpusTags"
 	"\x14\x00\x00\x00" "opustags test packet"

@@ -53,6 +53,8 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #endif
 
+using namespace std::literals;
+
 namespace ot {
 
 /**
