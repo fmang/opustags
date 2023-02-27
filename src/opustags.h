@@ -51,6 +51,8 @@
 #include <libkern/OSByteOrder.h>
 #define htole32(x) OSSwapHostToLittleInt32(x)
 #define le32toh(x) OSSwapLittleToHostInt32(x)
+#define htobe32(x) OSSwapHostToBigInt32(x)
+#define be32toh(x) OSSwapBigToHostInt32(x)
 #endif
 
 using namespace std::literals;
@@ -89,6 +91,7 @@ enum class st {
 	cut_comment_count,
 	cut_comment_length,
 	cut_comment_data,
+	invalid_size,
 	/* CLI */
 	bad_arguments,
 };
@@ -397,6 +400,26 @@ opus_tags parse_tags(const ogg_packet& packet);
  * Serialize an #opus_tags object into an OpusTags Ogg packet.
  */
 dynamic_ogg_packet render_tags(const opus_tags& tags);
+
+/**
+ * Extracted data from the METADATA_BLOCK_PICTURE tag. See
+ * <https://xiph.org/flac/format.html#metadata_block_picture> for the full specifications.
+ *
+ * It may contain all kinds of metadata but most are not used at all. For now, let’s assume all
+ * pictures have picture type 3 (front cover), and empty metadata.
+ */
+struct picture {
+	/** Extract the picture information from serialized binary data.*/
+	picture(std::string block);
+	std::string_view mime_type;
+	std::string_view picture_data;
+	/** To avoid needless copies of the picture data, move the original data block there. The
+	 *  string_view attributes will refer to it. */
+	std::string storage;
+};
+
+/** Extract the first picture embedded in the tags, regardless of its type. */
+std::optional<picture> extract_cover(const opus_tags& tags);
 
 /** \} */
 

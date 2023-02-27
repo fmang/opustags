@@ -110,3 +110,54 @@ ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)
 
 	return op;
 }
+
+/**
+ * The METADATA_BLOCK_PICTURE binary data, after base64 decoding, is organized like this:
+ *
+ *  - 4 bytes for the picture type,
+ *  - 4 + n bytes for the MIME type,
+ *  - 4 + n bytes for the description string,
+ *  - 16 bytes of picture attributes,
+ *  - 4 + n bytes for the picture data.
+ *
+ * Integers are all big endian.
+ */
+ot::picture::picture(std::string block)
+	: storage(std::move(block))
+{
+	auto bytes = reinterpret_cast<const uint8_t*>(storage.data());
+
+	size_t mime_offset = 4;
+	if (storage.size() < mime_offset + 4)
+		throw status { st::invalid_size, "missing MIME type in picture block" };
+	uint32_t mime_size = be32toh(*reinterpret_cast<const uint32_t*>(bytes + mime_offset));
+
+	size_t desc_offset = mime_offset + 4 + mime_size;
+	if (storage.size() < desc_offset + 4)
+		throw status { st::invalid_size, "missing description in picture block" };
+	uint32_t desc_size = be32toh(*reinterpret_cast<const uint32_t*>(bytes + desc_offset));
+
+	size_t pic_offset = desc_offset + 4 + desc_size + 16;
+	if (storage.size() < pic_offset + 4)
+		throw status { st::invalid_size, "missing picture data in picture block" };
+	uint32_t pic_size = be32toh(*reinterpret_cast<const uint32_t*>(bytes + pic_offset));
+
+	if (storage.size() != pic_offset + 4 + pic_size)
+		throw status { st::invalid_size, "invalid picture block size" };
+
+	mime_type = std::string_view(reinterpret_cast<const char*>(bytes + mime_offset + 4), mime_size);
+	picture_data = std::string_view(reinterpret_cast<const char*>(bytes + pic_offset + 4), pic_size);
+}
+
+std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
+{
+	static const std::string_view prefix = "METADATA_BLOCK_PICTURE="sv;
+	auto is_cover = [](const std::string& tag) { return tag.starts_with(prefix); };
+	auto cover_tag = std::find_if(tags.comments.begin(), tags.comments.end(), is_cover);
+	if (cover_tag == tags.comments.end())
+		return {}; // No cover art.
+
+	std::string_view cover_value = *cover_tag;
+	cover_value.remove_prefix(prefix.size());
+	return picture(decode_base64(cover_value));
+}

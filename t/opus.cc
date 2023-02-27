@@ -135,12 +135,43 @@ static void recode_padding()
 		throw failure("the rendered packet is not what we expected");
 }
 
+static void extract_cover()
+{
+	std::string_view picture_data = ""sv
+		"\x00\x00\x00\x03" // Picture type 3.
+		"\x00\x00\x00\x09" "image/foo" // MIME type.
+		"\x00\x00\x00\x00" "" // Description.
+		"\x00\x00\x00\x00" // Width.
+		"\x00\x00\x00\x00" // Height.
+		"\x00\x00\x00\x00" // Color depth.
+		"\x00\x00\x00\x00" // Palette size.
+		"\x00\x00\x00\x0C" "Picture data";
+
+	ot::opus_tags tags;
+	tags.comments.push_front("METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_data));
+	std::optional<ot::picture> cover = ot::extract_cover(tags);
+	if (!cover)
+		throw failure("could not extract the cover");
+	if (cover->mime_type != "image/foo")
+		throw failure("bad extracted MIME type");
+	if (cover->picture_data != "Picture data")
+		throw failure("bad extracted picture data");
+
+	std::string_view truncated_data = picture_data.substr(0, picture_data.size() - 1);
+	tags.comments.push_front("METADATA_BLOCK_PICTURE=" + ot::encode_base64(truncated_data));
+	try {
+		ot::extract_cover(tags);
+		throw failure("accepted a bad picture block");
+	} catch (const ot::status& rc) {}
+}
+
 int main()
 {
-	std::cout << "1..4\n";
+	std::cout << "1..5\n";
 	run(parse_standard, "parse a standard OpusTags packet");
 	run(parse_corrupted, "correctly reject invalid packets");
 	run(recode_standard, "recode a standard OpusTags packet");
 	run(recode_padding, "recode a OpusTags packet with padding");
+	run(extract_cover, "extract the cover art");
 	return 0;
 }
