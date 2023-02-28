@@ -149,6 +149,9 @@ ot::picture::picture(std::string block)
 	picture_data = std::string_view(reinterpret_cast<const char*>(bytes + pic_offset + 4), pic_size);
 }
 
+/**
+ * \todo Take into account the picture types (first 4 bytes of the tag value).
+ */
 std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 {
 	static const std::string_view prefix = "METADATA_BLOCK_PICTURE="sv;
@@ -156,6 +159,11 @@ std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 	auto cover_tag = std::find_if(tags.comments.begin(), tags.comments.end(), is_cover);
 	if (cover_tag == tags.comments.end())
 		return {}; // No cover art.
+
+	auto extra_cover_tag = std::find_if(std::next(cover_tag), tags.comments.end(), is_cover);
+	if (extra_cover_tag != tags.comments.end())
+		fputs("warning: Found multiple covers; only the first will be extracted."
+		              " Please report your use case if you need a finer selection.\n", stderr);
 
 	std::string_view cover_value = *cover_tag;
 	cover_value.remove_prefix(prefix.size());

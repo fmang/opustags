@@ -148,7 +148,7 @@ static void extract_cover()
 		"\x00\x00\x00\x0C" "Picture data";
 
 	ot::opus_tags tags;
-	tags.comments.push_front("METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_data));
+	tags.comments = { "METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_data) };
 	std::optional<ot::picture> cover = ot::extract_cover(tags);
 	if (!cover)
 		throw failure("could not extract the cover");
@@ -158,7 +158,7 @@ static void extract_cover()
 		throw failure("bad extracted picture data");
 
 	std::string_view truncated_data = picture_data.substr(0, picture_data.size() - 1);
-	tags.comments.push_front("METADATA_BLOCK_PICTURE=" + ot::encode_base64(truncated_data));
+	tags.comments = { "METADATA_BLOCK_PICTURE=" + ot::encode_base64(truncated_data) };
 	try {
 		ot::extract_cover(tags);
 		throw failure("accepted a bad picture block");

@@ -402,7 +402,7 @@ static void output_cover(const ot::opus_tags& tags, const ot::options &opt)
 {
 	std::optional<ot::picture> cover = extract_cover(tags);
 	if (!cover) {
-		fputs("warning: no cover found.\n", stderr);
+		fputs("warning: No cover found.\n", stderr);
 		return;
 	}
 
