@@ -122,31 +122,29 @@ ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)
  *
  * Integers are all big endian.
  */
-ot::picture::picture(std::string block)
+ot::picture::picture(ot::byte_string block)
 	: storage(std::move(block))
 {
-	auto bytes = reinterpret_cast<const uint8_t*>(storage.data());
-
 	size_t mime_offset = 4;
 	if (storage.size() < mime_offset + 4)
 		throw status { st::invalid_size, "missing MIME type in picture block" };
-	uint32_t mime_size = be32toh(*reinterpret_cast<const uint32_t*>(bytes + mime_offset));
+	uint32_t mime_size = be32toh(*reinterpret_cast<const uint32_t*>(&storage[mime_offset]));
 
 	size_t desc_offset = mime_offset + 4 + mime_size;
 	if (storage.size() < desc_offset + 4)
 		throw status { st::invalid_size, "missing description in picture block" };
-	uint32_t desc_size = be32toh(*reinterpret_cast<const uint32_t*>(bytes + desc_offset));
+	uint32_t desc_size = be32toh(*reinterpret_cast<const uint32_t*>(&storage[desc_offset]));
 
 	size_t pic_offset = desc_offset + 4 + desc_size + 16;
 	if (storage.size() < pic_offset + 4)
 		throw status { st::invalid_size, "missing picture data in picture block" };
-	uint32_t pic_size = be32toh(*reinterpret_cast<const uint32_t*>(bytes + pic_offset));
+	uint32_t pic_size = be32toh(*reinterpret_cast<const uint32_t*>(&storage[pic_offset]));
 
 	if (storage.size() != pic_offset + 4 + pic_size)
 		throw status { st::invalid_size, "invalid picture block size" };
 
-	mime_type = std::string_view(reinterpret_cast<const char*>(bytes + mime_offset + 4), mime_size);
-	picture_data = std::string_view(reinterpret_cast<const char*>(bytes + pic_offset + 4), pic_size);
+	mime_type = byte_string_view(&storage[mime_offset + 4], mime_size);
+	picture_data = byte_string_view(&storage[pic_offset + 4], pic_size);
 }
 
 /**

@@ -137,7 +137,7 @@ static void recode_padding()
 
 static void extract_cover()
 {
-	std::string_view picture_data = ""sv
+	ot::byte_string_view picture_data = ""_bsv
 		"\x00\x00\x00\x03" // Picture type 3.
 		"\x00\x00\x00\x09" "image/foo" // MIME type.
 		"\x00\x00\x00\x00" "" // Description.
@@ -152,12 +152,12 @@ static void extract_cover()
 	std::optional<ot::picture> cover = ot::extract_cover(tags);
 	if (!cover)
 		throw failure("could not extract the cover");
-	if (cover->mime_type != "image/foo")
+	if (cover->mime_type != "image/foo"_bsv)
 		throw failure("bad extracted MIME type");
-	if (cover->picture_data != "Picture data")
+	if (cover->picture_data != "Picture data"_bsv)
 		throw failure("bad extracted picture data");
 
-	std::string_view truncated_data = picture_data.substr(0, picture_data.size() - 1);
+	ot::byte_string_view truncated_data = picture_data.substr(0, picture_data.size() - 1);
 	tags.comments = { "METADATA_BLOCK_PICTURE=" + ot::encode_base64(truncated_data) };
 	try {
 		ot::extract_cover(tags);

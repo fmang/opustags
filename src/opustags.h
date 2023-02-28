@@ -111,6 +111,9 @@ struct status {
 	std::string message;
 };
 
+using byte_string = std::basic_string<uint8_t>;
+using byte_string_view = std::basic_string_view<uint8_t>;
+
 /***********************************************************************************************//**
  * \defgroup system System
  * \{
@@ -192,8 +195,8 @@ void run_editor(std::string_view editor, std::string_view path);
  */
 timespec get_file_timestamp(const char* path);
 
-std::string encode_base64(std::string_view src);
-std::string decode_base64(std::string_view src);
+std::string encode_base64(byte_string_view src);
+byte_string decode_base64(std::string_view src);
 
 /** \} */
 
@@ -410,12 +413,12 @@ dynamic_ogg_packet render_tags(const opus_tags& tags);
  */
 struct picture {
 	/** Extract the picture information from serialized binary data.*/
-	picture(std::string block);
-	std::string_view mime_type;
-	std::string_view picture_data;
+	picture(byte_string block);
+	byte_string_view mime_type;
+	byte_string_view picture_data;
 	/** To avoid needless copies of the picture data, move the original data block there. The
 	 *  string_view attributes will refer to it. */
-	std::string storage;
+	byte_string storage;
 };
 
 /** Extract the first picture embedded in the tags, regardless of its type. */
@@ -560,3 +563,7 @@ void run(const options& opt);
 /** \} */
 
 }
+
+/** Handy literal suffix for building byte strings. */
+ot::byte_string operator""_bs(const char* data, size_t size);
+ot::byte_string_view operator""_bsv(const char* data, size_t size);

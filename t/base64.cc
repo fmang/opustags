@@ -3,26 +3,26 @@
 
 static void check_encode_base64()
 {
-	is(ot::encode_base64(""), "", "empty");
-	is(ot::encode_base64("a"), "YQ==", "1 character");
-	is(ot::encode_base64("aa"), "YWE=", "2 characters");
-	is(ot::encode_base64("aaa"), "YWFh", "3 characters");
-	is(ot::encode_base64("aaaa"), "YWFhYQ==", "4 characters");
-	is(ot::encode_base64("\xFF\xFF\xFE"), "///+", "RFC alphabet");
-	is(ot::encode_base64("\0x"sv), "AHg=", "embedded null bytes");
+	is(ot::encode_base64(""_bsv), "", "empty");
+	is(ot::encode_base64("a"_bsv), "YQ==", "1 character");
+	is(ot::encode_base64("aa"_bsv), "YWE=", "2 characters");
+	is(ot::encode_base64("aaa"_bsv), "YWFh", "3 characters");
+	is(ot::encode_base64("aaaa"_bsv), "YWFhYQ==", "4 characters");
+	is(ot::encode_base64("\xFF\xFF\xFE"_bsv), "///+", "RFC alphabet");
+	is(ot::encode_base64("\0x"_bsv), "AHg=", "embedded null bytes");
 }
 
 static void check_decode_base64()
 {
-	is(ot::decode_base64(""), "", "empty");
-	is(ot::decode_base64("YQ=="), "a", "1 character");
-	is(ot::decode_base64("YWE="), "aa", "2 characters");
-	is(ot::decode_base64("YQ"), "a", "padless 1 character");
-	is(ot::decode_base64("YWE"), "aa", "padless 2 characters");
-	is(ot::decode_base64("YWFh"), "aaa", "3 characters");
-	is(ot::decode_base64("YWFhYQ=="), "aaaa", "4 characters");
-	is(ot::decode_base64("///+"), "\xFF\xFF\xFE", "RFC alphabet");
-	is(ot::decode_base64("AHg="), "\0x"sv, "embedded null bytes");
+	opaque_is(ot::decode_base64(""), ""_bsv, "empty");
+	opaque_is(ot::decode_base64("YQ=="), "a"_bsv, "1 character");
+	opaque_is(ot::decode_base64("YWE="), "aa"_bsv, "2 characters");
+	opaque_is(ot::decode_base64("YQ"), "a"_bsv, "padless 1 character");
+	opaque_is(ot::decode_base64("YWE"), "aa"_bsv, "padless 2 characters");
+	opaque_is(ot::decode_base64("YWFh"), "aaa"_bsv, "3 characters");
+	opaque_is(ot::decode_base64("YWFhYQ=="), "aaaa"_bsv, "4 characters");
+	opaque_is(ot::decode_base64("///+"), "\xFF\xFF\xFE"_bsv, "RFC alphabet");
+	opaque_is(ot::decode_base64("AHg="), "\0x"_bsv, "embedded null bytes");
 
 	try {
 		ot::decode_base64("Y===");

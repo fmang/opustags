@@ -13,10 +13,10 @@
 
 #include <cstring>
 
-static const unsigned char base64_table[65] =
+static const char base64_table[65] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-std::string ot::encode_base64(std::string_view src)
+std::string ot::encode_base64(ot::byte_string_view src)
 {
 	size_t len = src.size();
 	size_t num_blocks = (len + 2) / 3; // Count of 3-byte blocks, rounded up.
@@ -27,9 +27,9 @@ std::string ot::encode_base64(std::string_view src)
 	std::string out;
 	out.resize(olen);
 
-	const unsigned char* in = reinterpret_cast<const unsigned char*>(src.data());
-	const unsigned char* end = in + len;
-	unsigned char* pos = reinterpret_cast<unsigned char*>(out.data());
+	const uint8_t* in = src.data();
+	const uint8_t* end = in + len;
+	char* pos = out.data();
 	while (end - in >= 3) {
 		*pos++ = base64_table[in[0] >> 2];
 		*pos++ = base64_table[((in[0] & 0x03) << 4) | (in[1] >> 4)];
@@ -53,7 +53,7 @@ std::string ot::encode_base64(std::string_view src)
 	return out;
 }
 
-std::string ot::decode_base64(std::string_view src)
+ot::byte_string ot::decode_base64(std::string_view src)
 {
 	// Remove the padding and rely on the string length instead.
 	while (src.back() == '=')
@@ -66,14 +66,14 @@ std::string ot::decode_base64(std::string_view src)
 		case 3: olen += 2; break;
 	}
 
-	std::string out;
+	ot::byte_string out;
 	out.resize(olen);
-	unsigned char* pos = reinterpret_cast<unsigned char*>(out.data());
+	uint8_t* pos = out.data();
 
 	unsigned char dtable[256];
 	memset(dtable, 0x80, 256);
 	for (size_t i = 0; i < sizeof(base64_table) - 1; ++i)
-		dtable[base64_table[i]] = (unsigned char) i;
+		dtable[(size_t) base64_table[i]] = (unsigned char) i;
 
 	unsigned char block[4];
 	size_t count = 0;

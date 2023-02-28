@@ -18,6 +18,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+ot::byte_string operator""_bs(const char* data, size_t size)
+{
+	return ot::byte_string(reinterpret_cast<const uint8_t*>(data), size);
+}
+
+ot::byte_string_view operator""_bsv(const char* data, size_t size)
+{
+	return ot::byte_string_view(reinterpret_cast<const uint8_t*>(data), size);
+}
+
 void ot::partial_file::open(const char* destination)
 {
 	final_name = destination;

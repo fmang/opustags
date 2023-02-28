@@ -51,6 +51,13 @@ void is(const T& got, const U& expected, const char* name)
 	}
 }
 
+template <typename T, typename U>
+void opaque_is(const T& got, const U& expected, const char* name)
+{
+	if (got != expected)
+		throw failure(name);
+}
+
 template <>
 void is(const ot::status& got, const ot::st& expected, const char* name)
 {
