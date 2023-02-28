@@ -147,6 +147,20 @@ ot::picture::picture(ot::byte_string block)
 	picture_data = byte_string_view(&storage[pic_offset + 4], pic_size);
 }
 
+ot::byte_string ot::picture::serialize() const
+{
+	ot::byte_string bytes;
+	size_t mime_offset = 4;
+	size_t pic_offset = mime_offset + 4 + mime_type.size() + 4 + 0 + 16;
+	bytes.resize(pic_offset + 4 + picture_data.size());
+	*reinterpret_cast<uint32_t*>(&bytes[0]) = htobe32(3); // Picture type: front cover.
+	*reinterpret_cast<uint32_t*>(&bytes[mime_offset]) = htobe32(mime_type.size());
+	std::copy(mime_type.begin(), mime_type.end(), std::next(bytes.begin(), mime_offset + 4));
+	*reinterpret_cast<uint32_t*>(&bytes[pic_offset]) = htobe32(picture_data.size());
+	std::copy(picture_data.begin(), picture_data.end(), std::next(bytes.begin(), pic_offset + 4));
+	return bytes;
+}
+
 /**
  * \todo Take into account the picture types (first 4 bytes of the tag value).
  */
@@ -166,4 +180,12 @@ std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 	std::string_view cover_value = *cover_tag;
 	cover_value.remove_prefix(prefix.size());
 	return picture(decode_base64(cover_value));
+}
+
+std::string ot::make_cover(ot::byte_string_view picture_data)
+{
+	picture pic;
+	pic.mime_type = "application/octet-stream"_bsv;
+	pic.picture_data = picture_data;
+	return "METADATA_BLOCK_PICTURE=" + encode_base64(pic.serialize());
 }

@@ -65,6 +65,8 @@ Documentation
       -s, --set FIELD=VALUE         replace a comment
       -S, --set-all                 import comments from standard input
       -e, --edit                    edit tags interactively in VISUAL/EDITOR
+      --output-cover FILE           extract and save the cover art, if any
+      --set-cover FILE              sets the cover art
       --raw                         disable encoding conversion
 
 See the man page, `opustags.1`, for extensive documentation.

@@ -107,7 +107,7 @@ environment variable. The allowed format is the same as \fB--set-all\fP.
 If TERM and VISUAL are set, VISUAL takes precedence over EDITOR.
 .TP
 .B \-\-output-cover \fIFILE\fP
-Save the cover art of the input file at the specified location.
+Save the cover art of the input Opus file to the specified location.
 If the input file does not contain any cover art, this option has no effect.
 To allow overwriting the target location, specify \fB--overwrite\fP.
 In the case of multiple pictures embedded in the Opus tags, only the first one is saved.
@@ -115,6 +115,11 @@ Note that the since the image format is not fixed, you should consider an extens
 and rely on the magic number to deduce the type. opustags does not add or check the target file’s
 extension.
 You can specify \fB-\fP for standard output, in which case the regular output will be suppressed.
+.TP
+.B \-\-set-cover \fIFILE\fP
+Replace or set the cover art to the specified picture.
+In theory, an Opus file may contain multiple pictures with different roles, though in practice only
+the front cover really matters. opustags can currently only handle one front cover and nothing else.
 .TP
 .B \-\-raw
 OpusTags metadata should always be encoded in UTF-8, as per RFC 7845. However, some files may be

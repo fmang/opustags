@@ -157,6 +157,9 @@ private:
 	ot::file file;
 };
 
+/** Read a whole file into memory and return the read content. */
+byte_string slurp_binary_file(const char* filename);
+
 /** C++ wrapper for iconv. */
 class encoding_converter {
 public:
@@ -412,10 +415,19 @@ dynamic_ogg_packet render_tags(const opus_tags& tags);
  * pictures have picture type 3 (front cover), and empty metadata.
  */
 struct picture {
+	picture() = default;
+
 	/** Extract the picture information from serialized binary data.*/
 	picture(byte_string block);
 	byte_string_view mime_type;
 	byte_string_view picture_data;
+
+	/**
+	 * Encode the picture attributes (mime_type, picture_data) into a binary block to be stored
+	 * into METADATA_BLOCK_PICTURE.
+	 */
+	byte_string serialize() const;
+
 	/** To avoid needless copies of the picture data, move the original data block there. The
 	 *  string_view attributes will refer to it. */
 	byte_string storage;
@@ -423,6 +435,12 @@ struct picture {
 
 /** Extract the first picture embedded in the tags, regardless of its type. */
 std::optional<picture> extract_cover(const opus_tags& tags);
+
+/**
+ * Return a METADATA_BLOCK_PICTURE tag defining the front cover art to the given picture data (JPEG,
+ * PNG). The MIME type is deduced from the magic number.
+ */
+std::string make_cover(byte_string_view picture_data);
 
 /** \} */
 

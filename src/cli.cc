@@ -37,6 +37,7 @@ Options:
   -S, --set-all                 import comments from standard input
   -e, --edit                    edit tags interactively in VISUAL/EDITOR
   --output-cover FILE           extract and save the cover art, if any
+  --set-cover FILE              sets the cover art
   --raw                         disable encoding conversion
 
 See the man page for extensive documentation.
@@ -54,6 +55,7 @@ static struct option getopt_options[] = {
 	{"set-all", no_argument, 0, 'S'},
 	{"edit", no_argument, 0, 'e'},
 	{"output-cover", required_argument, 0, 'c'},
+	{"set-cover", required_argument, 0, 'C'},
 	{"raw", no_argument, 0, 'r'},
 	{NULL, 0, 0, 0}
 };
@@ -65,6 +67,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	const char* equal;
 	ot::status rc;
 	bool set_all = false;
+	std::optional<std::string> set_cover;
 	opt = {};
 	if (argc == 1)
 		throw status {st::bad_arguments, "No arguments specified. Use -h for help."};
@@ -114,6 +117,11 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 				throw status {st::bad_arguments, "Cannot specify --output-cover more than once."};
 			opt.cover_out = optarg;
 			break;
+		case 'C':
+			if (set_cover)
+				throw status {st::bad_arguments, "Cannot specify --set-cover more than once."};
+			set_cover = optarg;
+			break;
 		case 'r':
 			opt.raw = true;
 			break;
@@ -132,6 +140,12 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	for (int i = optind; i < argc; i++) {
 		stdin_as_input = stdin_as_input || strcmp(argv[i], "-") == 0;
 		opt.paths_in.emplace_back(argv[i]);
+	}
+
+	if (set_cover) {
+		byte_string picture_data = ot::slurp_binary_file(set_cover->c_str());
+		opt.to_delete.push_back("METADATA_BLOCK_PICTURE");
+		opt.to_add.push_back(ot::make_cover(picture_data));
 	}
 
 	// Convert arguments to UTF-8.

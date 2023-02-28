@@ -12,6 +12,7 @@
 #include <opustags.h>
 
 #include <errno.h>
+#include <fstream>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -95,6 +96,30 @@ void ot::partial_file::abort()
 		return;
 	file.reset();
 	remove(temporary_name.c_str());
+}
+
+/** \todo Support non-seekable files like streams. */
+ot::byte_string ot::slurp_binary_file(const char* filename)
+{
+	std::ifstream file(filename, std::ios::binary | std::ios::ate);
+	if (file.fail())
+		throw status { st::standard_error,
+		               "Could not open '"s + filename + "': " + strerror(errno) + "." };
+
+	auto file_size = file.tellg();
+	if (file_size == decltype(file)::pos_type(-1))
+		throw status { st::standard_error,
+		               "Could not determine the size of '"s + filename + "': " + strerror(errno) + "." };
+
+	byte_string content;
+	content.resize(file_size);
+	file.seekg(0);
+	file.read(reinterpret_cast<char*>(content.data()), file_size);
+	if (file.fail())
+		throw status { st::standard_error,
+		               "Could not read '"s + filename + "': " + strerror(errno) + "." };
+
+	return content;
 }
 
 ot::encoding_converter::encoding_converter(const char* from, const char* to)

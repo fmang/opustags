@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 55;
+use Test::More tests => 58;
 
 use Digest::MD5;
 use File::Basename;
@@ -73,6 +73,7 @@ Options:
   -S, --set-all                 import comments from standard input
   -e, --edit                    edit tags interactively in VISUAL/EDITOR
   --output-cover FILE           extract and save the cover art, if any
+  --set-cover FILE              sets the cover art
   --raw                         disable encoding conversion
 
 See the man page for extensive documentation.
@@ -326,3 +327,14 @@ is_deeply(opustags('out.opus'), [$big_tags, '', 0], 'read multi-page header');
 is_deeply(opustags(qw(out.opus -i -D -a), 'encoder=Lavc58.18.100 libopus'), ['', '', 0], 'shrink the header');
 is(md5('out.opus'), '111a483596ac32352fbce4d14d16abd2', 'the result is identical to the original file');
 unlink('out.opus');
+
+####################################################################################################
+# Cover arts
+
+is_deeply(opustags(qw(-D --set-cover pixel.png gobble.opus -o out.opus), ), ['', '', 0], 'set the cover');
+is_deeply(opustags(qw(--output-cover out.png out.opus), ), [<<'END_OUT', '', 0], 'extract the cover');
+METADATA_BLOCK_PICTURE=AAAAAwAAABhhcHBsaWNhdGlvbi9vY3RldC1zdHJlYW0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEWJUE5HDQoaCgAAAA1JSERSAAAAAQAAAAEIAgAAAJB3U94AAAAMSURBVAjXY/j//z8ABf4C/tzMWecAAAAASUVORK5CYII=
+END_OUT
+is(md5('out.png'), md5('pixel.png'), 'the extracted cover is identical to the one set');
+unlink('out.opus');
+unlink('out.png');
