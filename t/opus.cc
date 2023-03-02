@@ -169,16 +169,16 @@ static void make_cover()
 {
 	ot::byte_string_view picture_block = ""_bsv
 		"\x00\x00\x00\x03" // Picture type 3.
-		"\x00\x00\x00\x18" "application/octet-stream" // MIME type.
+		"\x00\x00\x00\x09" "image/png" // MIME type.
 		"\x00\x00\x00\x00" "" // Description.
 		"\x00\x00\x00\x00" // Width.
 		"\x00\x00\x00\x00" // Height.
 		"\x00\x00\x00\x00" // Color depth.
 		"\x00\x00\x00\x00" // Palette size.
-		"\x00\x00\x00\x0C" "Picture data";
+		"\x00\x00\x00\x11" "\x89PNG Picture data";
 
 	std::string expected = "METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_block);
-	is(ot::make_cover("Picture data"_bsv), expected, "build the picture tag");
+	is(ot::make_cover("\x89PNG Picture data"_bsv), expected, "build the picture tag");
 }
 
 int main()

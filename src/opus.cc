@@ -182,10 +182,30 @@ std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 	return picture(decode_base64(cover_value));
 }
 
+/**
+ * Detect the MIME type of the given data block by checking the first bytes. Only the most common
+ * image formats are currently supported. Using magic(5) would give better results but that level of
+ * exhaustiveness is probably not necessary.
+ */
+static ot::byte_string_view detect_mime_type(ot::byte_string_view data)
+{
+	static std::initializer_list<std::pair<ot::byte_string_view, ot::byte_string_view>> magic_numbers = {
+		{ "\xff\xd8\xff"_bsv, "image/jpeg"_bsv },
+		{ "\x89PNG"_bsv, "image/png"_bsv },
+		{ "GIF8"_bsv, "image/gif"_bsv },
+	};
+	for (auto [magic, mime] : magic_numbers) {
+		if (data.starts_with(magic))
+			return mime;
+	}
+	fputs("warning: Could not identify the MIME type of the picture; defaulting to application/octet-stream.\n", stderr);
+	return "application/octet-stream"_bsv;
+}
+
 std::string ot::make_cover(ot::byte_string_view picture_data)
 {
 	picture pic;
-	pic.mime_type = "application/octet-stream"_bsv;
+	pic.mime_type = detect_mime_type(picture_data);
 	pic.picture_data = picture_data;
 	return "METADATA_BLOCK_PICTURE=" + encode_base64(pic.serialize());
 }

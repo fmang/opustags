@@ -333,7 +333,7 @@ unlink('out.opus');
 
 is_deeply(opustags(qw(-D --set-cover pixel.png gobble.opus -o out.opus), ), ['', '', 0], 'set the cover');
 is_deeply(opustags(qw(--output-cover out.png out.opus), ), [<<'END_OUT', '', 0], 'extract the cover');
-METADATA_BLOCK_PICTURE=AAAAAwAAABhhcHBsaWNhdGlvbi9vY3RldC1zdHJlYW0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEWJUE5HDQoaCgAAAA1JSERSAAAAAQAAAAEIAgAAAJB3U94AAAAMSURBVAjXY/j//z8ABf4C/tzMWecAAAAASUVORK5CYII=
+METADATA_BLOCK_PICTURE=AAAAAwAAAAlpbWFnZS9wbmcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEWJUE5HDQoaCgAAAA1JSERSAAAAAQAAAAEIAgAAAJB3U94AAAAMSURBVAjXY/j//z8ABf4C/tzMWecAAAAASUVORK5CYII=
 END_OUT
 is(md5('out.png'), md5('pixel.png'), 'the extracted cover is identical to the one set');
 unlink('out.opus');
