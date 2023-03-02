@@ -3,6 +3,12 @@ opustags
 
 View and edit Ogg Opus comments.
 
+opustags supports the following features:
+
+- interactive editing using your preferred text editor,
+- batch editing with command-line flags,
+- tags exporting and importing through text files.
+
 opustags is designed to be fast and as conservative as possible, to the point that if you edit tags
 then edit them again to their previous values, you should get a bit-perfect copy of the original
 file. No under-the-cover operation like writing "edited with opustags" or timestamp tagging will
@@ -10,15 +16,6 @@ ever be performed.
 
 opustags is tag-agnostic: you can write arbitrary key-value tags, and none of them will be treated
 specially. After all, common tags like TITLE or ARTIST are nothing more than conventions.
-
-It currently has the following limitations:
-
-- The total size of all tags cannot exceed 64 kB, the maximum size of one Ogg page.
-- Multiplexed streams are not supported.
-- Newlines inside tags are not supported by `--set-all`.
-
-If you'd like one of these limitations lifted, please do open an issue explaining your use case.
-Feel free to ask for new features too.
 
 Requirements
 ------------

@@ -11,7 +11,7 @@
 
 #include <opustags.h>
 
-#include <cstring>
+#include <string.h>
 
 static const char8_t base64_table[65] =
 	u8"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

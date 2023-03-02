@@ -1,6 +1,15 @@
 opustags changelog
 ==================
 
+1.8.0 - 2023-03-07
+------------------
+
+- Introduce --set-cover and --output-cover.
+
+opustags is now able to extract and edit the cover art of Opus files. The underlying
+METADATA_BLOCK_PICTURE tag will still appear as a regular tag, but you won’t have to handle it
+manually anymore.
+
 1.7.0 - 2023-02-13
 ------------------
 

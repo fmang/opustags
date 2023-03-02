@@ -1,4 +1,4 @@
-.TH opustags 1 "February 2023" "@PROJECT_NAME@ @PROJECT_VERSION@"
+.TH opustags 1 "March 2023" "@PROJECT_NAME@ @PROJECT_VERSION@"
 .SH NAME
 opustags \- Ogg Opus tag editor
 .SH SYNOPSIS
@@ -20,7 +20,7 @@ opustags \- Ogg Opus tag editor
 .SH DESCRIPTION
 .PP
 \fBopustags\fP can read and edit the comment header of an Ogg Opus file.
-It basically has two modes: read-only, and read-write for tag editing.
+It has two modes: read-only, and read-write for tag editing.
 .PP
 In read-only mode, only the beginning of \fIINPUT\fP is read, and the tags are
 printed on standard output. Lines prefixed by tabs are continuation of the previous tag.
@@ -47,10 +47,9 @@ All the previously existing tags as deleted.
 .PP
 The Opus format specifications requires that tags are encoded in UTF-8, so that's the only encoding
 opustags supports. If your system encoding is different, the tags are automatically converted to and
-from your system locale. When the conversion is lossy, the incompatible characters are
-transliterated and a warning is displayed. Even if you edit an Opus file whose tags contains
-characters unsupported by your system encoding, the original UTF-8 values will be preserved for the
-tags you don't explictly modify.
+from your system locale. When you edit an Opus file whose tags contains characters unsupported by
+your system encoding, the original UTF-8 values will be preserved for the tags you don't explictly
+modify.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help

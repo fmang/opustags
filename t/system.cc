@@ -48,6 +48,7 @@ void check_slurp()
 
 void check_converter()
 {
+	setlocale(LC_ALL, "");
 	is(ot::decode_utf8(ot::encode_utf8("Éphémère")), "Éphémère", "decode_utf8 reverts encode_utf8");
 	opaque_is(ot::encode_utf8(ot::decode_utf8(u8"Éphémère")), u8"Éphémère",
 	          "encode_utf8 reverts decode_utf8");
