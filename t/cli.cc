@@ -159,8 +159,7 @@ void check_bad_arguments()
 	error_case({"opustags", "--derp=y"}, "Unrecognized option '--derp=y'.", "unrecognized long option with value");
 	error_case({"opustags", "-aX=Y"}, "Exactly one input file must be specified.", "no input file");
 	error_case({"opustags", "-i", "-o", "/dev/null", "-"}, "Cannot combine --in-place and --output.", "in-place + output");
-	error_case({"opustags", "-S", "-"}, "Cannot use standard input as input file when --set-all is specified.",
-	                                    "set all and read opus from stdin");
+	error_case({"opustags", "-S", "-"}, "Cannot use standard input more than once.", "set all and read opus from stdin");
 	error_case({"opustags", "-i", "-"}, "Cannot modify standard input in place.", "write stdin in-place");
 	error_case({"opustags", "-o", "x", "--output", "y", "z"},
 	           "Cannot specify --output more than once.", "double output");

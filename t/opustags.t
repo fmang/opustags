@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 58;
+use Test::More tests => 59;
 
 use Digest::MD5;
 use File::Basename;
@@ -331,10 +331,14 @@ unlink('out.opus');
 ####################################################################################################
 # Cover arts
 
-is_deeply(opustags(qw(-D --set-cover pixel.png gobble.opus -o out.opus), ), ['', '', 0], 'set the cover');
-is_deeply(opustags(qw(--output-cover out.png out.opus), ), [<<'END_OUT', '', 0], 'extract the cover');
+is_deeply(opustags(qw(-D --set-cover pixel.png gobble.opus -o out.opus)), ['', '', 0], 'set the cover');
+is_deeply(opustags(qw(--output-cover out.png out.opus)), [<<'END_OUT', '', 0], 'extract the cover');
 METADATA_BLOCK_PICTURE=AAAAAwAAAAlpbWFnZS9wbmcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEWJUE5HDQoaCgAAAA1JSERSAAAAAQAAAAEIAgAAAJB3U94AAAAMSURBVAjXY/j//z8ABf4C/tzMWecAAAAASUVORK5CYII=
 END_OUT
 is(md5('out.png'), md5('pixel.png'), 'the extracted cover is identical to the one set');
 unlink('out.opus');
 unlink('out.png');
+
+is_deeply(opustags(qw(-D --set-cover - gobble.opus), { in => "GIF8 x" }), [<<'END_OUT', '', 0], 'read the cover from stdin');
+METADATA_BLOCK_PICTURE=AAAAAwAAAAlpbWFnZS9naWYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZHSUY4IHg=
+END_OUT

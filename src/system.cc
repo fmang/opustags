@@ -98,26 +98,47 @@ void ot::partial_file::abort()
 	remove(temporary_name.c_str());
 }
 
-/** \todo Support non-seekable files like streams. */
+/**
+ * Determine the file size, in bytes, of the given file. Return -1 on for streams.
+ */
+static long get_file_size(FILE* f)
+{
+	if (fseek(f, 0L, SEEK_END) != 0) {
+		clearerr(f); // Recover.
+		return -1;
+	}
+	long file_size = ftell(f);
+	rewind(f);
+	return file_size;
+}
+
 ot::byte_string ot::slurp_binary_file(const char* filename)
 {
-	std::ifstream file(filename, std::ios::binary | std::ios::ate);
-	if (file.fail())
+	file f = strcmp(filename, "-") == 0 ? freopen(nullptr, "rb", stdin)
+	                                    : fopen(filename, "rb");
+	if (f == nullptr)
 		throw status { st::standard_error,
 		               "Could not open '"s + filename + "': " + strerror(errno) + "." };
 
-	auto file_size = file.tellg();
-	if (file_size == decltype(file)::pos_type(-1))
-		throw status { st::standard_error,
-		               "Could not determine the size of '"s + filename + "': " + strerror(errno) + "." };
-
 	byte_string content;
-	content.resize(file_size);
-	file.seekg(0);
-	file.read(reinterpret_cast<char*>(content.data()), file_size);
-	if (file.fail())
-		throw status { st::standard_error,
-		               "Could not read '"s + filename + "': " + strerror(errno) + "." };
+	long file_size = get_file_size(f.get());
+	if (file_size == -1) {
+		// Read the input stream block by block and resize the output byte string as needed.
+		uint8_t buffer[4096];
+		while (!feof(f.get())) {
+			size_t read_len = fread(buffer, 1, sizeof(buffer), f.get());
+			content.append(buffer, read_len);
+			if (ferror(f.get()))
+				throw status { st::standard_error,
+					       "Could not read '"s + filename + "': " + strerror(errno) + "." };
+		}
+	} else {
+		// Lucky! We know the file size, so let’s slurp it at once.
+		content.resize(file_size);
+		if (fread(content.data(), 1, file_size, f.get()) < file_size)
+			throw status { st::standard_error,
+				       "Could not read '"s + filename + "': " + strerror(errno) + "." };
+	}
 
 	return content;
 }

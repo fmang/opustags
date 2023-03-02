@@ -136,17 +136,20 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 		return opt;
 
 	// All non-option arguments are input files.
-	bool stdin_as_input = false;
+	size_t stdin_uses = 0;
 	for (int i = optind; i < argc; i++) {
-		stdin_as_input = stdin_as_input || strcmp(argv[i], "-") == 0;
+		if (strcmp(argv[i], "-") == 0)
+			++stdin_uses;
 		opt.paths_in.emplace_back(argv[i]);
 	}
+	bool stdin_as_input = stdin_uses > 0;
 
-	if (set_cover) {
-		byte_string picture_data = ot::slurp_binary_file(set_cover->c_str());
-		opt.to_delete.push_back("METADATA_BLOCK_PICTURE");
-		opt.to_add.push_back(ot::make_cover(picture_data));
-	}
+	if (set_cover == "-")
+		++stdin_uses;
+	if (set_all)
+		++stdin_uses;
+	if (stdin_uses > 1)
+		throw status { st::bad_arguments, "Cannot use standard input more than once." };
 
 	// Convert arguments to UTF-8.
 	if (!opt.raw) {
@@ -169,10 +172,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	if ((!opt.in_place || opt.edit_interactively) && opt.paths_in.size() != 1)
 		throw status {st::bad_arguments, "Exactly one input file must be specified."};
 
-	if (set_all && stdin_as_input)
-		throw status {st::bad_arguments, "Cannot use standard input as input file when --set-all is specified."};
-
-	if (opt.edit_interactively && (stdin_as_input || opt.path_out == "-"))
+	if (opt.edit_interactively && (stdin_as_input || opt.path_out == "-" || opt.cover_out == "-"))
 		throw status {st::bad_arguments, "Cannot edit interactively when standard input or standard output are already used."};
 
 	if (opt.edit_interactively && !opt.path_out.has_value() && !opt.in_place)
@@ -186,6 +186,12 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 
 	if (opt.cover_out && opt.paths_in.size() > 1)
 		throw status {st::bad_arguments, "Cannot use --output-cover with multiple input files."};
+
+	if (set_cover) {
+		byte_string picture_data = ot::slurp_binary_file(set_cover->c_str());
+		opt.to_delete.push_back("METADATA_BLOCK_PICTURE");
+		opt.to_add.push_back(ot::make_cover(picture_data));
+	}
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
