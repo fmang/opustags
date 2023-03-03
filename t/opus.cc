@@ -16,15 +16,15 @@ static void parse_standard()
 	op.bytes = sizeof(standard_OpusTags) - 1;
 	op.packet = (unsigned char*) standard_OpusTags;
 	ot::opus_tags tags = ot::parse_tags(op);
-	if (tags.vendor != "opustags test packet")
+	if (tags.vendor != u8"opustags test packet")
 		throw failure("bad vendor string");
 	if (tags.comments.size() != 2)
 		throw failure("bad number of comments");
 	auto it = tags.comments.begin();
-	if (*it != "TITLE=Foo")
+	if (*it != u8"TITLE=Foo")
 		throw failure("bad title");
 	++it;
-	if (*it != "ARTIST=Bar")
+	if (*it != u8"ARTIST=Bar")
 		throw failure("bad artist");
 	if (tags.extra_data.size() != 0)
 		throw failure("found mysterious padding data");
@@ -123,7 +123,7 @@ static void recode_padding()
 	op.packet = (unsigned char*) padded_OpusTags.data();
 
 	ot::opus_tags tags = ot::parse_tags(op);
-	if (tags.extra_data != "\0hello"s)
+	if (tags.extra_data != "\0hello"_bsv)
 		throw failure("corrupted extra data");
 	// recode the packet and ensure it's exactly the same
 	auto packet = ot::render_tags(tags);
@@ -148,7 +148,7 @@ static void extract_cover()
 		"\x00\x00\x00\x0C" "Picture data";
 
 	ot::opus_tags tags;
-	tags.comments = { "METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_data) };
+	tags.comments = { u8"METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_data) };
 	std::optional<ot::picture> cover = ot::extract_cover(tags);
 	if (!cover)
 		throw failure("could not extract the cover");
@@ -158,7 +158,7 @@ static void extract_cover()
 		throw failure("bad extracted picture data");
 
 	ot::byte_string_view truncated_data = picture_data.substr(0, picture_data.size() - 1);
-	tags.comments = { "METADATA_BLOCK_PICTURE=" + ot::encode_base64(truncated_data) };
+	tags.comments = { u8"METADATA_BLOCK_PICTURE=" + ot::encode_base64(truncated_data) };
 	try {
 		ot::extract_cover(tags);
 		throw failure("accepted a bad picture block");
@@ -177,8 +177,8 @@ static void make_cover()
 		"\x00\x00\x00\x00" // Palette size.
 		"\x00\x00\x00\x11" "\x89PNG Picture data";
 
-	std::string expected = "METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_block);
-	is(ot::make_cover("\x89PNG Picture data"_bsv), expected, "build the picture tag");
+	std::u8string expected = u8"METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_block);
+	opaque_is(ot::make_cover("\x89PNG Picture data"_bsv), expected, "build the picture tag");
 }
 
 int main()

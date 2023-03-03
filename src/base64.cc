@@ -13,10 +13,10 @@
 
 #include <cstring>
 
-static const char base64_table[65] =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char8_t base64_table[65] =
+	u8"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-std::string ot::encode_base64(ot::byte_string_view src)
+std::u8string ot::encode_base64(ot::byte_string_view src)
 {
 	size_t len = src.size();
 	size_t num_blocks = (len + 2) / 3; // Count of 3-byte blocks, rounded up.
@@ -24,12 +24,12 @@ std::string ot::encode_base64(ot::byte_string_view src)
 	if (olen < len)
 		throw std::overflow_error("failed to encode excessively long base64 block");
 
-	std::string out;
+	std::u8string out;
 	out.resize(olen);
 
 	const uint8_t* in = src.data();
 	const uint8_t* end = in + len;
-	char* pos = out.data();
+	char8_t* pos = out.data();
 	while (end - in >= 3) {
 		*pos++ = base64_table[in[0] >> 2];
 		*pos++ = base64_table[((in[0] & 0x03) << 4) | (in[1] >> 4)];
@@ -53,10 +53,10 @@ std::string ot::encode_base64(ot::byte_string_view src)
 	return out;
 }
 
-ot::byte_string ot::decode_base64(std::string_view src)
+ot::byte_string ot::decode_base64(std::u8string_view src)
 {
 	// Remove the padding and rely on the string length instead.
-	while (src.back() == '=')
+	while (src.back() == u8'=')
 		src.remove_suffix(1);
 
 	size_t olen = src.size() / 4 * 3; // Whole blocks;

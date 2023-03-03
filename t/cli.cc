@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-static ot::status read_comments(FILE* input, std::list<std::string>& comments, bool raw)
+static ot::status read_comments(FILE* input, std::list<std::u8string>& comments, bool raw)
 {
 	try {
 		comments = ot::read_comments(input, raw);
@@ -15,7 +15,7 @@ static ot::status read_comments(FILE* input, std::list<std::string>& comments, b
 
 void check_read_comments()
 {
-	std::list<std::string> comments;
+	std::list<std::u8string> comments;
 	ot::status rc;
 	{
 		std::string txt = "TITLE=a b c\n\nARTIST=X\nArtist=Y\n"s;
@@ -23,7 +23,7 @@ void check_read_comments()
 		rc = read_comments(input.get(), comments, false);
 		if (rc != ot::st::ok)
 			throw failure("could not read comments");
-		auto&& expected = {"TITLE=a b c", "ARTIST=X", "Artist=Y"};
+		auto&& expected = {u8"TITLE=a b c", u8"ARTIST=X", u8"Artist=Y"};
 		if (!std::equal(comments.begin(), comments.end(), expected.begin(), expected.end()))
 			throw failure("parsed user comments did not match expectations");
 	}
@@ -40,7 +40,7 @@ void check_read_comments()
 		rc = read_comments(input.get(), comments, true);
 		if (rc != ot::st::ok)
 			throw failure("could not read comments");
-		if (comments.front() != "RAW=\xFF\xFF")
+		if (comments.front() != (char8_t*) "RAW=\xFF\xFF")
 			throw failure("parsed user comments did not match expectations");
 	}
 	{
@@ -49,7 +49,7 @@ void check_read_comments()
 		rc = read_comments(input.get(), comments, true);
 		if (rc != ot::st::ok)
 			throw failure("could not read comments");
-		if (comments.front() != "MULTILINE=First\nSecond")
+		if (comments.front() != u8"MULTILINE=First\nSecond")
 			throw failure("parsed user comments did not match expectations");
 	}
 	{
@@ -109,14 +109,14 @@ void check_good_arguments()
 	opt = parse({"opustags", "x", "--output", "y", "-D", "-s", "X=Y Z", "-d", "a=b"});
 	if (opt.paths_in.size() != 1 || opt.paths_in.front() != "x" || !opt.path_out ||
 	    opt.path_out != "y" || !opt.delete_all || opt.overwrite || opt.to_delete.size() != 2 ||
-	    opt.to_delete.front() != "X" || *std::next(opt.to_delete.begin()) != "a=b" ||
-	    opt.to_add != std::list<std::string>{"X=Y Z"})
+	    opt.to_delete.front() != u8"X" || *std::next(opt.to_delete.begin()) != u8"a=b" ||
+	    opt.to_add != std::list<std::u8string>{ u8"X=Y Z" })
 		throw failure("unexpected option parsing result for case #1");
 
 	opt = parse({"opustags", "-S", "x", "-S", "-a", "x=y z", "-i"});
 	if (opt.paths_in.size() != 1 || opt.paths_in.front() != "x" || opt.path_out ||
 	    !opt.overwrite || opt.to_delete.size() != 0 ||
-	    opt.to_add != std::list<std::string>{"N=1", "x=y z"})
+	    opt.to_add != std::list<std::u8string>{ u8"N=1", u8"x=y z" })
 		throw failure("unexpected option parsing result for case #2");
 
 	opt = parse({"opustags", "-i", "x", "y", "z"});
@@ -130,7 +130,7 @@ void check_good_arguments()
 		throw failure("unexpected option parsing result for case #4");
 
 	opt = parse({"opustags", "-a", "X=\xFF", "--raw", "x"});
-	if (!opt.raw || opt.to_add.front() != "X=\xFF")
+	if (!opt.raw || opt.to_add.front() != u8"X=\xFF")
 		throw failure("--raw did not disable transcoding");
 }
 
@@ -198,23 +198,23 @@ void check_bad_arguments()
 
 static void check_delete_comments()
 {
-	using C = std::list<std::string>;
-	C original = {"TITLE=X", "Title=Y", "Title=Z", "ARTIST=A", "artIst=B"};
+	using C = std::list<std::u8string>;
+	C original = {u8"TITLE=X", u8"Title=Y", u8"Title=Z", u8"ARTIST=A", u8"artIst=B"};
 
 	C edited = original;
-	ot::delete_comments(edited, "derp");
+	ot::delete_comments(edited, u8"derp");
 	if (!std::equal(edited.begin(), edited.end(), original.begin(), original.end()))
 		throw failure("should not have deleted anything");
 
-	ot::delete_comments(edited, "Title");
-	C expected = {"ARTIST=A", "artIst=B"};
+	ot::delete_comments(edited, u8"Title");
+	C expected = {u8"ARTIST=A", u8"artIst=B"};
 	if (!std::equal(edited.begin(), edited.end(), expected.begin(), expected.end()))
 		throw failure("did not delete all titles correctly");
 
 	edited = original;
-	ot::delete_comments(edited, "titlE=Y");
-	ot::delete_comments(edited, "Title=z");
-	expected = {"TITLE=X", "Title=Z", "ARTIST=A", "artIst=B"};
+	ot::delete_comments(edited, u8"titlE=Y");
+	ot::delete_comments(edited, u8"Title=z");
+	expected = {u8"TITLE=X", u8"Title=Z", u8"ARTIST=A", u8"artIst=B"};
 	if (!std::equal(edited.begin(), edited.end(), expected.begin(), expected.end()))
 		throw failure("did not delete a specific title correctly");
 }

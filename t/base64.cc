@@ -3,35 +3,35 @@
 
 static void check_encode_base64()
 {
-	is(ot::encode_base64(""_bsv), "", "empty");
-	is(ot::encode_base64("a"_bsv), "YQ==", "1 character");
-	is(ot::encode_base64("aa"_bsv), "YWE=", "2 characters");
-	is(ot::encode_base64("aaa"_bsv), "YWFh", "3 characters");
-	is(ot::encode_base64("aaaa"_bsv), "YWFhYQ==", "4 characters");
-	is(ot::encode_base64("\xFF\xFF\xFE"_bsv), "///+", "RFC alphabet");
-	is(ot::encode_base64("\0x"_bsv), "AHg=", "embedded null bytes");
+	opaque_is(ot::encode_base64(""_bsv), u8"", "empty");
+	opaque_is(ot::encode_base64("a"_bsv), u8"YQ==", "1 character");
+	opaque_is(ot::encode_base64("aa"_bsv), u8"YWE=", "2 characters");
+	opaque_is(ot::encode_base64("aaa"_bsv), u8"YWFh", "3 characters");
+	opaque_is(ot::encode_base64("aaaa"_bsv), u8"YWFhYQ==", "4 characters");
+	opaque_is(ot::encode_base64("\xFF\xFF\xFE"_bsv), u8"///+", "RFC alphabet");
+	opaque_is(ot::encode_base64("\0x"_bsv), u8"AHg=", "embedded null bytes");
 }
 
 static void check_decode_base64()
 {
-	opaque_is(ot::decode_base64(""), ""_bsv, "empty");
-	opaque_is(ot::decode_base64("YQ=="), "a"_bsv, "1 character");
-	opaque_is(ot::decode_base64("YWE="), "aa"_bsv, "2 characters");
-	opaque_is(ot::decode_base64("YQ"), "a"_bsv, "padless 1 character");
-	opaque_is(ot::decode_base64("YWE"), "aa"_bsv, "padless 2 characters");
-	opaque_is(ot::decode_base64("YWFh"), "aaa"_bsv, "3 characters");
-	opaque_is(ot::decode_base64("YWFhYQ=="), "aaaa"_bsv, "4 characters");
-	opaque_is(ot::decode_base64("///+"), "\xFF\xFF\xFE"_bsv, "RFC alphabet");
-	opaque_is(ot::decode_base64("AHg="), "\0x"_bsv, "embedded null bytes");
+	opaque_is(ot::decode_base64(u8""), ""_bsv, "empty");
+	opaque_is(ot::decode_base64(u8"YQ=="), "a"_bsv, "1 character");
+	opaque_is(ot::decode_base64(u8"YWE="), "aa"_bsv, "2 characters");
+	opaque_is(ot::decode_base64(u8"YQ"), "a"_bsv, "padless 1 character");
+	opaque_is(ot::decode_base64(u8"YWE"), "aa"_bsv, "padless 2 characters");
+	opaque_is(ot::decode_base64(u8"YWFh"), "aaa"_bsv, "3 characters");
+	opaque_is(ot::decode_base64(u8"YWFhYQ=="), "aaaa"_bsv, "4 characters");
+	opaque_is(ot::decode_base64(u8"///+"), "\xFF\xFF\xFE"_bsv, "RFC alphabet");
+	opaque_is(ot::decode_base64(u8"AHg="), "\0x"_bsv, "embedded null bytes");
 
 	try {
-		ot::decode_base64("Y===");
+		ot::decode_base64(u8"Y===");
 		throw failure("accepted a bad block size");
 	} catch (const ot::status& e) {
 	}
 
 	try {
-		ot::decode_base64("\xFF bad message!");
+		ot::decode_base64(u8"\xFF bad message!");
 		throw failure("accepted an invalid character");
 	} catch (const ot::status& e) {
 	}

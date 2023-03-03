@@ -186,8 +186,8 @@ void run_editor(std::string_view editor, std::string_view path);
  */
 timespec get_file_timestamp(const char* path);
 
-std::string encode_base64(byte_string_view src);
-byte_string decode_base64(std::string_view src);
+std::u8string encode_base64(byte_string_view src);
+byte_string decode_base64(std::u8string_view src);
 
 /** \} */
 
@@ -361,7 +361,7 @@ struct opus_tags {
 	 * OpusTags packets begin with a vendor string, meant to identify the implementation of the
 	 * encoder. It is expected to be an arbitrary UTF-8 string.
 	 */
-	std::string vendor;
+	std::u8string vendor;
 	/**
 	 * Comments are strings in the NAME=Value format. A comment may also be called a field, or a
 	 * tag.
@@ -370,7 +370,7 @@ struct opus_tags {
 	 * can be any valid UTF-8 string. The specification is not too clear for Opus, but let's
 	 * assume it's the same.
 	 */
-	std::list<std::string> comments;
+	std::list<std::u8string> comments;
 	/**
 	 * According to RFC 7845:
 	 * > Immediately following the user comment list, the comment header MAY contain
@@ -382,7 +382,7 @@ struct opus_tags {
 	 * In the future, we could add options to manipulate this data: view it, edit it, truncate
 	 * it if it's marked as padding, truncate it unconditionally.
 	 */
-	std::string extra_data;
+	byte_string extra_data;
 };
 
 /**
@@ -428,7 +428,7 @@ std::optional<picture> extract_cover(const opus_tags& tags);
  * Return a METADATA_BLOCK_PICTURE tag defining the front cover art to the given picture data (JPEG,
  * PNG). The MIME type is deduced from the magic number.
  */
-std::string make_cover(byte_string_view picture_data);
+std::u8string make_cover(byte_string_view picture_data);
 
 /** \} */
 
@@ -493,11 +493,9 @@ struct options {
 	 * #to_add takes precedence over #to_delete, so if the same comment appears in both lists,
 	 * the one in #to_delete applies only to the previously existing tags.
 	 *
-	 * The strings are stored in UTF-8.
-	 *
 	 * Option: --delete, --set
 	 */
-	std::list<std::string> to_delete;
+	std::list<std::u8string> to_delete;
 	/**
 	 * Delete all the existing comments.
 	 *
@@ -508,11 +506,9 @@ struct options {
 	 * List of comments to add, in the current system encoding. For exemple `TITLE=a b c`. They
 	 * must be valid.
 	 *
-	 * The strings are stored in UTF-8.
-	 *
 	 * Options: --add, --set, --set-all
 	 */
-	std::list<std::string> to_add;
+	std::list<std::u8string> to_add;
 	/**
 	 * If set, the input file’s cover art is exported to the specified file. - for stdout. Does
 	 * not overwrite the file if it already exists unless -y is specified. Does nothing if the
@@ -544,21 +540,19 @@ options parse_options(int argc, char** argv, FILE* comments);
  *
  * The output generated is meant to be parseable by #ot::read_comments.
  */
-void print_comments(const std::list<std::string>& comments, FILE* output, bool raw);
+void print_comments(const std::list<std::u8string>& comments, FILE* output, bool raw);
 
 /**
  * Parse the comments outputted by #ot::print_comments. Unless raw is true, the comments are
  * converted from the system encoding to UTF-8, and returned as UTF-8.
  */
-std::list<std::string> read_comments(FILE* input, bool raw);
+std::list<std::u8string> read_comments(FILE* input, bool raw);
 
 /**
  * Remove all comments matching the specified selector, which may either be a field name or a
  * NAME=VALUE pair. The field name is case-insensitive.
- *
- * The strings are all UTF-8.
  */
-void delete_comments(std::list<std::string>& comments, const std::string& selector);
+void delete_comments(std::list<std::u8string>& comments, const std::u8string& selector);
 
 /**
  * Main entry point to the opustags program, and pretty much the same as calling opustags from the

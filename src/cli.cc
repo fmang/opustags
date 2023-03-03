@@ -65,6 +65,8 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	options opt;
 	const char* equal;
 	ot::status rc;
+	std::list<std::string> local_to_add; // opt.to_add before UTF-8 conversion.
+	std::list<std::string> local_to_delete; // opt.to_delete before UTF-8 conversion.
 	bool set_all = false;
 	std::optional<std::string> set_cover;
 	opt = {};
@@ -90,7 +92,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 			opt.overwrite = true;
 			break;
 		case 'd':
-			opt.to_delete.emplace_back(optarg);
+			local_to_delete.emplace_back(optarg);
 			break;
 		case 'a':
 		case 's':
@@ -98,8 +100,8 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 			if (equal == nullptr)
 				throw status {st::bad_arguments, "Comment does not contain an equal sign: "s + optarg + "."};
 			if (c == 's')
-				opt.to_delete.emplace_back(optarg, equal - optarg);
-			opt.to_add.emplace_back(optarg);
+				local_to_delete.emplace_back(optarg, equal - optarg);
+			local_to_add.emplace_back(optarg);
 			break;
 		case 'S':
 			opt.delete_all = true;
@@ -151,14 +153,22 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 		throw status { st::bad_arguments, "Cannot use standard input more than once." };
 
 	// Convert arguments to UTF-8.
-	if (!opt.raw) {
-		for (std::list<std::string>* args : { &opt.to_add, &opt.to_delete }) {
-			try {
-				for (std::string& arg : *args)
-					arg = to_utf8(arg);
-			} catch (const ot::status& rc) {
-				throw status {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
-			}
+	if (opt.raw) {
+		// Cast the user data without any encoding conversion.
+		auto cast_to_utf8 = [](std::string_view in)
+			{ return std::u8string(reinterpret_cast<const char8_t*>(in.data()), in.size()); };
+		std::transform(local_to_add.begin(), local_to_add.end(),
+			       std::back_inserter(opt.to_add), cast_to_utf8);
+		std::transform(local_to_delete.begin(), local_to_delete.end(),
+			       std::back_inserter(opt.to_delete), cast_to_utf8);
+	} else {
+		try {
+			std::transform(local_to_add.begin(), local_to_add.end(),
+			               std::back_inserter(opt.to_add), encode_utf8);
+			std::transform(local_to_delete.begin(), local_to_delete.end(),
+			               std::back_inserter(opt.to_delete), encode_utf8);
+		} catch (const ot::status& rc) {
+			throw status {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
 		}
 	}
 
@@ -188,13 +198,13 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 
 	if (set_cover) {
 		byte_string picture_data = ot::slurp_binary_file(set_cover->c_str());
-		opt.to_delete.push_back("METADATA_BLOCK_PICTURE");
+		opt.to_delete.push_back(u8"METADATA_BLOCK_PICTURE"s);
 		opt.to_add.push_back(ot::make_cover(picture_data));
 	}
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
-		std::list<std::string> comments = read_comments(comments_input, opt.raw);
+		std::list<std::u8string> comments = read_comments(comments_input, opt.raw);
 		opt.to_add.splice(opt.to_add.begin(), std::move(comments));
 	}
 	return opt;
@@ -202,21 +212,21 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 
 /** Format a UTF-8 string by adding tabulations (\t) after line feeds (\n) to mark continuation for
  *  multiline values. */
-static std::string format_value(const std::string& source)
+static std::u8string format_value(const std::u8string& source)
 {
-	auto newline_count = std::count(source.begin(), source.end(), '\n');
+	auto newline_count = std::count(source.begin(), source.end(), u8'\n');
 
 	// General case: the value fits on a single line. Use std::string’s copy constructor for the
 	// most efficient copy we could hope for.
 	if (newline_count == 0)
 		return source;
 
-	std::string formatted;
+	std::u8string formatted;
 	formatted.reserve(source.size() + newline_count);
 	for (auto c : source) {
 		formatted.push_back(c);
 		if (c == '\n')
-			formatted.push_back('\t');
+			formatted.push_back(u8'\t');
 	}
 	return formatted;
 }
@@ -227,11 +237,10 @@ static std::string format_value(const std::string& source)
  * To disambiguate between a newline embedded in a comment and a newline representing the start of
  * the next tag, continuation lines always have a single TAB (^I) character added to the beginning.
  */
-void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
+void ot::print_comments(const std::list<std::u8string>& comments, FILE* output, bool raw)
 {
-	std::string local;
 	bool has_control = false;
-	for (const std::string& source_comment : comments) {
+	for (const std::u8string& source_comment : comments) {
 		if (!has_control) { // Don’t bother analyzing comments if the flag is already up.
 			for (unsigned char c : source_comment) {
 				if (c < 0x20 && c != '\n') {
@@ -241,46 +250,43 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 			}
 		}
 
-		std::string utf8_comment = format_value(source_comment);
-		const std::string* comment;
+		std::u8string utf8_comment = format_value(source_comment);
 		// Convert the comment from UTF-8 to the system encoding if relevant.
 		if (raw) {
-			comment = &utf8_comment;
+			fwrite(utf8_comment.data(), 1, utf8_comment.size(), output);
 		} else {
 			try {
-				local = from_utf8(utf8_comment);
-				comment = &local;
+				std::string local = decode_utf8(utf8_comment);
+				fwrite(local.data(), 1, local.size(), output);
 			} catch (ot::status& rc) {
 				rc.message += " See --raw.";
 				throw;
 			}
 		}
-
-		fwrite(comment->data(), 1, comment->size(), output);
 		putc('\n', output);
 	}
 	if (has_control)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
-std::list<std::string> ot::read_comments(FILE* input, bool raw)
+std::list<std::u8string> ot::read_comments(FILE* input, bool raw)
 {
-	std::list<std::string> comments;
+	std::list<std::u8string> comments;
 	comments.clear();
 	char* source_line = nullptr;
 	size_t buflen = 0;
 	ssize_t nread;
-	std::string* previous_comment = nullptr;
+	std::u8string* previous_comment = nullptr;
 	while ((nread = getline(&source_line, &buflen, input)) != -1) {
 		if (nread > 0 && source_line[nread - 1] == '\n')
 			--nread; // Chomp.
 
-		std::string line;
+		std::u8string line;
 		if (raw) {
-			line = std::string(source_line, nread);
+			line = std::u8string(reinterpret_cast<char8_t*>(source_line), nread);
 		} else {
 			try {
-				line = to_utf8(std::string_view(source_line, nread));
+				line = encode_utf8(std::string_view(source_line, nread));
 			} catch (const ot::status& rc) {
 				free(source_line);
 				throw ot::status {ot::st::badly_encoded, "UTF-8 conversion error: " + rc.message};
@@ -290,10 +296,10 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 		if (line.empty()) {
 			// Ignore empty lines.
 			previous_comment = nullptr;
-		} else if (line[0] == '#') {
+		} else if (line[0] == u8'#') {
 			// Ignore comments.
 			previous_comment = nullptr;
-		} else if (line[0] == '\t') {
+		} else if (line[0] == u8'\t') {
 			// Continuation line: append the current line to the previous tag.
 			if (previous_comment == nullptr) {
 				ot::status rc = {ot::st::error, "Unexpected continuation line: " + std::string(source_line, nread)};
@@ -303,7 +309,7 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 				line[0] = '\n';
 				previous_comment->append(line);
 			}
-		} else if (line.find('=') == std::string::npos) {
+		} else if (line.find(u8'=') == decltype(line)::npos) {
 			ot::status rc = {ot::st::error, "Malformed tag: " + std::string(source_line, nread)};
 			free(source_line);
 			throw rc;
@@ -315,19 +321,20 @@ std::list<std::string> ot::read_comments(FILE* input, bool raw)
 	return comments;
 }
 
-void ot::delete_comments(std::list<std::string>& comments, const std::string& selector)
+void ot::delete_comments(std::list<std::u8string>& comments, const std::u8string& selector)
 {
 	auto name = selector.data();
-	auto equal = selector.find('=');
-	auto value = (equal == std::string::npos ? nullptr : name + equal + 1);
+	auto equal = selector.find(u8'=');
+	auto value = (equal == std::u8string::npos ? nullptr : name + equal + 1);
 	auto name_len = value ? equal : selector.size();
 	auto value_len = value ? selector.size() - equal - 1 : 0;
 	auto it = comments.begin(), end = comments.end();
 	while (it != end) {
 		auto current = it++;
+		/** \todo Avoid using strncasecmp because it assumes the system locale is UTF-8. */
 		bool name_match = current->size() > name_len + 1 &&
 		                  (*current)[name_len] == '=' &&
-		                  strncasecmp(current->data(), name, name_len) == 0;
+		                  strncasecmp((const char*) current->data(), (const char*) name, name_len) == 0;
 		if (!name_match)
 			continue;
 		bool value_match = value == nullptr ||
@@ -343,11 +350,11 @@ static void edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
 	if (opt.delete_all) {
 		tags.comments.clear();
-	} else for (const std::string& name : opt.to_delete) {
-		ot::delete_comments(tags.comments, name.c_str());
+	} else for (const std::u8string& name : opt.to_delete) {
+		ot::delete_comments(tags.comments, name);
 	}
 
-	for (const std::string& comment : opt.to_add)
+	for (const std::u8string& comment : opt.to_add)
 		tags.comments.emplace_back(comment);
 }
 

@@ -30,14 +30,14 @@ ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 	if (packet.bytes < 0)
 		throw status {st::int_overflow, "Overflowing comment header length"};
 	size_t size = static_cast<size_t>(packet.bytes);
-	const char* data = reinterpret_cast<char*>(packet.packet);
+	const uint8_t* data = reinterpret_cast<uint8_t*>(packet.packet);
 	size_t pos = 0;
 	opus_tags my_tags;
 
 	// Magic number
 	if (8 > size)
 		throw status {st::cut_magic_number, "Comment header too short for the magic number"};
-	if (memcmp(data, "OpusTags", 8) != 0)
+	if (memcmp(data, u8"OpusTags", 8) != 0)
 		throw status {st::bad_magic_number, "Comment header did not start with OpusTags"};
 
 	// Vendor
@@ -48,7 +48,7 @@ ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 	size_t vendor_length = le32toh(*((uint32_t*) (data + pos)));
 	if (pos + 4 + vendor_length > size)
 		throw status {st::cut_vendor_data, "Vendor string did not fit the comment header"};
-	my_tags.vendor = std::string(data + pos + 4, vendor_length);
+	my_tags.vendor = std::u8string(reinterpret_cast<const char8_t*>(&data[pos + 4]), vendor_length);
 	pos += 4 + my_tags.vendor.size();
 
 	// Comment count
@@ -66,13 +66,13 @@ ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 		if (pos + 4 + comment_length > size)
 			throw status {st::cut_comment_data,
 			              "Comment string did not fit the comment header"};
-		const char *comment_value = data + pos + 4;
+		auto comment_value = reinterpret_cast<const char8_t*>(&data[pos + 4]);
 		my_tags.comments.emplace_back(comment_value, comment_length);
 		pos += 4 + comment_length;
 	}
 
 	// Extra data
-	my_tags.extra_data = std::string(data + pos, size - pos);
+	my_tags.extra_data = byte_string(data + pos, size - pos);
 
 	return my_tags;
 }
@@ -80,7 +80,7 @@ ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)
 {
 	size_t size = 8 + 4 + tags.vendor.size() + 4;
-	for (const std::string& comment : tags.comments)
+	for (const std::u8string& comment : tags.comments)
 		size += 4 + comment.size();
 	size += tags.extra_data.size();
 
@@ -100,7 +100,7 @@ ot::dynamic_ogg_packet ot::render_tags(const opus_tags& tags)
 	n = htole32(tags.comments.size());
 	memcpy(data, &n, 4);
 	data += 4;
-	for (const std::string& comment : tags.comments) {
+	for (const std::u8string& comment : tags.comments) {
 		n = htole32(comment.size());
 		memcpy(data, &n, 4);
 		memcpy(data+4, comment.data(), comment.size());
@@ -166,8 +166,8 @@ ot::byte_string ot::picture::serialize() const
  */
 std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 {
-	static const std::string_view prefix = "METADATA_BLOCK_PICTURE="sv;
-	auto is_cover = [](const std::string& tag) { return tag.starts_with(prefix); };
+	static const std::u8string_view prefix = u8"METADATA_BLOCK_PICTURE="sv;
+	auto is_cover = [](const std::u8string& tag) { return tag.starts_with(prefix); };
 	auto cover_tag = std::find_if(tags.comments.begin(), tags.comments.end(), is_cover);
 	if (cover_tag == tags.comments.end())
 		return {}; // No cover art.
@@ -177,7 +177,7 @@ std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 		fputs("warning: Found multiple covers; only the first will be extracted."
 		              " Please report your use case if you need a finer selection.\n", stderr);
 
-	std::string_view cover_value = *cover_tag;
+	std::u8string_view cover_value = *cover_tag;
 	cover_value.remove_prefix(prefix.size());
 	return picture(decode_base64(cover_value));
 }
@@ -202,10 +202,10 @@ static ot::byte_string_view detect_mime_type(ot::byte_string_view data)
 	return "application/octet-stream"_bsv;
 }
 
-std::string ot::make_cover(ot::byte_string_view picture_data)
+std::u8string ot::make_cover(ot::byte_string_view picture_data)
 {
 	picture pic;
 	pic.mime_type = detect_mime_type(picture_data);
 	pic.picture_data = picture_data;
-	return "METADATA_BLOCK_PICTURE=" + encode_base64(pic.serialize());
+	return u8"METADATA_BLOCK_PICTURE=" + encode_base64(pic.serialize());
 }
