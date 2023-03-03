@@ -160,25 +160,13 @@ private:
 /** Read a whole file into memory and return the read content. */
 byte_string slurp_binary_file(const char* filename);
 
-/** C++ wrapper for iconv. */
-class encoding_converter {
-public:
-	/**
-	 * Allocate the iconv conversion state, initializing the given source and destination
-	 * character encodings. If it's okay to have some information lost, make sure `to` ends with
-	 * "//TRANSLIT", otherwise the conversion will fail when a character cannot be represented
-	 * in the target encoding. See the documentation of iconv_open for details.
-	 */
-	encoding_converter(const char* from, const char* to);
-	~encoding_converter();
-	/**
-	 * Convert text using iconv. If the input sequence is invalid, return #st::badly_encoded and
-	 * abort the processing, leaving out in an undefined state.
-	 */
-	std::string operator()(std::string_view in);
-private:
-	iconv_t cd; /**< conversion descriptor */
-};
+/** Convert a string from the system locale’s encoding to UTF-8. */
+std::u8string encode_utf8(std::string_view);
+std::string to_utf8(std::string_view); ///< \deprecated
+
+/** Convert a string from UTF-8 to the system locale’s encoding. */
+std::string decode_utf8(std::u8string_view);
+std::string from_utf8(std::string_view); ///< \deprecated
 
 /** Escape a string so that a POSIX shell interprets it as a single argument. */
 std::string shell_escape(std::string_view word);

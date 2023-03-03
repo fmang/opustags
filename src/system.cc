@@ -143,24 +143,47 @@ ot::byte_string ot::slurp_binary_file(const char* filename)
 	return content;
 }
 
-ot::encoding_converter::encoding_converter(const char* from, const char* to)
+/** C++ wrapper for iconv. */
+class encoding_converter {
+public:
+	/**
+	 * Allocate the iconv conversion state, initializing the given source and destination
+	 * character encodings. If it's okay to have some information lost, make sure `to` ends with
+	 * "//TRANSLIT", otherwise the conversion will fail when a character cannot be represented
+	 * in the target encoding. See the documentation of iconv_open for details.
+	 */
+	encoding_converter(const char* from, const char* to);
+	~encoding_converter();
+	/**
+	 * Convert text using iconv. If the input sequence is invalid, return #st::badly_encoded and
+	 * abort the processing, leaving out in an undefined state.
+	 */
+	template<class InChar, class OutChar>
+	std::basic_string<OutChar> convert(std::basic_string_view<InChar>);
+private:
+	iconv_t cd; /**< conversion descriptor */
+};
+
+encoding_converter::encoding_converter(const char* from, const char* to)
 {
 	cd = iconv_open(to, from);
 	if (cd == (iconv_t) -1)
 		throw std::bad_alloc();
 }
 
-ot::encoding_converter::~encoding_converter()
+encoding_converter::~encoding_converter()
 {
 	iconv_close(cd);
 }
 
-std::string ot::encoding_converter::operator()(std::string_view in)
+template<class InChar, class OutChar>
+std::basic_string<OutChar> encoding_converter::convert(std::basic_string_view<InChar> in)
 {
 	iconv(cd, nullptr, nullptr, nullptr, nullptr);
-	std::string out;
+	std::basic_string<OutChar> out;
 	out.reserve(in.size());
-	char* in_cursor = const_cast<char*>(in.data());
+	const char* in_data = reinterpret_cast<const char*>(in.data());
+	char* in_cursor = const_cast<char*>(in_data);
 	size_t in_left = in.size();
 	constexpr size_t chunk_size = 1024;
 	char chunk[chunk_size];
@@ -172,19 +195,42 @@ std::string ot::encoding_converter::operator()(std::string_view in)
 		if (rc == (size_t) -1 && errno == E2BIG) {
 			// Loop normally.
 		} else if (rc == (size_t) -1) {
-			throw status {ot::st::badly_encoded, strerror(errno) + "."s};
+			throw ot::status {ot::st::badly_encoded, strerror(errno) + "."s};
 		} else if (rc != 0) {
-			throw status {ot::st::badly_encoded,
-			              "Some characters could not be converted into the target encoding."};
+			throw ot::status {ot::st::badly_encoded,
+			                 "Some characters could not be converted into the target encoding."};
 		}
 
-		out.append(chunk, out_cursor - chunk);
+		out.append(reinterpret_cast<OutChar*>(chunk), out_cursor - chunk);
 		if (in_cursor == nullptr)
 			break;
 		else if (in_left == 0)
 			in_cursor = nullptr;
 	}
 	return out;
+}
+
+static encoding_converter to_utf8_cvt("", "UTF-8");
+static encoding_converter from_utf8_cvt("UTF-8", "");
+
+std::u8string ot::encode_utf8(std::string_view in)
+{
+	return to_utf8_cvt.convert<char, char8_t>(in);
+}
+
+std::string ot::to_utf8(std::string_view in)
+{
+	return to_utf8_cvt.convert<char, char>(in);
+}
+
+std::string ot::decode_utf8(std::u8string_view in)
+{
+	return from_utf8_cvt.convert<char8_t, char>(in);
+}
+
+std::string ot::from_utf8(std::string_view in)
+{
+	return from_utf8_cvt.convert<char, char>(in);
 }
 
 std::string ot::shell_escape(std::string_view word)

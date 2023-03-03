@@ -48,15 +48,15 @@ void check_slurp()
 
 void check_converter()
 {
-	const char* ephemere_iso = "\xc9\x70\x68\xe9\x6d\xe8\x72\x65";
-	ot::encoding_converter to_utf8("ISO_8859-1", "UTF-8");
-	ot::encoding_converter from_utf8("UTF-8", "ISO_8859-1");
+	is(ot::from_utf8(ot::to_utf8("Éphémère")), "Éphémère", "from_utf8 reverts to_utf8");
+	is(ot::to_utf8(ot::from_utf8("Éphémère")), "Éphémère", "to_utf8 reverts from_utf8");
 
-	is(to_utf8(ephemere_iso), "Éphémère", "conversion to UTF-8 is correct");
-	is(from_utf8("Éphémère"), ephemere_iso, "conversion from UTF-8 is correct");
+	is(ot::decode_utf8(ot::encode_utf8("Éphémère")), "Éphémère", "decode_utf8 reverts encode_utf8");
+	opaque_is(ot::encode_utf8(ot::decode_utf8(u8"Éphémère")), u8"Éphémère",
+	          "encode_utf8 reverts decode_utf8");
 
 	try {
-		from_utf8("\xFF\xFF");
+		ot::from_utf8("\xFF\xFF");
 		throw failure("conversion from bad UTF-8 did not fail");
 	} catch (const ot::status&) {}
 }

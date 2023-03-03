@@ -63,7 +63,6 @@ static struct option getopt_options[] = {
 ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 {
 	options opt;
-	static ot::encoding_converter to_utf8("", "UTF-8");
 	const char* equal;
 	ot::status rc;
 	bool set_all = false;
@@ -230,7 +229,6 @@ static std::string format_value(const std::string& source)
  */
 void ot::print_comments(const std::list<std::string>& comments, FILE* output, bool raw)
 {
-	static ot::encoding_converter from_utf8("UTF-8", "");
 	std::string local;
 	bool has_control = false;
 	for (const std::string& source_comment : comments) {
@@ -268,7 +266,6 @@ void ot::print_comments(const std::list<std::string>& comments, FILE* output, bo
 std::list<std::string> ot::read_comments(FILE* input, bool raw)
 {
 	std::list<std::string> comments;
-	static ot::encoding_converter to_utf8("", "UTF-8");
 	comments.clear();
 	char* source_line = nullptr;
 	size_t buflen = 0;
