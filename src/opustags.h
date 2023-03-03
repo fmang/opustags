@@ -162,11 +162,9 @@ byte_string slurp_binary_file(const char* filename);
 
 /** Convert a string from the system locale’s encoding to UTF-8. */
 std::u8string encode_utf8(std::string_view);
-std::string to_utf8(std::string_view); ///< \deprecated
 
 /** Convert a string from UTF-8 to the system locale’s encoding. */
 std::string decode_utf8(std::u8string_view);
-std::string from_utf8(std::string_view); ///< \deprecated
 
 /** Escape a string so that a POSIX shell interprets it as a single argument. */
 std::string shell_escape(std::string_view word);

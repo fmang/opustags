@@ -210,27 +210,16 @@ std::basic_string<OutChar> encoding_converter::convert(std::basic_string_view<In
 	return out;
 }
 
-static encoding_converter to_utf8_cvt("", "UTF-8");
-static encoding_converter from_utf8_cvt("UTF-8", "");
-
 std::u8string ot::encode_utf8(std::string_view in)
 {
+	static encoding_converter to_utf8_cvt("", "UTF-8");
 	return to_utf8_cvt.convert<char, char8_t>(in);
-}
-
-std::string ot::to_utf8(std::string_view in)
-{
-	return to_utf8_cvt.convert<char, char>(in);
 }
 
 std::string ot::decode_utf8(std::u8string_view in)
 {
+	static encoding_converter from_utf8_cvt("UTF-8", "");
 	return from_utf8_cvt.convert<char8_t, char>(in);
-}
-
-std::string ot::from_utf8(std::string_view in)
-{
-	return from_utf8_cvt.convert<char, char>(in);
 }
 
 std::string ot::shell_escape(std::string_view word)

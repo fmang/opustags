@@ -48,15 +48,12 @@ void check_slurp()
 
 void check_converter()
 {
-	is(ot::from_utf8(ot::to_utf8("Éphémère")), "Éphémère", "from_utf8 reverts to_utf8");
-	is(ot::to_utf8(ot::from_utf8("Éphémère")), "Éphémère", "to_utf8 reverts from_utf8");
-
 	is(ot::decode_utf8(ot::encode_utf8("Éphémère")), "Éphémère", "decode_utf8 reverts encode_utf8");
 	opaque_is(ot::encode_utf8(ot::decode_utf8(u8"Éphémère")), u8"Éphémère",
 	          "encode_utf8 reverts decode_utf8");
 
 	try {
-		ot::from_utf8("\xFF\xFF");
+		ot::decode_utf8((char8_t*) "\xFF\xFF");
 		throw failure("conversion from bad UTF-8 did not fail");
 	} catch (const ot::status&) {}
 }
