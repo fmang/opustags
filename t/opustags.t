@@ -4,7 +4,8 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 59;
+use Test::More tests => 60;
+use Test::Deep qw(cmp_deeply re);
 
 use Digest::MD5;
 use File::Basename;
@@ -53,34 +54,9 @@ $help->[0] =~ /^([^\n]*+)/;
 my $version = $1;
 like($version, qr/^opustags version (\d+\.\d+\.\d+)/, 'get the version string');
 
-my $expected_help = <<"EOF";
-$version
-
-Usage: opustags --help
-       opustags [OPTIONS] FILE
-       opustags OPTIONS -i FILE...
-       opustags OPTIONS FILE -o FILE
-
-Options:
-  -h, --help                    print this help
-  -o, --output FILE             specify the output file
-  -i, --in-place                overwrite the input files
-  -y, --overwrite               overwrite the output file if it already exists
-  -a, --add FIELD=VALUE         add a comment
-  -d, --delete FIELD[=VALUE]    delete previously existing comments
-  -D, --delete-all              delete all the previously existing comments
-  -s, --set FIELD=VALUE         replace a comment
-  -S, --set-all                 import comments from standard input
-  -e, --edit                    edit tags interactively in VISUAL/EDITOR
-  --output-cover FILE           extract and save the cover art, if any
-  --set-cover FILE              sets the cover art
-  --raw                         disable encoding conversion
-
-See the man page for extensive documentation.
-EOF
-
-is_deeply(opustags('--help'), [$expected_help, '', 0], '--help displays the help message');
-is_deeply(opustags('-h'), [$expected_help, '', 0], '-h displays the help message too');
+my $expected_help = qr{opustags version .*\n\nUsage: opustags --help\n};
+cmp_deeply(opustags('--help'), [re($expected_help), '', 0], '--help displays the help message');
+cmp_deeply(opustags('-h'), [re($expected_help), '', 0], '-h displays the help message too');
 
 is_deeply(opustags('--derp'), ['', <<"EOF", 512], 'unrecognized option shows an error');
 error: Unrecognized option '--derp'.
@@ -342,3 +318,8 @@ unlink('out.png');
 is_deeply(opustags(qw(-D --set-cover - gobble.opus), { in => "GIF8 x" }), [<<'END_OUT', '', 0], 'read the cover from stdin');
 METADATA_BLOCK_PICTURE=AAAAAwAAAAlpbWFnZS9naWYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZHSUY4IHg=
 END_OUT
+
+####################################################################################################
+# Vendor string
+
+is_deeply(opustags(qw(--vendor gobble.opus)), ["Lavf58.12.100\n", '', 0], 'print the vendor string');

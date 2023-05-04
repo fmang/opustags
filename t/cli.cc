@@ -185,6 +185,8 @@ void check_bad_arguments()
 	            "Cannot specify standard output for both --output and --output-cover.", "-o and --output-cover conflict");
 	error_case({"opustags", "-i", "x", "y", "--output-cover", "z"},
 	            "Cannot use --output-cover with multiple input files.", "--output-cover with multiple input");
+	error_case({"opustags", "-i", "--vendor", "x"},
+	            "--vendor is only supported in read-only mode.", "--vendor when editing");
 	error_case({"opustags", "-d", "\xFF", "x"},
 	           "Could not encode argument into UTF-8:",
 	           "-d with binary data");

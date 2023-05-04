@@ -121,6 +121,10 @@ Specify \fB-\fP to read the picture from standard input.
 In theory, an Opus file may contain multiple pictures with different roles, though in practice only
 the front cover really matters. opustags can currently only handle one front cover and nothing else.
 .TP
+.B \-\-vendor
+Print the vendor string from the OpusTags packet and do nothing else. Standard tags operations are
+not supported when specifying this flag.
+.TP
 .B \-\-raw
 OpusTags metadata should always be encoded in UTF-8, as per RFC 7845. However, some files may be
 corrupted or possibly even contain intentional binary data. In that case, --raw lets you edit that

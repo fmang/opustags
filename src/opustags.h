@@ -516,6 +516,13 @@ struct options {
 	 */
 	std::optional<std::string> cover_out;
 	/**
+	 * Print the vendor string at the beginning of the OpusTags packet instead of printing the
+	 * tags. Only applicable in read-only mode.
+	 *
+	 * Option: --vendor
+	 */
+	bool print_vendor = false;
+	/**
 	 * Disable encoding conversions. OpusTags are specified to always be encoded as UTF-8, but
 	 * if for some reason a specific file contains binary tags that someone would like to
 	 * extract and set as-is, encoding conversion would get in the way.

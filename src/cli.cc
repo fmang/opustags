@@ -38,6 +38,7 @@ Options:
   -e, --edit                    edit tags interactively in VISUAL/EDITOR
   --output-cover FILE           extract and save the cover art, if any
   --set-cover FILE              sets the cover art
+  --vendor                      print the vendor string
   --raw                         disable encoding conversion
 
 See the man page for extensive documentation.
@@ -56,6 +57,7 @@ static struct option getopt_options[] = {
 	{"edit", no_argument, 0, 'e'},
 	{"output-cover", required_argument, 0, 'c'},
 	{"set-cover", required_argument, 0, 'C'},
+	{"vendor", no_argument, 0, 'v'},
 	{"raw", no_argument, 0, 'r'},
 	{NULL, 0, 0, 0}
 };
@@ -123,6 +125,9 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 				throw status {st::bad_arguments, "Cannot specify --set-cover more than once."};
 			set_cover = optarg;
 			break;
+		case 'v':
+			opt.print_vendor = true;
+			break;
 		case 'r':
 			opt.raw = true;
 			break;
@@ -172,6 +177,8 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 		}
 	}
 
+	bool read_only = !opt.in_place && !opt.path_out.has_value();
+
 	if (opt.in_place && opt.path_out)
 		throw status {st::bad_arguments, "Cannot combine --in-place and --output."};
 
@@ -184,7 +191,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	if (opt.edit_interactively && (stdin_as_input || opt.path_out == "-" || opt.cover_out == "-"))
 		throw status {st::bad_arguments, "Cannot edit interactively when standard input or standard output are already used."};
 
-	if (opt.edit_interactively && !opt.path_out.has_value() && !opt.in_place)
+	if (opt.edit_interactively && read_only)
 		throw status {st::bad_arguments, "Cannot edit interactively when no output is specified."};
 
 	if (opt.edit_interactively && (opt.delete_all || !opt.to_add.empty() || !opt.to_delete.empty()))
@@ -195,6 +202,9 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 
 	if (opt.cover_out && opt.paths_in.size() > 1)
 		throw status {st::bad_arguments, "Cannot use --output-cover with multiple input files."};
+
+	if (opt.print_vendor && !read_only)
+		throw status {st::bad_arguments, "--vendor is only supported in read-only mode."};
 
 	if (set_cover) {
 		byte_string picture_data = ot::slurp_binary_file(set_cover->c_str());
@@ -232,6 +242,26 @@ static std::u8string format_value(const std::u8string& source)
 }
 
 /**
+ * Convert the comment from UTF-8 to the system encoding if relevant, and print it with a trailing
+ * line feed.
+ */
+static void puts_utf8(std::u8string_view str, FILE* output, bool raw)
+{
+	if (raw) {
+		fwrite(str.data(), 1, str.size(), output);
+	} else {
+		try {
+			std::string local = ot::decode_utf8(str);
+			fwrite(local.data(), 1, local.size(), output);
+		} catch (ot::status& rc) {
+			rc.message += " See --raw.";
+			throw;
+		}
+	}
+	putc('\n', output);
+}
+
+/**
  * Print comments in a human readable format that can also be read back in by #read_comment.
  *
  * To disambiguate between a newline embedded in a comment and a newline representing the start of
@@ -249,21 +279,8 @@ void ot::print_comments(const std::list<std::u8string>& comments, FILE* output, 
 				}
 			}
 		}
-
 		std::u8string utf8_comment = format_value(source_comment);
-		// Convert the comment from UTF-8 to the system encoding if relevant.
-		if (raw) {
-			fwrite(utf8_comment.data(), 1, utf8_comment.size(), output);
-		} else {
-			try {
-				std::string local = decode_utf8(utf8_comment);
-				fwrite(local.data(), 1, local.size(), output);
-			} catch (ot::status& rc) {
-				rc.message += " See --raw.";
-				throw;
-			}
-		}
-		putc('\n', output);
+		puts_utf8(utf8_comment, output, raw);
 	}
 	if (has_control)
 		fputs("warning: Some tags contain control characters.\n", stderr);
@@ -498,8 +515,12 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 				writer->write_header_packet(serialno, pageno, packet);
 				pageno_offset = writer->next_page_no - 1 - reader.absolute_page_no;
 			} else {
-				if (opt.cover_out != "-")
-					ot::print_comments(tags.comments, stdout, opt.raw);
+				if (opt.cover_out != "-") {
+					if (opt.print_vendor)
+						puts_utf8(tags.vendor, stdout, opt.raw);
+					else
+						ot::print_comments(tags.comments, stdout, opt.raw);
+				}
 				break;
 			}
 		} else if (writer) {

@@ -3,7 +3,7 @@
  * \ingroup opus
  *
  * The way Opus is encapsulated into an Ogg stream, and the content of the packets we're dealing
- * with here is defined by [RFC 7584](https://tools.ietf.org/html/rfc7845.html).
+ * with here is defined by [RFC 7845](https://tools.ietf.org/html/rfc7845.html).
  *
  * Section 3 "Packet Organization" is critical for us:
  *
