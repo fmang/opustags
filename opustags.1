@@ -125,6 +125,10 @@ the front cover really matters. opustags can currently only handle one front cov
 Print the vendor string from the OpusTags packet and do nothing else. Standard tags operations are
 not supported when specifying this flag.
 .TP
+.B \-\-set-vendor \fIVALUE\fP
+Replace the vendor string by the specified value. This action can be performed alongside tag
+edition.
+.TP
 .B \-\-raw
 OpusTags metadata should always be encoded in UTF-8, as per RFC 7845. However, some files may be
 corrupted or possibly even contain intentional binary data. In that case, --raw lets you edit that

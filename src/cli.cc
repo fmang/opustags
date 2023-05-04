@@ -39,6 +39,7 @@ Options:
   --output-cover FILE           extract and save the cover art, if any
   --set-cover FILE              sets the cover art
   --vendor                      print the vendor string
+  --set-vendor VALUE            set the vendor string
   --raw                         disable encoding conversion
 
 See the man page for extensive documentation.
@@ -58,6 +59,7 @@ static struct option getopt_options[] = {
 	{"output-cover", required_argument, 0, 'c'},
 	{"set-cover", required_argument, 0, 'C'},
 	{"vendor", no_argument, 0, 'v'},
+	{"set-vendor", required_argument, 0, 'V'},
 	{"raw", no_argument, 0, 'r'},
 	{NULL, 0, 0, 0}
 };
@@ -71,6 +73,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 	std::list<std::string> local_to_delete; // opt.to_delete before UTF-8 conversion.
 	bool set_all = false;
 	std::optional<std::string> set_cover;
+	std::optional<std::string> set_vendor;
 	opt = {};
 	if (argc == 1)
 		throw status {st::bad_arguments, "No arguments specified. Use -h for help."};
@@ -128,6 +131,11 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 		case 'v':
 			opt.print_vendor = true;
 			break;
+		case 'V':
+			if (set_vendor)
+				throw status {st::bad_arguments, "Cannot specify --set-vendor more than once."};
+			set_vendor = optarg;
+			break;
 		case 'r':
 			opt.raw = true;
 			break;
@@ -166,12 +174,16 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 			       std::back_inserter(opt.to_add), cast_to_utf8);
 		std::transform(local_to_delete.begin(), local_to_delete.end(),
 			       std::back_inserter(opt.to_delete), cast_to_utf8);
+		if (set_vendor)
+			opt.set_vendor = cast_to_utf8(*set_vendor);
 	} else {
 		try {
 			std::transform(local_to_add.begin(), local_to_add.end(),
 			               std::back_inserter(opt.to_add), encode_utf8);
 			std::transform(local_to_delete.begin(), local_to_delete.end(),
 			               std::back_inserter(opt.to_delete), encode_utf8);
+			if (set_vendor)
+				opt.set_vendor = encode_utf8(*set_vendor);
 		} catch (const ot::status& rc) {
 			throw status {st::bad_arguments, "Could not encode argument into UTF-8: " + rc.message};
 		}
@@ -365,6 +377,9 @@ void ot::delete_comments(std::list<std::u8string>& comments, const std::u8string
 /** Apply the modifications requested by the user to the opustags packet. */
 static void edit_tags(ot::opus_tags& tags, const ot::options& opt)
 {
+	if (opt.set_vendor)
+		tags.vendor = *opt.set_vendor;
+
 	if (opt.delete_all) {
 		tags.comments.clear();
 	} else for (const std::u8string& name : opt.to_delete) {

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 60;
+use Test::More tests => 62;
 use Test::Deep qw(cmp_deeply re);
 
 use Digest::MD5;
@@ -323,3 +323,7 @@ END_OUT
 # Vendor string
 
 is_deeply(opustags(qw(--vendor gobble.opus)), ["Lavf58.12.100\n", '', 0], 'print the vendor string');
+
+is_deeply(opustags(qw(--set-vendor opustags gobble.opus -o out.opus)), ['', '', 0], 'set the vendor string');
+is_deeply(opustags(qw(--vendor out.opus)), ["opustags\n", '', 0], 'the vendor string was updated');
+unlink('out.opus');

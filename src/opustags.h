@@ -523,6 +523,12 @@ struct options {
 	 */
 	bool print_vendor = false;
 	/**
+	 * Replace the vendor string by the one specified by the user.
+	 *
+	 * Option: --set-vendor
+	 */
+	std::optional<std::u8string> set_vendor;
+	/**
 	 * Disable encoding conversions. OpusTags are specified to always be encoded as UTF-8, but
 	 * if for some reason a specific file contains binary tags that someone would like to
 	 * extract and set as-is, encoding conversion would get in the way.
