@@ -613,6 +613,10 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 	ot::ogg_writer writer(output);
 	writer.path = path_out;
 	process(reader, &writer, opt);
+
+	// Close the input file and finalize the output. When --in-place is specified, some file
+	// systems like SMB require that the input is closed first.
+	input.reset();
 	temporary_output.commit();
 }
 
