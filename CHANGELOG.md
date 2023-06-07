@@ -1,6 +1,12 @@
 opustags changelog
 ==================
 
+1.9.0 - 2023-06-07
+------------------
+
+- Introduce --vendor and --set-vendor.
+- Close the input file before finalizing the output, in order to fix --in-place on SMB drives.
+
 1.8.0 - 2023-03-07
 ------------------
 
