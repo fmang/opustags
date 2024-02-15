@@ -17,6 +17,8 @@ ever be performed.
 opustags is tag-agnostic: you can write arbitrary key-value tags, and none of them will be treated
 specially. After all, common tags like TITLE or ARTIST are nothing more than conventions.
 
+The project’s homepage is located at <https://github.com/fmang/opustags>.
+
 Requirements
 ------------
 

@@ -25,6 +25,9 @@ You should check that your changes don't break the test suite by running
 Following these practices is important to keep the history clean, and to allow
 for better code reviews.
 
+You can submit pull requests on GitHub at <https://github.com/fmang/opustags>,
+or email me your patches at <fmang+opustags@mg0.fr>.
+
 ## History of opustags
 
 opustags is originally a small project made to fill a need to edit tags in Opus
@@ -49,6 +52,8 @@ modules, and reviewed for safety.
 1.3.0 was focused on correctness, and detects edge cases as early as possible,
 instead of hoping something will eventually fail if something is weird.
 
+Subsequent releases have been adding new features.
+
 ## Candidate features
 
 The code contains a few `\todo` markers where something could be improved in the
@@ -59,13 +64,7 @@ More generally, here are a few features that could be added in the future:
 - Discouraging non-ASCII field names.
 - Logicial stream listing and selection for multiplexed files.
 - Escaping control characters with --escape.
-- Dump binary packets with --binary.
-- Edition of the vendor string.
 - Edition of the arbitrary binary block past the comments.
-- Support for OpusTags packets spanning multiple pages (> 64 kB).
-- Interactive edition of comments inside the EDITOR (--edit).
-- Support for cover arts.
-- Load tags from a file with --set-all=tags.txt.
 - Colored output.
 
 Don't hesitate to contact me before you do anything, I'll give you directions.

@@ -51,5 +51,6 @@ include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
 configure_file(opustags.1 . @ONLY)
 install(FILES "${CMAKE_BINARY_DIR}/opustags.1" DESTINATION "${CMAKE_INSTALL_MANDIR}/man1")
+install(FILES CHANGELOG.md CONTRIBUTING.md LICENSE README.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
 add_subdirectory(t)
