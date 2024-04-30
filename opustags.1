@@ -1,4 +1,4 @@
-.TH opustags 1 "March 2023" "@PROJECT_NAME@ @PROJECT_VERSION@"
+.TH opustags 1 "April 2024" "@PROJECT_NAME@ @PROJECT_VERSION@"
 .SH NAME
 opustags \- Ogg Opus tag editor
 .SH SYNOPSIS
@@ -135,6 +135,14 @@ corrupted or possibly even contain intentional binary data. In that case, --raw 
 kind of binary data without ensuring the validity of the tags encoding. This option may also be
 useful when your system encoding is different from UTF-8 and you wish to preserve the full UTF-8
 character set even though your system cannot display it.
+.TP
+.B \-z
+When editing tags programmatically with line-based tools like grep or sed, tags containing newlines
+are likely to corrupt the result because these tools won’t interpret multi-line tags as a whole. To
+make automatic processing easier, \fB-z\fP delimits tags by a null byte (ASCII NUL) instead of line
+feeds. That same \fB-z\fP flag is also supported by GNU grep or GNU sed and, combined with opustags
+-z, would make them process the input tag-by-tag instead of line-by-line, thus supporting multi-line
+tags as well. This option also disables the TAB prefix for continuation lines after a line feed.
 .SH EXAMPLES
 .PP
 List all the tags in file foo.opus:
@@ -145,10 +153,6 @@ Copy in.opus to out.opus, with the TITLE tag added:
 .PP
 	opustags in.opus --output out.opus --add "TITLE=Hello world!"
 .PP
-Replace all the tags in dest.opus with the ones from src.opus:
-.PP
-	opustags src.opus | opustags --in-place dest.opus --set-all
-.PP
 Remove the previously existing ARTIST tags and add the two X and Y ARTIST tags, then display the new
 tags without writing them to the Opus file:
 .PP
@@ -157,6 +161,14 @@ tags without writing them to the Opus file:
 Edit tags interactively in Vim:
 .PP
 	EDITOR=vim opustags --in-place --edit file.opus
+.PP
+Replace all the tags in dest.opus with the ones from src.opus:
+.PP
+	opustags src.opus | opustags --in-place dest.opus --set-all
+.PP
+Use GNU grep to remove all the CHAPTER* tags, with -z to support multi-line tags:
+.PP
+	opustags -z file.opus | grep -z -v ^CHAPTER | opustags -z --in-place file.opus --set-all
 .SH CAVEATS
 .PP
 \fBopustags\fP currently has the following limitations:

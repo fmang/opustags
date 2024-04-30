@@ -41,6 +41,7 @@ Options:
   --vendor                      print the vendor string
   --set-vendor VALUE            set the vendor string
   --raw                         disable encoding conversion
+  -z                            delimit tags with NUL
 
 See the man page for extensive documentation.
 )raw";
@@ -79,7 +80,7 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 		throw status {st::bad_arguments, "No arguments specified. Use -h for help."};
 	int c;
 	optind = 0;
-	while ((c = getopt_long(argc, argv, ":ho:iyd:a:s:DSe", getopt_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, ":ho:iyd:a:s:DSez", getopt_options, NULL)) != -1) {
 		switch (c) {
 		case 'h':
 			opt.print_help = true;
@@ -138,6 +139,9 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 			break;
 		case 'r':
 			opt.raw = true;
+			break;
+		case 'z':
+			opt.tag_delimiter = '\0';
 			break;
 		case ':':
 			throw status {st::bad_arguments, "Missing value for option '"s + argv[optind - 1] + "'."};
@@ -226,17 +230,17 @@ ot::options ot::parse_options(int argc, char** argv, FILE* comments_input)
 
 	if (set_all) {
 		// Read comments from stdin and prepend them to opt.to_add.
-		std::list<std::u8string> comments = read_comments(comments_input, opt.raw);
+		std::list<std::u8string> comments = read_comments(comments_input, opt);
 		opt.to_add.splice(opt.to_add.begin(), std::move(comments));
 	}
 	return opt;
 }
 
 /** Format a UTF-8 string by adding tabulations (\t) after line feeds (\n) to mark continuation for
- *  multiline values. */
-static std::u8string format_value(const std::u8string& source)
+ *  multiline values. With -z, this behavior applies for embedded NUL characters instead of LF. */
+static std::u8string format_value(const std::u8string& source, const ot::options& opt)
 {
-	auto newline_count = std::count(source.begin(), source.end(), u8'\n');
+	auto newline_count = std::count(source.begin(), source.end(), opt.tag_delimiter);
 
 	// General case: the value fits on a single line. Use std::string’s copy constructor for the
 	// most efficient copy we could hope for.
@@ -247,7 +251,7 @@ static std::u8string format_value(const std::u8string& source)
 	formatted.reserve(source.size() + newline_count);
 	for (auto c : source) {
 		formatted.push_back(c);
-		if (c == '\n')
+		if (c == opt.tag_delimiter)
 			formatted.push_back(u8'\t');
 	}
 	return formatted;
@@ -257,9 +261,9 @@ static std::u8string format_value(const std::u8string& source)
  * Convert the comment from UTF-8 to the system encoding if relevant, and print it with a trailing
  * line feed.
  */
-static void puts_utf8(std::u8string_view str, FILE* output, bool raw)
+static void puts_utf8(std::u8string_view str, FILE* output, const ot::options& opt)
 {
-	if (raw) {
+	if (opt.raw) {
 		fwrite(str.data(), 1, str.size(), output);
 	} else {
 		try {
@@ -270,7 +274,7 @@ static void puts_utf8(std::u8string_view str, FILE* output, bool raw)
 			throw;
 		}
 	}
-	putc('\n', output);
+	putc(opt.tag_delimiter, output);
 }
 
 /**
@@ -279,7 +283,7 @@ static void puts_utf8(std::u8string_view str, FILE* output, bool raw)
  * To disambiguate between a newline embedded in a comment and a newline representing the start of
  * the next tag, continuation lines always have a single TAB (^I) character added to the beginning.
  */
-void ot::print_comments(const std::list<std::u8string>& comments, FILE* output, bool raw)
+void ot::print_comments(const std::list<std::u8string>& comments, FILE* output, const ot::options& opt)
 {
 	bool has_control = false;
 	for (const std::u8string& source_comment : comments) {
@@ -291,14 +295,14 @@ void ot::print_comments(const std::list<std::u8string>& comments, FILE* output, 
 				}
 			}
 		}
-		std::u8string utf8_comment = format_value(source_comment);
-		puts_utf8(utf8_comment, output, raw);
+		std::u8string utf8_comment = format_value(source_comment, opt);
+		puts_utf8(utf8_comment, output, opt);
 	}
 	if (has_control)
 		fputs("warning: Some tags contain control characters.\n", stderr);
 }
 
-std::list<std::u8string> ot::read_comments(FILE* input, bool raw)
+std::list<std::u8string> ot::read_comments(FILE* input, const ot::options& opt)
 {
 	std::list<std::u8string> comments;
 	comments.clear();
@@ -306,12 +310,12 @@ std::list<std::u8string> ot::read_comments(FILE* input, bool raw)
 	size_t buflen = 0;
 	ssize_t nread;
 	std::u8string* previous_comment = nullptr;
-	while ((nread = getline(&source_line, &buflen, input)) != -1) {
-		if (nread > 0 && source_line[nread - 1] == '\n')
+	while ((nread = getdelim(&source_line, &buflen, opt.tag_delimiter, input)) != -1) {
+		if (nread > 0 && source_line[nread - 1] == opt.tag_delimiter)
 			--nread; // Chomp.
 
 		std::u8string line;
-		if (raw) {
+		if (opt.raw) {
 			line = std::u8string(reinterpret_cast<char8_t*>(source_line), nread);
 		} else {
 			try {
@@ -335,7 +339,7 @@ std::list<std::u8string> ot::read_comments(FILE* input, bool raw)
 				free(source_line);
 				throw rc;
 			} else {
-				line[0] = '\n';
+				line[0] = opt.tag_delimiter;
 				previous_comment->append(line);
 			}
 		} else if (line.find(u8'=') == decltype(line)::npos) {
@@ -391,7 +395,7 @@ static void edit_tags(ot::opus_tags& tags, const ot::options& opt)
 }
 
 /** Spawn VISUAL or EDITOR to edit the given tags. */
-static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path, bool raw)
+static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std::string>& base_path, const ot::options& opt)
 {
 	const char* editor = nullptr;
 	if (getenv("TERM") != nullptr)
@@ -410,7 +414,7 @@ static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std
 	if (fd == -1 || (tags_file = fdopen(fd, "w")) == nullptr)
 		throw ot::status {ot::st::standard_error,
 		                  "Could not open '" + tags_path + "': " + strerror(errno)};
-	ot::print_comments(tags.comments, tags_file.get(), raw);
+	ot::print_comments(tags.comments, tags_file.get(), opt);
 	tags_file.reset();
 
 	// Spawn the editor, and watch the modification timestamps.
@@ -441,7 +445,7 @@ static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std
 	if (tags_file == nullptr)
 		throw ot::status {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
 	try {
-		tags.comments = ot::read_comments(tags_file.get(), raw);
+		tags.comments = ot::read_comments(tags_file.get(), opt);
 	} catch (const ot::status& rc) {
 		fprintf(stderr, "warning: Leaving %s on the disk.\n", tags_path.c_str());
 		throw;
@@ -524,7 +528,7 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 			if (writer) {
 				if (opt.edit_interactively) {
 					fflush(writer->file); // flush before calling the subprocess
-					edit_tags_interactively(tags, writer->path, opt.raw);
+					edit_tags_interactively(tags, writer->path, opt);
 				}
 				auto packet = ot::render_tags(tags);
 				writer->write_header_packet(serialno, pageno, packet);
@@ -532,9 +536,9 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 			} else {
 				if (opt.cover_out != "-") {
 					if (opt.print_vendor)
-						puts_utf8(tags.vendor, stdout, opt.raw);
+						puts_utf8(tags.vendor, stdout, opt);
 					else
-						ot::print_comments(tags.comments, stdout, opt.raw);
+						ot::print_comments(tags.comments, stdout, opt);
 				}
 				break;
 			}

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use utf8;
 
-use Test::More tests => 62;
+use Test::More tests => 66;
 use Test::Deep qw(cmp_deeply re);
 
 use Digest::MD5;
@@ -326,4 +326,19 @@ is_deeply(opustags(qw(--vendor gobble.opus)), ["Lavf58.12.100\n", '', 0], 'print
 
 is_deeply(opustags(qw(--set-vendor opustags gobble.opus -o out.opus)), ['', '', 0], 'set the vendor string');
 is_deeply(opustags(qw(--vendor out.opus)), ["opustags\n", '', 0], 'the vendor string was updated');
+unlink('out.opus');
+
+####################################################################################################
+# Multi-line tags
+
+is_deeply(opustags(qw(--set-all gobble.opus -o out.opus), { in => "MULTILINE=one\n\ttwo\nSIMPLE=three\n" }), ['', '', 0], 'parses continuation lines');
+is_deeply(opustags(qw(out.opus -z)), ["MULTILINE=one\ntwo\0SIMPLE=three\0", '', 0], 'delimits output with NUL on -z');
+unlink('out.opus');
+
+is_deeply(opustags(qw(--set-all gobble.opus -o out.opus -z), { in => "MULTILINE=one\ntwo\0SIMPLE=three\0" }), ['', '', 0], 'delimits input with NUL on -z');
+is_deeply(opustags(qw(out.opus)), [<<'END', '', 0], 'indents continuation lines');
+MULTILINE=one
+	two
+SIMPLE=three
+END
 unlink('out.opus');

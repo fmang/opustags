@@ -69,5 +69,6 @@ Documentation
       --vendor                      print the vendor string
       --set-vendor VALUE            set the vendor string
       --raw                         disable encoding conversion
+      -z                            delimit tags with NUL
 
 See the man page, `opustags.1`, for extensive documentation.

@@ -5,8 +5,10 @@
 
 static ot::status read_comments(FILE* input, std::list<std::u8string>& comments, bool raw)
 {
+	ot::options opt;
+	opt.raw = raw;
 	try {
-		comments = ot::read_comments(input, raw);
+		comments = ot::read_comments(input, opt);
 	} catch (const ot::status& rc) {
 		return rc;
 	}

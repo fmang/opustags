@@ -534,6 +534,13 @@ struct options {
 	 * extract and set as-is, encoding conversion would get in the way.
 	 */
 	bool raw = false;
+	/**
+	 * In text mode (default), tags are separated by a line feed. However, when combining
+	 * opustags with grep or other line-based tools, this proves to be a bad separator because
+	 * tag values may contain newlines. Changing the delimiter to '\0' with -z eases the
+	 * processing of multi-line tags with other tools that support null-terminated lines.
+	 */
+	char tag_delimiter = '\n';
 };
 
 /**
@@ -551,13 +558,13 @@ options parse_options(int argc, char** argv, FILE* comments);
  *
  * The output generated is meant to be parseable by #ot::read_comments.
  */
-void print_comments(const std::list<std::u8string>& comments, FILE* output, bool raw);
+void print_comments(const std::list<std::u8string>& comments, FILE* output, const options& opt);
 
 /**
  * Parse the comments outputted by #ot::print_comments. Unless raw is true, the comments are
  * converted from the system encoding to UTF-8, and returned as UTF-8.
  */
-std::list<std::u8string> read_comments(FILE* input, bool raw);
+std::list<std::u8string> read_comments(FILE* input, const options& opt);
 
 /**
  * Remove all comments matching the specified selector, which may either be a field name or a
