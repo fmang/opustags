@@ -1,6 +1,14 @@
 opustags changelog
 ==================
 
+1.10.0 - 2024-05-03
+-------------------
+
+- Introduce -z to delimit tags with null bytes.
+
+This option makes it possible to leverage GNU sed or GNU grep for automated tag edition with
+`opustags -z … | sed -z … | opustags -z -S …`, while also supporting multi-line tags.
+
 1.9.0 - 2023-06-07
 ------------------
 
