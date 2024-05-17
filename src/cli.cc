@@ -15,6 +15,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <algorithm>
 
 static const char help_message[] =
 PROJECT_NAME " version " PROJECT_VERSION

@@ -24,6 +24,7 @@
 #include <opustags.h>
 
 #include <string.h>
+#include <algorithm>
 
 ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 {
