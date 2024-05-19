@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 project(
 	opustags
-	VERSION 1.10.0
+	VERSION 1.10.1
 	LANGUAGES CXX
 )
 
