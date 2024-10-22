@@ -119,13 +119,16 @@ using byte_string_view = std::basic_string_view<uint8_t>;
  * \{
  */
 
+/** Local helper deleter lambda */
+inline auto fclose_deleter = [](FILE* f) { fclose(f); };
+
 /**
  * Smart auto-closing FILE* handle.
  *
  * It implictly converts from an already opened FILE*.
  */
-struct file : std::unique_ptr<FILE, decltype(&fclose)> {
-	file(FILE* f = nullptr) : std::unique_ptr<FILE, decltype(&fclose)>(f, &fclose) {}
+struct file : std::unique_ptr<FILE, decltype(fclose_deleter)> {
+	file(FILE* f = nullptr) : std::unique_ptr<FILE, decltype(fclose_deleter)>(f, fclose_deleter) {}
 };
 
 /**
