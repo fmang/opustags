@@ -127,7 +127,7 @@ ot::byte_string ot::slurp_binary_file(const char* filename)
 
 	byte_string content;
 	long file_size = get_file_size(f.get());
-	if (file_size == -1) {
+	if (file_size < 0) {
 		// Read the input stream block by block and resize the output byte string as needed.
 		uint8_t buffer[4096];
 		while (!feof(f.get())) {
@@ -140,7 +140,7 @@ ot::byte_string ot::slurp_binary_file(const char* filename)
 	} else {
 		// Lucky! We know the file size, so let’s slurp it at once.
 		content.resize(file_size);
-		if (fread(content.data(), 1, file_size, f.get()) < file_size)
+		if (fread(content.data(), 1, file_size, f.get()) < size_t(file_size))
 			throw status { st::standard_error,
 				       "Could not read '"s + filename + "': " + strerror(errno) + "." };
 	}
