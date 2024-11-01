@@ -119,13 +119,16 @@ using byte_string_view = std::basic_string_view<uint8_t>;
  * \{
  */
 
+/** fclose wrapper for std::unique_ptr’s deleter. */
+void close_file(FILE*);
+
 /**
  * Smart auto-closing FILE* handle.
  *
  * It implictly converts from an already opened FILE*.
  */
-struct file : std::unique_ptr<FILE, decltype(&fclose)> {
-	file(FILE* f = nullptr) : std::unique_ptr<FILE, decltype(&fclose)>(f, &fclose) {}
+struct file : std::unique_ptr<FILE, decltype(&close_file)> {
+	file(FILE* f = nullptr) : std::unique_ptr<FILE, decltype(&close_file)>(f, &close_file) {}
 };
 
 /**

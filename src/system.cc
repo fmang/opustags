@@ -29,6 +29,11 @@ ot::byte_string_view operator""_bsv(const char* data, size_t size)
 	return ot::byte_string_view(reinterpret_cast<const uint8_t*>(data), size);
 }
 
+void ot::close_file(FILE* file)
+{
+	fclose(file);
+}
+
 void ot::partial_file::open(const char* destination)
 {
 	final_name = destination;
