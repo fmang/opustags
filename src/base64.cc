@@ -56,7 +56,7 @@ std::u8string ot::encode_base64(ot::byte_string_view src)
 ot::byte_string ot::decode_base64(std::u8string_view src)
 {
 	// Remove the padding and rely on the string length instead.
-	while (src.back() == u8'=')
+	while (!src.empty() && src.back() == u8'=')
 		src.remove_suffix(1);
 
 	size_t olen = src.size() / 4 * 3; // Whole blocks;
