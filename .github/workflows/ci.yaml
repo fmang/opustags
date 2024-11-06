@@ -1,0 +1,27 @@
+name: Continuous Integration
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:rawhide
+    steps:
+    - name: Checkout git repository
+      uses: actions/checkout@v4
+    - name: Install dependencies
+      run: dnf -y install cmake gcc-c++ libubsan libasan libogg-devel 'perl(Test::Harness)' 'perl(strict)' 'perl(warnings)' 'perl(utf8)' 'perl(Test::More)' 'perl(Test::Deep)' 'perl(Digest::MD5)' 'perl(File::Basename)' 'perl(File::Copy)' 'perl(IPC::Open3)' 'perl(List::MoreUtils)' 'perl(Symbol)' ffmpeg-free
+    - name: Build
+      env:
+        CXX: g++
+        CXXFLAGS: -D_FORTIFY_SOURCE=3 -D_GLIBCXX_ASSERTIONS -D_GLIBCXX_DEBUG -O2 -flto=auto -g -Wall -Wextra -Werror=format-security -fstack-protector-strong -fstack-clash-protection -fcf-protection -fsanitize=address,undefined
+        LDFLAGS: -fsanitize=address,undefined
+      run: |
+        cmake -B target -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+        cmake --build target
+    - name: Test
+      run: |
+        cmake --build target --target check
