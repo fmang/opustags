@@ -55,7 +55,9 @@ ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 	// Comment count
 	if (pos + 4 > size)
 		throw status {st::cut_comment_count, "Comment count did not fit the comment header"};
-	uint32_t count = le32toh(*((uint32_t*) (data + pos)));
+	uint32_t count;
+	memcpy(&count, data + pos, sizeof(count));
+	count = le32toh(count);
 	pos += 4;
 
 	// Comments' data
@@ -63,7 +65,9 @@ ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 		if (pos + 4 > size)
 			throw status {st::cut_comment_length,
 			              "Comment length did not fit the comment header"};
-		uint32_t comment_length = le32toh(*((uint32_t*) (data + pos)));
+		uint32_t comment_length;
+		memcpy(&comment_length, data + pos, sizeof(comment_length));
+		comment_length = le32toh(comment_length);
 		if (pos + 4 + comment_length > size)
 			throw status {st::cut_comment_data,
 			              "Comment string did not fit the comment header"};
@@ -134,12 +138,16 @@ ot::picture::picture(ot::byte_string block)
 	size_t desc_offset = mime_offset + 4 + mime_size;
 	if (storage.size() < desc_offset + 4)
 		throw status { st::invalid_size, "missing description in picture block" };
-	uint32_t desc_size = be32toh(*reinterpret_cast<const uint32_t*>(&storage[desc_offset]));
+	uint32_t desc_size;
+	memcpy(&desc_size, &storage[desc_offset], sizeof(desc_size));
+	desc_size = be32toh(desc_size);
 
 	size_t pic_offset = desc_offset + 4 + desc_size + 16;
 	if (storage.size() < pic_offset + 4)
 		throw status { st::invalid_size, "missing picture data in picture block" };
-	uint32_t pic_size = be32toh(*reinterpret_cast<const uint32_t*>(&storage[pic_offset]));
+	uint32_t pic_size;
+	memcpy(&pic_size, &storage[pic_offset], sizeof(pic_size));
+	pic_size = be32toh(pic_size);
 
 	if (storage.size() != pic_offset + 4 + pic_size)
 		throw status { st::invalid_size, "invalid picture block size" };
@@ -157,7 +165,8 @@ ot::byte_string ot::picture::serialize() const
 	*reinterpret_cast<uint32_t*>(&bytes[0]) = htobe32(3); // Picture type: front cover.
 	*reinterpret_cast<uint32_t*>(&bytes[mime_offset]) = htobe32(mime_type.size());
 	std::copy(mime_type.begin(), mime_type.end(), std::next(bytes.begin(), mime_offset + 4));
-	*reinterpret_cast<uint32_t*>(&bytes[pic_offset]) = htobe32(picture_data.size());
+	uint32_t picture_data_size = htobe32(picture_data.size());
+	memcpy(&bytes[pic_offset], &picture_data_size, sizeof(picture_data_size));
 	std::copy(picture_data.begin(), picture_data.end(), std::next(bytes.begin(), pic_offset + 4));
 	return bytes;
 }
