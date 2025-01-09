@@ -43,13 +43,13 @@ to set new tags without being bothered by the old ones.
 If you want to replace all the tags, you can use the \fB--set-all\fP option which will cause
 \fBopustags\fP to read tags from standard input.
 The format is the same as the one used for output: newline-separated \fIFIELD=Value\fP assignment.
-All the previously existing tags as deleted.
+All the previously existing tags are deleted.
 .PP
-The Opus format specifications requires that tags are encoded in UTF-8, so that's the only encoding
-opustags supports. If your system encoding is different, the tags are automatically converted to and
-from your system locale. When you edit an Opus file whose tags contains characters unsupported by
-your system encoding, the original UTF-8 values will be preserved for the tags you don't explicitly
-modify.
+The Opus format specification requires that tags are encoded in UTF-8, so that’s the only encoding
+\fBopustags\fP supports. If your system encoding is different, the tags are automatically converted
+to and from your system locale. When you edit an Opus file whose tags contain characters unsupported
+by your system encoding, the original UTF-8 values will be preserved for the tags you don’t
+explicitly modify.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help
@@ -67,7 +67,7 @@ setting \fB--output\fP to the same path as the input file and enabling \fB--over
 This option conflicts with \fB--output\fP.
 .TP
 .B \-y, \-\-overwrite
-By default, \fBopustags\fP refuses to overwrite an already-existent file.
+By default, \fBopustags\fP refuses to overwrite an already-existing file.
 Use \fB-y\fP to allow overwriting.
 Note that this option is not needed when the output is a special file like \fI/dev/null\fP.
 .TP
@@ -79,10 +79,10 @@ In both cases, the field names are case-insensitive, and expected to be ASCII.
 .B \-a, \-\-add \fIFIELD=VALUE\fP
 Add a tag. Note that multiple tags with the same field name are perfectly acceptable, so you can add
 multiple fields with the same name, and previously existing tags will also be preserved.
-When the \fB--delete\fP is used with the same \fIFIELD\fP, only the older tags are deleted.
+When \fB--delete\fP is used with the same \fIFIELD\fP, only the older tags are deleted.
 .TP
 .B \-s, \-\-set \fIFIELD=VALUE\fP
-This option is provided for convenience. It delete all the fields of the same
+This option is provided for convenience. It deletes all the fields of the same
 type that may already exist, then adds it with the wanted value.
 This is strictly equivalent to \fB--delete\fP \fIFIELD\fP \fB--add\fP
 \fIFIELD=VALUE\fP. You can combine it with \fB--add\fP to add tags of the same
@@ -93,16 +93,16 @@ added with \fB--add\fP.
 Delete all the previously existing tags.
 .TP
 .B \-S, \-\-set-all
-Sets the tags from scratch.
+Set the tags from scratch.
 All the original tags are deleted and new ones are read from standard input.
 Each line must specify a \fIFIELD=VALUE\fP pair and be separated with line feeds.
 Empty lines and lines starting with \fI#\fP are ignored.
-Multiline tags must have their continuation lines prefixed by a single tab (in other words, every
+Multi-line tags must have their continuation lines prefixed by a single tab (in other words, every
 \fI\\n\fP must be replaced by \fI\\n\\t\fP).
 .TP
 .B \-e, \-\-edit
 Edit tags interactively by spawning the program specified by the EDITOR
-environment variable. The allowed format is the same as \fB--set-all\fP.
+environment variable. The allowed format is the same as with \fB--set-all\fP.
 If TERM and VISUAL are set, VISUAL takes precedence over EDITOR.
 .TP
 .B \-\-output-cover \fIFILE\fP
@@ -110,16 +110,17 @@ Save the cover art of the input Opus file to the specified location.
 If the input file does not contain any cover art, this option has no effect.
 To allow overwriting the target location, specify \fB--overwrite\fP.
 In the case of multiple pictures embedded in the Opus tags, only the first one is saved.
-Note that the since the image format is not fixed, you should consider an extension-less file name
-and rely on the magic number to deduce the type. opustags does not add or check the target file’s
-extension.
+Note that since the image format is not fixed, you should consider an extension-less file name and
+rely on the magic number to deduce the type.
+\fBopustags\fP does not add or check the target file’s extension.
 You can specify \fB-\fP for standard output, in which case the regular output will be suppressed.
 .TP
 .B \-\-set-cover \fIFILE\fP
 Replace or set the cover art to the specified picture.
 Specify \fB-\fP to read the picture from standard input.
 In theory, an Opus file may contain multiple pictures with different roles, though in practice only
-the front cover really matters. opustags can currently only handle one front cover and nothing else.
+the front cover really matters.
+\fBopustags\fP can currently only handle one front cover and nothing else.
 .TP
 .B \-\-vendor
 Print the vendor string from the OpusTags packet and do nothing else. Standard tags operations are
@@ -140,9 +141,10 @@ character set even though your system cannot display it.
 When editing tags programmatically with line-based tools like grep or sed, tags containing newlines
 are likely to corrupt the result because these tools won’t interpret multi-line tags as a whole. To
 make automatic processing easier, \fB-z\fP delimits tags by a null byte (ASCII NUL) instead of line
-feeds. That same \fB-z\fP flag is also supported by GNU grep or GNU sed and, combined with opustags
--z, would make them process the input tag-by-tag instead of line-by-line, thus supporting multi-line
-tags as well. This option also disables the TAB prefix for continuation lines after a line feed.
+feeds. That same \fB-z\fP flag is also supported by GNU grep or GNU sed and, combined with
+\fBopustags -z\fP, would make them process the input tag-by-tag instead of line-by-line, thus
+supporting multi-line tags as well.
+This option also disables the tab prefix for continuation lines after a line feed.
 .SH EXAMPLES
 .PP
 List all the tags in file foo.opus:
@@ -172,7 +174,7 @@ Use GNU grep to remove all the CHAPTER* tags, with -z to support multi-line tags
 .SH CAVEATS
 .PP
 \fBopustags\fP currently has the following limitations:
-.IP \[bu]
+.IP \[bu] 2n
 Multiplexed streams are not supported.
 .IP \[bu]
 Control characters inside tags are printed raw rather than being escaped.
