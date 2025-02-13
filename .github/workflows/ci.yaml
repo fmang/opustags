@@ -1,19 +1,22 @@
 name: Continuous Integration
 on:
   push:
-    branches: ["master"]
+    branches: [master]
   pull_request:
-    branches: ["master"]
+    branches: [master]
   workflow_dispatch:
+env:
+  LC_CTYPE: C.UTF-8
+  CMAKE_COLOR_DIAGNOSTICS: ON
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: registry.fedoraproject.org/fedora:rawhide
     steps:
     - name: Checkout git repository
       uses: actions/checkout@v4
     - name: Install dependencies
-      run: dnf -y install cmake gcc-c++ libubsan libasan libogg-devel 'perl(Test::Harness)' 'perl(strict)' 'perl(warnings)' 'perl(utf8)' 'perl(Test::More)' 'perl(Test::Deep)' 'perl(Digest::MD5)' 'perl(File::Basename)' 'perl(File::Copy)' 'perl(IPC::Open3)' 'perl(List::MoreUtils)' 'perl(Symbol)' ffmpeg-free
+      run: |
+        sudo apt install cmake g++ pkg-config libogg-dev ffmpeg libtest-harness-perl libtest-deep-perl liblist-moreutils-perl libtest-utf8-perl
     - name: Build
       env:
         CXX: g++
