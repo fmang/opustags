@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  extract-tag:
+    name: Extract release tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ env.RELEASE_TAG }}
+      version: ${{ env.RELEASE_VERSION }}
+    steps:
+      - name: Parse refs
+        run: |
+          RELEASE_TAG=${GITHUB_REF#refs/*/}
+          test -z $RELEASE_TAG && exit 1
+          RELEASE_VERSION=$(echo "$RELEASE_TAG" | sed 's/^[^0-9]*//')
+          test -z $RELEASE_VERSION && exit 1
+          echo "Releasing version: $RELEASE_VERSION; Tag: $RELEASE_TAG"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+  build:
+    name: Build
+    runs-on: ubuntu-22.04
+    needs: ["extract-tag"]
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y g++ cmake pkg-config libogg-dev libogg0
+
+      - name: CMake build
+        run: |
+          mkdir build
+          cmake -DCMAKE_INSTALL_PREFIX=./build/usr -S .
+          make
+          make install
+      
+      - name: Create control file
+        run: |
+          mkdir -p build/DEBIAN
+          cat << EOF > build/DEBIAN/control
+          Package: opustags
+          Version: ${{ needs.extract-tag.outputs.version }}
+          Architecture: amd64
+          Maintainer: github.com/fmang
+          Depends: libogg0 (>= 1.3.4) | libogg (>= 1.3.4)
+          Priority: optional
+          Description: Ogg Opus tags editor
+          EOF
+      
+      - name: Create package file
+        run: |
+          dpkg-deb -v --build ./build
+          mv build.deb opustags-${{ needs.extract-tag.outputs.version }}-amd64.deb
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-pkg
+          path: opustags-${{ needs.extract-tag.outputs.version }}-amd64.deb
+
+  upload-assets:
+    name: Upload release assets
+    needs: ["extract-tag", "build"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: .
+
+      - name: Upload .deb package file
+        run: |
+          gh release upload ${{ needs.extract-tag.outputs.tag }} opustags-${{ needs.extract-tag.outputs.version }}-amd64.deb
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
