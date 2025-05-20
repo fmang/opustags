@@ -36,9 +36,9 @@ jobs:
       - name: CMake build
         run: |
           mkdir build
-          cmake -DCMAKE_INSTALL_PREFIX=./build/usr -S .
+          cmake -DCMAKE_INSTALL_PREFIX=/usr -S .
           make
-          make install
+          make install DESTDIR=./build
       
       - name: Create control file
         run: |
