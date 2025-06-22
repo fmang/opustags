@@ -27,7 +27,7 @@ std::u8string ot::encode_base64(ot::byte_string_view src)
 	std::u8string out;
 	out.resize(olen);
 
-	const uint8_t* in = src.data();
+	const uint8_t* in = reinterpret_cast<const uint8_t*>(src.data());
 	const uint8_t* end = in + len;
 	char8_t* pos = out.data();
 	while (end - in >= 3) {
@@ -68,7 +68,7 @@ ot::byte_string ot::decode_base64(std::u8string_view src)
 
 	ot::byte_string out;
 	out.resize(olen);
-	uint8_t* pos = out.data();
+	uint8_t* pos = reinterpret_cast<uint8_t*>(out.data());
 
 	unsigned char dtable[256];
 	memset(dtable, 0x80, 256);

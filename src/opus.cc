@@ -77,7 +77,7 @@ ot::opus_tags ot::parse_tags(const ogg_packet& packet)
 	}
 
 	// Extra data
-	my_tags.extra_data = byte_string(data + pos, size - pos);
+	my_tags.extra_data = byte_string(reinterpret_cast<const char*>(data + pos), size - pos);
 
 	return my_tags;
 }
@@ -200,16 +200,16 @@ std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 static ot::byte_string_view detect_mime_type(ot::byte_string_view data)
 {
 	static std::initializer_list<std::pair<ot::byte_string_view, ot::byte_string_view>> magic_numbers = {
-		{ "\xff\xd8\xff"_bsv, "image/jpeg"_bsv },
-		{ "\x89PNG"_bsv, "image/png"_bsv },
-		{ "GIF8"_bsv, "image/gif"_bsv },
+		{ "\xff\xd8\xff"sv, "image/jpeg"sv },
+		{ "\x89PNG"sv, "image/png"sv },
+		{ "GIF8"sv, "image/gif"sv },
 	};
 	for (auto [magic, mime] : magic_numbers) {
 		if (data.starts_with(magic))
 			return mime;
 	}
 	fputs("warning: Could not identify the MIME type of the picture; defaulting to application/octet-stream.\n", stderr);
-	return "application/octet-stream"_bsv;
+	return "application/octet-stream"sv;
 }
 
 std::u8string ot::make_cover(ot::byte_string_view picture_data)

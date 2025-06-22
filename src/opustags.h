@@ -111,8 +111,11 @@ struct status {
 	std::string message;
 };
 
-using byte_string = std::basic_string<uint8_t>;
-using byte_string_view = std::basic_string_view<uint8_t>;
+/**
+ * Alias for binary data strings. Concretely the same as regular strings but reflect the intent.
+ */
+using byte_string = std::string;
+using byte_string_view = std::string_view;
 
 /***********************************************************************************************//**
  * \defgroup system System
@@ -584,7 +587,3 @@ void run(const options& opt);
 /** \} */
 
 }
-
-/** Handy literal suffix for building byte strings. */
-ot::byte_string operator""_bs(const char* data, size_t size);
-ot::byte_string_view operator""_bsv(const char* data, size_t size);

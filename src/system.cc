@@ -19,16 +19,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-ot::byte_string operator""_bs(const char* data, size_t size)
-{
-	return ot::byte_string(reinterpret_cast<const uint8_t*>(data), size);
-}
-
-ot::byte_string_view operator""_bsv(const char* data, size_t size)
-{
-	return ot::byte_string_view(reinterpret_cast<const uint8_t*>(data), size);
-}
-
 void ot::close_file(FILE* file)
 {
 	fclose(file);
@@ -129,7 +119,7 @@ ot::byte_string ot::slurp_binary_file(const char* filename)
 	long file_size = get_file_size(f.get());
 	if (file_size < 0) {
 		// Read the input stream block by block and resize the output byte string as needed.
-		uint8_t buffer[4096];
+		char buffer[4096];
 		while (!feof(f.get())) {
 			size_t read_len = fread(buffer, 1, sizeof(buffer), f.get());
 			content.append(buffer, read_len);

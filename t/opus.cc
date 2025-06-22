@@ -123,7 +123,7 @@ static void recode_padding()
 	op.packet = (unsigned char*) padded_OpusTags.data();
 
 	ot::opus_tags tags = ot::parse_tags(op);
-	if (tags.extra_data != "\0hello"_bsv)
+	if (tags.extra_data != "\0hello"sv)
 		throw failure("corrupted extra data");
 	// recode the packet and ensure it's exactly the same
 	auto packet = ot::render_tags(tags);
@@ -137,7 +137,7 @@ static void recode_padding()
 
 static void extract_cover()
 {
-	ot::byte_string_view picture_data = ""_bsv
+	ot::byte_string_view picture_data = ""sv
 		"\x00\x00\x00\x03" // Picture type 3.
 		"\x00\x00\x00\x09" "image/foo" // MIME type.
 		"\x00\x00\x00\x00" "" // Description.
@@ -152,9 +152,9 @@ static void extract_cover()
 	std::optional<ot::picture> cover = ot::extract_cover(tags);
 	if (!cover)
 		throw failure("could not extract the cover");
-	if (cover->mime_type != "image/foo"_bsv)
+	if (cover->mime_type != "image/foo"sv)
 		throw failure("bad extracted MIME type");
-	if (cover->picture_data != "Picture data"_bsv)
+	if (cover->picture_data != "Picture data"sv)
 		throw failure("bad extracted picture data");
 
 	ot::byte_string_view truncated_data = picture_data.substr(0, picture_data.size() - 1);
@@ -167,7 +167,7 @@ static void extract_cover()
 
 static void make_cover()
 {
-	ot::byte_string_view picture_block = ""_bsv
+	ot::byte_string_view picture_block = ""sv
 		"\x00\x00\x00\x03" // Picture type 3.
 		"\x00\x00\x00\x09" "image/png" // MIME type.
 		"\x00\x00\x00\x00" "" // Description.
@@ -178,7 +178,7 @@ static void make_cover()
 		"\x00\x00\x00\x11" "\x89PNG Picture data";
 
 	std::u8string expected = u8"METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_block);
-	opaque_is(ot::make_cover("\x89PNG Picture data"_bsv), expected, "build the picture tag");
+	opaque_is(ot::make_cover("\x89PNG Picture data"sv), expected, "build the picture tag");
 }
 
 int main()
