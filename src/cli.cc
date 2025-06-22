@@ -503,7 +503,7 @@ static void process(ot::ogg_reader& reader, ot::ogg_writer* writer, const ot::op
 	 *  output stream, we need to renumber all the succeeding pages. If the input stream
 	 *  contains gaps, the offset will naively reproduce the gaps: page numbers 0 (1) 2 4 will
 	 *  become 0 (1 2) 3 5, where (…) is the OpusTags packet, and not 0 (1 2) 3 4. */
-	int pageno_offset = 0;
+	long pageno_offset = 0;
 
 	while (reader.next_page()) {
 		auto serialno = ogg_page_serialno(&reader.page);

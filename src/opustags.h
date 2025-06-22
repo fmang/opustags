@@ -266,10 +266,9 @@ struct ogg_reader {
 	ogg_page page;
 	/**
 	 * Page number in the physical stream of the last read page, disregarding multiplexed
-	 * streams. The first page number is 0. When no page has been read, its value is
-	 * (size_t) -1.
+	 * streams. The first page number is 0. When no page has been read, its value is -1.
 	 */
-	size_t absolute_page_no = -1;
+	long absolute_page_no = -1;
 	/**
 	 * The file is our source of binary data. It is not integrated to libogg, so we need to
 	 * handle it ourselves.

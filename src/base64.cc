@@ -84,11 +84,11 @@ ot::byte_string ot::decode_base64(std::u8string_view src)
 
 		block[count++] = tmp;
 		if (count == 2) {
-			*pos++ = (block[0] << 2) | (block[1] >> 4);
+			*pos++ = 0xFF & (block[0] << 2) | (block[1] >> 4);
 		} else if (count == 3) {
-			*pos++ = (block[1] << 4) | (block[2] >> 2);
+			*pos++ = 0xFF & (block[1] << 4) | (block[2] >> 2);
 		} else if (count == 4) {
-			*pos++ = (block[2] << 6) | block[3];
+			*pos++ = 0xFF & (block[2] << 6) | block[3];
 			count = 0;
 		}
 	}

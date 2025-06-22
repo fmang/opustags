@@ -28,8 +28,8 @@ bool ot::ogg_reader::next_page()
 	while ((rc = ogg_sync_pageout(&sync, &page)) != 1) {
 		if (rc == -1) {
 			throw status {st::bad_stream,
-			              absolute_page_no == (size_t) -1 ? "Input is not a valid Ogg file."
-			                                              : "Unsynced data in stream."};
+			              absolute_page_no == -1 ? "Input is not a valid Ogg file."
+			                                     : "Unsynced data in stream."};
 		}
 		if (ogg_sync_check(&sync) != 0)
 			throw status {st::libogg_error, "ogg_sync_check signalled an error."};
