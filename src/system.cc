@@ -239,7 +239,7 @@ std::string ot::shell_escape(std::string_view word)
 
 void ot::run_editor(std::string_view editor, std::string_view path)
 {
-	std::string command = std::string(editor) + " " + shell_escape(path);
+	std::string command = std::string(editor) + " -- " + shell_escape(path);
 	int status = system(command.c_str());
 
 	if (status == -1)
