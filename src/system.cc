@@ -237,8 +237,14 @@ static long get_file_size(FILE* f)
 
 ot::byte_string ot::slurp_binary_file(const char* filename)
 {
+#ifdef _WIN32
+	// The Microsoft C runtime does not support freopen with a null path, and main already puts
+	// stdin in binary mode.
+	file f = strcmp(filename, "-") == 0 ? stdin : fopen(filename, "rb");
+#else
 	file f = strcmp(filename, "-") == 0 ? freopen(nullptr, "rb", stdin)
 	                                    : fopen(filename, "rb");
+#endif
 	if (f == nullptr)
 		throw status { st::standard_error,
 		               "Could not open '"s + filename + "': " + strerror(errno) + "." };
