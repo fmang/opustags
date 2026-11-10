@@ -5,7 +5,7 @@
 
 static void check_ref_ogg()
 {
-	ot::file input = fopen("gobble.opus", "r");
+	ot::file input = fopen("gobble.opus", "rb");
 	if (input == nullptr)
 		throw failure("could not open gobble.opus");
 
@@ -68,6 +68,12 @@ static void check_memory_ogg()
 		my_ogg_size = ftell(output.get());
 		if (my_ogg_size != 67)
 			throw failure("unexpected output size");
+#ifdef _WIN32
+		// The fmemopen of tap.h doesn't write into my_ogg.
+		rewind(output.get());
+		if (fread(my_ogg.data(), 1, my_ogg_size, output.get()) != my_ogg_size)
+			throw failure("could not read back the output stream");
+#endif
 	}
 
 	{
@@ -141,7 +147,7 @@ void check_identification()
 
 void check_renumber_page()
 {
-	ot::file input = fopen("gobble.opus", "r");
+	ot::file input = fopen("gobble.opus", "rb");
 	if (input == nullptr)
 		throw failure("could not open gobble.opus");
 
