@@ -123,6 +123,24 @@ void ot::partial_file::open(const char* destination)
 		              strerror(errno)};
 }
 
+#ifdef _WIN32
+/** Describe an error code returned by GetLastError(). */
+static std::string win32_error_message(DWORD code)
+{
+	char* text = nullptr;
+	DWORD len = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+	                           FORMAT_MESSAGE_IGNORE_INSERTS,
+	                           nullptr, code, 0, reinterpret_cast<char*>(&text), 0, nullptr);
+	std::string message = len ? std::string(text, len) : "Error " + std::to_string(code);
+	LocalFree(text);
+	// System messages end with a period and CRLF.
+	while (!message.empty() && (message.back() == '\n' || message.back() == '\r' ||
+	                            message.back() == '.'))
+		message.pop_back();
+	return message;
+}
+#endif
+
 static mode_t get_umask()
 {
 	// libc doesn’t seem to provide a way to get umask without changing it, so we need this workaround.
@@ -380,6 +398,19 @@ void ot::run_editor(std::string_view editor, std::string_view path)
 timespec ot::get_file_timestamp(const char* path)
 {
 	timespec mtime;
+#ifdef _WIN32
+	// stat has a one-second resolution on Windows, so an edit made within that second would go
+	// unnoticed. FILETIME counts 100 ns intervals since 1601.
+	WIN32_FILE_ATTRIBUTE_DATA data;
+	if (!GetFileAttributesExA(path, GetFileExInfoStandard, &data))
+		throw status {st::standard_error,
+		              path + ": GetFileAttributesEx error: "s + win32_error_message(GetLastError())};
+	constexpr uint64_t unix_epoch = 116444736000000000; // 1970-01-01 in FILETIME units
+	uint64_t ticks = (uint64_t(data.ftLastWriteTime.dwHighDateTime) << 32 |
+	                  data.ftLastWriteTime.dwLowDateTime) - unix_epoch;
+	mtime.tv_sec = static_cast<time_t>(ticks / 10000000);
+	mtime.tv_nsec = static_cast<long>(ticks % 10000000 * 100);
+#else
 	struct stat st;
 	if (stat(path, &st) == -1)
 		throw status {st::standard_error, path + ": stat error: "s + strerror(errno)};
@@ -390,6 +421,7 @@ timespec ot::get_file_timestamp(const char* path)
 #else
 	mtime.tv_sec = st.st_mtime;
 	mtime.tv_nsec = st.st_mtimensec;
+#endif
 #endif
 	return mtime;
 }
