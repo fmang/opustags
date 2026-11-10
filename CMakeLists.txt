@@ -52,6 +52,12 @@ target_link_libraries(ot PUBLIC ${OGG_LIBRARIES} ${Iconv_LIBRARIES})
 add_executable(opustags src/opustags.cc)
 target_link_libraries(opustags ot)
 
+if(WIN32)
+	# Use UTF-8 as the process code page, see src/opustags.manifest.
+	enable_language(RC)
+	target_sources(opustags PRIVATE src/opustags.rc)
+endif()
+
 include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
 configure_file(opustags.1 . @ONLY)

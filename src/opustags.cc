@@ -12,6 +12,7 @@
 #ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
+#include <windows.h>
 #endif
 
 /**
@@ -26,8 +27,11 @@ int main(int argc, char** argv) {
 		_setmode(_fileno(stdin), _O_BINARY);
 		_setmode(_fileno(stdout), _O_BINARY);
 		_setmode(_fileno(stderr), _O_BINARY);
-#endif
+		// The UTF-8 code page set by the manifest does not change the locale "" selects.
+		setlocale(LC_ALL, GetACP() == CP_UTF8 ? ".UTF8" : "");
+#else
 		setlocale(LC_ALL, "");
+#endif
 		ot::options opt = ot::parse_options(argc, argv, stdin);
 		ot::run(opt);
 		return 0;
