@@ -302,6 +302,26 @@ std::string ot::decode_utf8(std::u8string_view in)
 
 std::string ot::shell_escape(std::string_view word)
 {
+#ifdef _WIN32
+	// Quote the word so that the C runtime parses it back as is, following
+	// https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments
+	// Always quote it, because cmd.exe interprets characters like & | < > ^ outside of quotes.
+	std::string escaped_word = "\"";
+	size_t backslashes = 0;
+	for (char c : word) {
+		if (c == '\\') {
+			++backslashes;
+			continue;
+		}
+		// Backslashes are only special before a double quote.
+		escaped_word.append(c == '"' ? 2 * backslashes + 1 : backslashes, '\\');
+		escaped_word += c;
+		backslashes = 0;
+	}
+	escaped_word.append(2 * backslashes, '\\');
+	escaped_word += '"';
+	return escaped_word;
+#else
 	std::string escaped_word;
 	// Pre-allocate the result, assuming most of the time enclosing it in single quotes is enough.
 	escaped_word.reserve(2 + word.size());
@@ -318,10 +338,31 @@ std::string ot::shell_escape(std::string_view word)
 	escaped_word += '\'';
 
 	return escaped_word;
+#endif
 }
 
 void ot::run_editor(std::string_view editor, std::string_view path)
 {
+#ifdef _WIN32
+	// Pass an absolute path rather than using --, which not all Windows editors understand.
+	std::string relative_path(path);
+	std::unique_ptr<char, decltype(&free)> absolute_path(
+		_fullpath(nullptr, relative_path.c_str(), 0), &free);
+	if (absolute_path == nullptr)
+		throw ot::status {st::standard_error,
+		                  "Could not resolve '" + relative_path + "': " + strerror(errno)};
+	// system() runs cmd /c, which removes the first and last quotes of the command line when it
+	// contains more than two (see cmd /?), so wrap the command in one more pair.
+	std::string command =
+		"\"" + std::string(editor) + " " + shell_escape(absolute_path.get()) + "\"";
+	int status = system(command.c_str());
+
+	if (status == -1)
+		throw ot::status {st::standard_error, "system error: "s + strerror(errno)};
+	else if (status != 0)
+		throw ot::status {st::child_process_failed,
+		                  "Child process exited with " + std::to_string(status)};
+#else
 	std::string command = std::string(editor) + " -- " + shell_escape(path);
 	int status = system(command.c_str());
 
@@ -333,6 +374,7 @@ void ot::run_editor(std::string_view editor, std::string_view path)
 	else if (WEXITSTATUS(status) != 0)
 		throw ot::status {st::child_process_failed,
 		                  "Child process exited with " + std::to_string(WEXITSTATUS(status))};
+#endif
 }
 
 timespec ot::get_file_timestamp(const char* path)
