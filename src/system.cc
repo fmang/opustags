@@ -33,7 +33,7 @@ void ot::partial_file::open(const char* destination)
 		throw status {st::standard_error,
 		              "Could not create a partial file for '" + final_name + "': " +
 		              strerror(errno)};
-	file = fdopen(fd, "w");
+	file = fdopen(fd, "wb");
 	if (file == nullptr)
 		throw status {st::standard_error,
 		              "Could not get the partial file handle to '" + temporary_name + "': " +

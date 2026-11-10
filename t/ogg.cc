@@ -5,7 +5,7 @@
 
 static void check_ref_ogg()
 {
-	ot::file input = fopen("gobble.opus", "r");
+	ot::file input = fopen("gobble.opus", "rb");
 	if (input == nullptr)
 		throw failure("could not open gobble.opus");
 
@@ -141,7 +141,7 @@ void check_identification()
 
 void check_renumber_page()
 {
-	ot::file input = fopen("gobble.opus", "r");
+	ot::file input = fopen("gobble.opus", "rb");
 	if (input == nullptr)
 		throw failure("could not open gobble.opus");
 

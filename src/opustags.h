@@ -55,6 +55,13 @@
 #define be32toh(x) OSSwapBigToHostInt32(x)
 #endif
 
+/** fopen mode flag that keeps the file from being inherited by child processes. */
+#ifdef _WIN32
+#  define OT_FOPEN_CLOEXEC "N"
+#else
+#  define OT_FOPEN_CLOEXEC "e"
+#endif
+
 using namespace std::literals;
 
 namespace ot {
