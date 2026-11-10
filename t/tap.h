@@ -15,6 +15,21 @@
 #include <exception>
 #include <iostream>
 
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#include <share.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 inline namespace tap {
 
 struct failure : std::runtime_error {
@@ -35,6 +50,39 @@ static void run(F test, const char *name)
 	}
 	std::cout << (ok ? "ok" : "not ok") << " - " << name << "\n";
 }
+
+#ifdef _WIN32
+/**
+ * Windows has no fmemopen, so copy the buffer into a temporary file instead. Unlike with
+ * fmemopen, writes don't reach the buffer.
+ */
+FILE* fmemopen(void* buf, size_t size, const char* mode)
+{
+	char dir[MAX_PATH + 1];
+	char path[MAX_PATH + 1];
+	if (GetTempPathA(sizeof(dir), dir) == 0 || GetTempFileNameA(dir, "ot", 0, path) == 0)
+		return nullptr;
+	int fd;
+	if (_sopen_s(&fd, path, _O_RDWR | _O_BINARY | _O_TEMPORARY, _SH_DENYNO,
+	             _S_IREAD | _S_IWRITE) != 0) {
+		DeleteFileA(path);
+		return nullptr;
+	}
+	FILE* file = _fdopen(fd, "w+b");
+	if (file == nullptr) {
+		_close(fd);
+		return nullptr;
+	}
+	if (mode[0] == 'r') {
+		if (fwrite(buf, 1, size, file) != size) {
+			fclose(file);
+			return nullptr;
+		}
+		rewind(file);
+	}
+	return file;
+}
+#endif
 
 void plan(int tests)
 {

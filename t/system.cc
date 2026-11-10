@@ -11,7 +11,11 @@ void check_partial_files()
 	{
 		ot::partial_file bad_tmp;
 		try {
+#ifdef _WIN32
+			bad_tmp.open("no-such-directory/partial_file.test");
+#else
 			bad_tmp.open("/dev/null");
+#endif
 			throw failure("opening a device as a partial file should fail");
 		} catch (const ot::status& rc) {
 			is(rc, ot::st::standard_error, "opening a device as a partial file fails");
@@ -61,10 +65,19 @@ void check_converter()
 
 void check_shell_esape()
 {
+#ifdef _WIN32
+	is(ot::shell_escape("foo"), "\"foo\"", "simple string");
+	is(ot::shell_escape("a b"), "\"a b\"", "string with a space");
+	is(ot::shell_escape("a&b"), "\"a&b\"", "string with a cmd.exe metacharacter");
+	is(ot::shell_escape("a\"b"), "\"a\\\"b\"", "string with a double quote");
+	is(ot::shell_escape("C:\\x\\"), "\"C:\\x\\\\\"", "trailing backslash");
+	is(ot::shell_escape("a\\\"b"), "\"a\\\\\\\"b\"", "backslash before a double quote");
+#else
 	is(ot::shell_escape("foo"), "'foo'", "simple string");
 	is(ot::shell_escape("a'b"), "'a'\\''b'", "string with a simple quote");
 	is(ot::shell_escape("a!b"), "'a'\\!'b'", "string with a bang");
 	is(ot::shell_escape("a!b'c!d'e"), "'a'\\!'b'\\''c'\\!'d'\\''e'", "string with a bang");
+#endif
 }
 
 int main(int argc, char **argv)
