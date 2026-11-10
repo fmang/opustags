@@ -314,6 +314,10 @@ std::list<std::u8string> ot::read_comments(FILE* input, const ot::options& opt)
 	while ((nread = getdelim(&source_line, &buflen, opt.tag_delimiter, input)) != -1) {
 		if (nread > 0 && source_line[nread - 1] == opt.tag_delimiter)
 			--nread; // Chomp.
+#ifdef _WIN32
+		if (opt.tag_delimiter == '\n' && nread > 0 && source_line[nread - 1] == '\r')
+			--nread; // CRLF line endings are common on Windows.
+#endif
 
 		std::u8string line;
 		if (opt.raw) {
