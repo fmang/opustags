@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <time.h>
 
+#include <cstdint>
 #include <functional>
 #include <list>
 #include <memory>
@@ -53,6 +54,14 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #define htobe32(x) OSSwapHostToBigInt32(x)
 #define be32toh(x) OSSwapBigToHostInt32(x)
+#endif
+
+#ifdef _WIN32
+// Windows has no <endian.h>, and all Windows platforms are little-endian.
+inline uint32_t htole32(uint32_t x) { return x; }
+inline uint32_t le32toh(uint32_t x) { return x; }
+inline uint32_t htobe32(uint32_t x) { return __builtin_bswap32(x); }
+inline uint32_t be32toh(uint32_t x) { return __builtin_bswap32(x); }
 #endif
 
 /** fopen mode flag that keeps the file from being inherited by child processes. */
