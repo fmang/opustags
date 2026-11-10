@@ -141,6 +141,7 @@ static std::string win32_error_message(DWORD code)
 }
 #endif
 
+#ifndef _WIN32
 static mode_t get_umask()
 {
 	// libc doesn’t seem to provide a way to get umask without changing it, so we need this workaround.
@@ -173,17 +174,43 @@ static void copy_permissions(const char* source, const char* dest)
 	if (chmod(dest, target_mode) == -1)
 		fprintf(stderr, "warning: Could not set mode of %s: %s\n", dest, strerror(errno));
 }
+#endif
 
 void ot::partial_file::commit()
 {
 	if (file == nullptr)
 		return;
 	file.reset();
+#ifdef _WIN32
+	// The read-only attribute is the only part of the mode on Windows. MoveFileEx refuses to
+	// replace a read-only file, so clear the attribute first and restore it on the new file.
+	const char* name = final_name.c_str();
+	DWORD attributes = GetFileAttributesA(name);
+	bool read_only = attributes != INVALID_FILE_ATTRIBUTES &&
+	                 (attributes & FILE_ATTRIBUTE_READONLY);
+	DWORD writable = attributes & ~FILE_ATTRIBUTE_READONLY;
+	if (read_only && !SetFileAttributesA(name, writable ? writable : FILE_ATTRIBUTE_NORMAL))
+		throw status {st::standard_error,
+		              "Could not clear the read-only attribute of '" + final_name + "': " +
+		              win32_error_message(GetLastError()) + "."};
+	if (!MoveFileExA(temporary_name.c_str(), name, MOVEFILE_REPLACE_EXISTING)) {
+		DWORD error = GetLastError();
+		if (read_only)
+			SetFileAttributesA(name, attributes);
+		throw status {st::standard_error,
+		              "Could not move the result file '" + temporary_name + "' to '" +
+		              final_name + "': " + win32_error_message(error) + "."};
+	}
+	if (read_only && !SetFileAttributesA(name, attributes))
+		fprintf(stderr, "warning: Could not set the attributes of %s: %s\n", name,
+		        win32_error_message(GetLastError()).c_str());
+#else
 	copy_permissions(final_name.c_str(), temporary_name.c_str());
 	if (rename(temporary_name.c_str(), final_name.c_str()) == -1)
 		throw status {st::standard_error,
 		              "Could not move the result file '" + temporary_name + "' to '" +
 		              final_name + "': " + strerror(errno) + "."};
+#endif
 }
 
 void ot::partial_file::abort()
