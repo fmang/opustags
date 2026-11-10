@@ -9,6 +9,10 @@
  * This modules shoumd not depend on any other opustags module.
  */
 
+#ifdef _WIN32
+#define _CRT_RAND_S // Declare rand_s in <stdlib.h>.
+#endif
+
 #include <opustags.h>
 
 #include <errno.h>
@@ -16,8 +20,87 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <unistd.h>
+
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#include <share.h>
+#include <windows.h>
+#else
+#include <sys/wait.h>
+#endif
+
+#ifdef _WIN32
+
+#ifndef HAVE_GETDELIM
+ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* stream)
+{
+	std::string line;
+	int c;
+	while ((c = getc(stream)) != EOF) {
+		line += static_cast<char>(c);
+		if (c == delim)
+			break;
+	}
+	if (line.empty())
+		return -1;
+	if (*lineptr == nullptr || *n < line.size() + 1) {
+		char* buffer = static_cast<char*>(realloc(*lineptr, line.size() + 1));
+		if (buffer == nullptr)
+			return -1;
+		*lineptr = buffer;
+		*n = line.size() + 1;
+	}
+	memcpy(*lineptr, line.c_str(), line.size() + 1);
+	return static_cast<ssize_t>(line.size());
+}
+#endif
+
+#ifndef HAVE_MKSTEMPS
+/**
+ * Unlike _mktemp, which only tries 26 names and ignores the suffix when checking whether a name
+ * is taken, keep picking random names until the file can be created.
+ */
+int mkstemps(char* tmpl, int suffixlen)
+{
+	size_t len = strlen(tmpl);
+	if (suffixlen < 0 || len < 6 + static_cast<size_t>(suffixlen)) {
+		errno = EINVAL;
+		return -1;
+	}
+	char* placeholder = tmpl + len - static_cast<size_t>(suffixlen) - 6;
+	if (memcmp(placeholder, "XXXXXX", 6) != 0) {
+		errno = EINVAL;
+		return -1;
+	}
+	static const char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	for (int attempt = 0; attempt < 100; ++attempt) {
+		for (int i = 0; i < 6; ++i) {
+			unsigned int r;
+			if (rand_s(&r) != 0) {
+				errno = EIO;
+				return -1;
+			}
+			placeholder[i] = chars[r % (sizeof(chars) - 1)];
+		}
+		// _O_NOINHERIT is the equivalent of O_CLOEXEC.
+		int fd;
+		errno_t rc = _sopen_s(&fd, tmpl, _O_CREAT | _O_EXCL | _O_RDWR | _O_BINARY | _O_NOINHERIT,
+		                      _SH_DENYNO, _S_IREAD | _S_IWRITE);
+		if (rc == 0)
+			return fd;
+		if (rc != EEXIST) {
+			errno = rc;
+			return -1;
+		}
+	}
+	errno = EEXIST;
+	return -1;
+}
+#endif
+
+#endif /* _WIN32 */
 
 void ot::close_file(FILE* file)
 {

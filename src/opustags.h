@@ -71,6 +71,16 @@ inline uint32_t be32toh(uint32_t x) { return __builtin_bswap32(x); }
 #  define OT_FOPEN_CLOEXEC "e"
 #endif
 
+#ifdef _WIN32
+// POSIX functions missing from the Microsoft C runtime, implemented in system.cc.
+#  ifndef HAVE_GETDELIM
+ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* stream);
+#  endif
+#  ifndef HAVE_MKSTEMPS
+int mkstemps(char* tmpl, int suffixlen);
+#  endif
+#endif
+
 using namespace std::literals;
 
 namespace ot {
