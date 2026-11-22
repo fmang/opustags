@@ -1,6 +1,7 @@
 #include <opustags.h>
 #include "tap.h"
 
+#include <locale.h>
 #include <string.h>
 
 static ot::status read_comments(FILE* input, std::list<std::u8string>& comments, bool raw)
@@ -225,6 +226,10 @@ static void check_delete_comments()
 
 int main(int argc, char **argv)
 {
+#ifdef _WIN32
+	// Like opustags.exe. The default C locale is not ASCII but the ANSI code page on Windows.
+	setlocale(LC_ALL, ".UTF8");
+#endif
 	std::cout << "1..4\n";
 	run(check_read_comments, "check tags parsing");
 	run(check_good_arguments, "check options parsing");

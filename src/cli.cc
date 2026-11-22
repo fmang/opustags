@@ -314,6 +314,10 @@ std::list<std::u8string> ot::read_comments(FILE* input, const ot::options& opt)
 	while ((nread = getdelim(&source_line, &buflen, opt.tag_delimiter, input)) != -1) {
 		if (nread > 0 && source_line[nread - 1] == opt.tag_delimiter)
 			--nread; // Chomp.
+#ifdef _WIN32
+		if (opt.tag_delimiter == '\n' && nread > 0 && source_line[nread - 1] == '\r')
+			--nread; // CRLF line endings are common on Windows.
+#endif
 
 		std::u8string line;
 		if (opt.raw) {
@@ -412,7 +416,7 @@ static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std
 	std::string tags_path = base_path.value_or("tags") + ".XXXXXX.opustags";
 	int fd = mkstemps(const_cast<char*>(tags_path.data()), 9);
 	ot::file tags_file;
-	if (fd == -1 || (tags_file = fdopen(fd, "w")) == nullptr)
+	if (fd == -1 || (tags_file = fdopen(fd, "wb")) == nullptr)
 		throw ot::status {ot::st::standard_error,
 		                  "Could not open '" + tags_path + "': " + strerror(errno)};
 	ot::print_comments(tags.comments, tags_file.get(), opt);
@@ -442,7 +446,7 @@ static void edit_tags_interactively(ot::opus_tags& tags, const std::optional<std
 	}
 
 	// Applying the new tags.
-	tags_file = fopen(tags_path.c_str(), "re");
+	tags_file = fopen(tags_path.c_str(), "rb" OT_FOPEN_CLOEXEC);
 	if (tags_file == nullptr)
 		throw ot::status {ot::st::standard_error, "Error opening " + tags_path + ": " + strerror(errno)};
 	try {
@@ -479,7 +483,7 @@ static void output_cover(const ot::opus_tags& tags, const ot::options &opt)
 			throw ot::status {ot::st::error, "Could not identify '" + opt.cover_out.value() + "': " + strerror(errno)};
 		}
 
-		output = fopen(opt.cover_out->c_str(), "w");
+		output = fopen(opt.cover_out->c_str(), "wb" OT_FOPEN_CLOEXEC);
 		if (output == nullptr)
 			throw ot::status {ot::st::standard_error, "Could not open '" + opt.cover_out.value() + "' for writing: " + strerror(errno)};
 	}
@@ -557,7 +561,7 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 	ot::file input;
 	if (path_in == "-")
 		input = stdin;
-	else if ((input = fopen(path_in.c_str(), "re")) == nullptr)
+	else if ((input = fopen(path_in.c_str(), "rb" OT_FOPEN_CLOEXEC)) == nullptr)
 		throw ot::status {ot::st::standard_error,
 		                  "Could not open '" + path_in + "' for reading: " + strerror(errno)};
 	ot::ogg_reader reader(input.get());
@@ -598,7 +602,7 @@ static void run_single(const ot::options& opt, const std::string& path_in, const
 		/* The output file exists. */
 		if (!S_ISREG(output_info.st_mode)) {
 			/* Special files are opened for writing directly. */
-			if ((final_output = fopen(path_out->c_str(), "we")) == nullptr)
+			if ((final_output = fopen(path_out->c_str(), "wb" OT_FOPEN_CLOEXEC)) == nullptr)
 				throw ot::status {ot::st::standard_error,
 				                  "Could not open '" + path_out.value() + "' for writing: " + strerror(errno)};
 			output = final_output.get();

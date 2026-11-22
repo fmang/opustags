@@ -30,6 +30,11 @@ include(CheckStructHasMember)
 check_struct_has_member("struct stat" st_mtim sys/stat.h HAVE_STAT_ST_MTIM LANGUAGE CXX)
 check_struct_has_member("struct stat" st_mtimespec sys/stat.h HAVE_STAT_ST_MTIMESPEC LANGUAGE CXX)
 
+# Windows lacks getdelim and mkstemps, in which case system.cc provides them.
+include(CheckFunctionExists)
+check_function_exists(getdelim HAVE_GETDELIM)
+check_function_exists(mkstemps HAVE_MKSTEMPS)
+
 configure_file(src/config.h.in config.h @ONLY)
 include_directories(BEFORE src "${CMAKE_BINARY_DIR}" ${OGG_INCLUDE_DIRS} ${Iconv_INCLUDE_DIRS})
 
@@ -46,6 +51,12 @@ target_link_libraries(ot PUBLIC ${OGG_LIBRARIES} ${Iconv_LIBRARIES})
 
 add_executable(opustags src/opustags.cc)
 target_link_libraries(opustags ot)
+
+if(WIN32)
+	# Use UTF-8 as the process code page, see src/opustags.manifest.
+	enable_language(RC)
+	target_sources(opustags PRIVATE src/opustags.rc)
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS opustags DESTINATION "${CMAKE_INSTALL_BINDIR}")
