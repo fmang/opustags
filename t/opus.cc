@@ -148,7 +148,7 @@ static void extract_cover()
 		"\x00\x00\x00\x0C" "Picture data";
 
 	ot::opus_tags tags;
-	tags.comments = { u8"METADATA_BLOCK_PICTURE=" + ot::encode_base64(picture_data) };
+	tags.comments = { u8"METADATA_block_PICTURE=" + ot::encode_base64(picture_data) };
 	std::optional<ot::picture> cover = ot::extract_cover(tags);
 	if (!cover)
 		throw failure("could not extract the cover");

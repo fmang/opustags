@@ -177,7 +177,10 @@ ot::byte_string ot::picture::serialize() const
 std::optional<ot::picture> ot::extract_cover(const ot::opus_tags& tags)
 {
 	static const std::u8string_view prefix = u8"METADATA_BLOCK_PICTURE="sv;
-	auto is_cover = [](const std::u8string& tag) { return tag.starts_with(prefix); };
+	auto is_cover = [](const std::u8string& tag) {
+		return tag.size() >= prefix.size() &&
+		       strncasecmp((const char*) tag.data(), (const char*) prefix.data(), prefix.size()) == 0;
+	};
 	auto cover_tag = std::find_if(tags.comments.begin(), tags.comments.end(), is_cover);
 	if (cover_tag == tags.comments.end())
 		return {}; // No cover art.
